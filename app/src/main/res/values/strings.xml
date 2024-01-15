@@ -1,0 +1,37 @@
+<resources>
+    <string name="app_name">Мои Кешбэки</string>
+    <string name="categories">Мои Категории</string>
+    <string name="settings">Настройки</string>
+    <string name="bank_card">Банковская карта</string>
+    <string name="bank_cards">Мои Карты</string>
+    <string name="shop">Магазин</string>
+    <string name="cashback">Кешбэк</string>
+    <string name="category_title">Категория</string>
+
+
+    <string name="app_version">Версия 1.0.0 от 07 января 2024</string>
+    <string name="dynamic_color">Использовать в оформлении динамические цвета</string>
+    <string name="dynamic_color_desc">Цветовая палитра приложения автоматически адаптируется и интегрируется с пользовательскими настройками</string>
+
+
+    <string name="empty_categories_list">Нажми + для добавления категорий</string>
+    <string name="add_category">Добавить категорию</string>
+    <string name="no_cashbacks_for_category">Нет кешбэков для этой категории</string>
+    <string name="max_cashback_title">Макс. </string>
+
+    <string name="category_placeholder">Название категории</string>
+    <string name="shop_placeholder">Название магазина</string>
+    <string name="tab_shops">Магазины</string>
+    <string name="tab_cashbacks">Кешбэки</string>
+    <string name="add_item">Добавить %s</string>
+    <string name="no_cashbacks_for_shop">Нет кешбэков для этого магазина</string>
+    <string name="empty_shops_list">Магазинов нет</string>
+
+    <!-- Оформление -->
+    <string name="dark_theme">Тёмное</string>
+    <string name="light_theme">Светлое</string>
+    <string name="system_theme">Как на устройстве</string>
+    <string name="now">(сейчас %s)</string>
+
+    <string name="switchThemeText">Оформление:</string>
+</resources>

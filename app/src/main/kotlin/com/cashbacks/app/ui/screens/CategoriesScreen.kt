@@ -1,0 +1,332 @@
+package com.cashbacks.app.ui.screens
+
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.isImeVisible
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.DataArray
+import androidx.compose.material.icons.rounded.Menu
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.FabPosition
+import androidx.compose.material3.FloatingActionButtonDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedIconButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import com.cashbacks.app.R
+import com.cashbacks.app.ui.composables.ListItemWithMaxCashback
+import com.cashbacks.app.ui.composables.NewNameTextField
+import com.cashbacks.app.ui.screens.navigation.AppScreens
+import com.cashbacks.app.util.LoadingInBox
+import com.cashbacks.app.util.animate
+import com.cashbacks.app.util.smoothScrollToItem
+import com.cashbacks.app.viewmodel.CategoriesViewModel
+import com.cashbacks.app.viewmodel.CategoriesViewModel.ViewModelState
+import com.cashbacks.domain.model.BasicCategory
+import com.cashbacks.domain.model.BasicInfoCategory
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@Composable
+fun CategoriesScreen(
+    viewModel: CategoriesViewModel,
+    openDrawer: () -> Unit,
+    navigateTo: (route: String) -> Unit
+) {
+    val snackbarHostState = remember(::SnackbarHostState)
+    val lazyListState = rememberLazyListState()
+    val scope = rememberCoroutineScope()
+
+    fun showSnackbar(message: String) {
+        scope.launch {
+            snackbarHostState.showSnackbar(message = message)
+        }
+    }
+
+    val keyboardIsOpen by keyboardAsState()
+    if (!keyboardIsOpen) {
+        viewModel.addingCategoriesState = false
+    }
+
+
+    Scaffold(
+        modifier = Modifier.fillMaxSize(),
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = {
+                    Text(
+                        text = stringResource(AppScreens.Categories.titleRes),
+                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                },
+                navigationIcon = {
+                    OutlinedIconButton(
+                        onClick = {
+                            viewModel.onItemClick(openDrawer)
+                        },
+                        shape = CircleShape,
+                        border = BorderStroke(
+                            width = 1.8.dp,
+                            brush = Brush.linearGradient(
+                                colors = listOf(
+                                    MaterialTheme.colorScheme.primaryContainer,
+                                    MaterialTheme.colorScheme.secondary,
+                                    MaterialTheme.colorScheme.tertiary
+                                )
+                            )
+                        )
+                    ) {
+                        Icon(Icons.Rounded.Menu, contentDescription = "open menu")
+                    }
+                },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primary.animate(),
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary.animate(),
+                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary.animate()
+                )
+            )
+        },
+        floatingActionButton = {
+            AnimatedVisibility(
+                visible = !viewModel.addingCategoriesState,
+                enter = fadeIn(),
+                exit = fadeOut()
+            ) {
+                ExtendedFloatingActionButton(
+                    text = {
+                        Text(
+                            text = stringResource(R.string.add_category),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    },
+                    icon = {
+                        Icon(
+                            imageVector = Icons.Rounded.Add,
+                            contentDescription = "add category"
+                        )
+                    },
+                    containerColor = MaterialTheme.colorScheme.primaryContainer.animate(),
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer.animate(),
+                    expanded = !lazyListState.isScrollInProgress,
+                    onClick = {
+                        viewModel.onItemClick {
+                            viewModel.addingCategoriesState = true
+                            scope.launch {
+                                delay(800)
+                                lazyListState.smoothScrollToItem(viewModel.categories.lastIndex)
+                            }
+                        }
+                    },
+                    modifier = Modifier.border(
+                        width = 2.dp,
+                        color = MaterialTheme.colorScheme.onPrimary.animate(),
+                        shape = FloatingActionButtonDefaults.extendedFabShape
+                    )
+                )
+            }
+        },
+        floatingActionButtonPosition = FabPosition.Center,
+        snackbarHost = {
+            SnackbarHost(hostState = snackbarHostState) {
+                Snackbar(
+                    snackbarData = it,
+                    shape = MaterialTheme.shapes.medium,
+                    containerColor = MaterialTheme.colorScheme.onBackground.animate(),
+                    contentColor = MaterialTheme.colorScheme.background.animate()
+                )
+            }
+        }
+    ) { contentPadding ->
+
+        Crossfade(
+            targetState = viewModel.state,
+            animationSpec = spring(stiffness = Spring.StiffnessLow),
+            label = "categories_list_animation",
+            modifier = Modifier
+                .imePadding()
+                .padding(contentPadding)
+                .fillMaxSize()
+        ) { state ->
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.TopCenter
+            ) {
+                when (state) {
+                    ViewModelState.Loading -> LoadingInBox(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .verticalScroll(rememberScrollState())
+                    )
+
+                    ViewModelState.EmptyList -> EmptyList(
+                        text = stringResource(R.string.empty_categories_list),
+                        icon = {
+                            Icon(
+                                imageVector = Icons.Rounded.DataArray,
+                                contentDescription = "empty list",
+                                tint = MaterialTheme.colorScheme.onBackground.animate(),
+                                modifier = Modifier.scale(2.5f)
+                            )
+                        },
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .fillMaxSize()
+                    )
+
+                    ViewModelState.Ready -> CategoriesScreen(
+                        viewModel = viewModel,
+                        listState = lazyListState,
+                        onClick = {
+                            viewModel.onItemClick {
+                                navigateTo(AppScreens.Category.createUrl(id = it.id))
+                            }
+                        },
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+
+                AnimatedVisibility(
+                    visible = state != ViewModelState.Loading && viewModel.addingCategoriesState,
+                    enter = expandVertically(
+                        animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing)
+                    ),
+                    exit = shrinkVertically(
+                        animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing)
+                    ),
+                    modifier = Modifier.align(Alignment.BottomCenter)
+                ) {
+                    NewNameTextField(
+                        placeholder = stringResource(R.string.category_placeholder)
+                    ) { name ->
+                        viewModel.addCategory(name)
+                        viewModel.addingCategoriesState = false
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+
+@ExperimentalLayoutApi
+@Composable
+fun keyboardAsState(): State<Boolean> {
+    val isImeVisible = WindowInsets.isImeVisible
+    return rememberUpdatedState(newValue = isImeVisible)
+}
+
+
+
+@Composable
+private fun EmptyList(
+    text: String,
+    modifier: Modifier = Modifier,
+    icon: @Composable (() -> Unit) = {}
+) {
+    Box(
+        modifier = Modifier
+            .then(modifier)
+            .verticalScroll(rememberScrollState()),
+    ) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier
+                .padding(vertical = 20.dp)
+                .align(Alignment.Center)
+                .matchParentSize()
+        ) {
+            icon()
+
+            Text(
+                text = text,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onBackground.animate(),
+                textAlign = TextAlign.Center
+            )
+        }
+    }
+}
+
+
+
+@Composable
+private fun CategoriesScreen(
+    viewModel: CategoriesViewModel,
+    listState: LazyListState,
+    modifier: Modifier = Modifier,
+    onClick: (BasicInfoCategory) -> Unit
+) {
+    LazyColumn(
+        state = listState,
+        modifier = modifier,
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        items(viewModel.categories) { category ->
+            ListItemWithMaxCashback(
+                name = category.name,
+                maxCashback = (category as BasicCategory).maxCashback,
+                cashbackPlaceholder = stringResource(R.string.no_cashbacks_for_category),
+                onClick = { onClick(category) }
+            )
+        }
+        item {
+            Spacer(modifier = Modifier.height(70.dp))
+        }
+    }
+}
