@@ -1,13 +1,12 @@
 package com.cashbacks.app.ui
 
+import android.graphics.Color
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.ui.graphics.toArgb
 import com.cashbacks.app.app.App
 import com.cashbacks.app.ui.screens.navigation.NavigationScreen
 import com.cashbacks.app.ui.theme.CashbacksTheme
@@ -21,13 +20,20 @@ class MainActivity : ComponentActivity() {
         val mainViewModel by viewModels<MainViewModel> { vmFactory }
 
         setContent {
-            CashbacksTheme(settings = mainViewModel.settings) { isDarkTheme ->
-                val statusBarStyle = SystemBarStyle.auto(
-                    lightScrim = MaterialTheme.colorScheme.onPrimary.toArgb(),
-                    darkScrim = MaterialTheme.colorScheme.onPrimary.toArgb(),
-                    detectDarkMode = { isDarkTheme.xor(mainViewModel.settings.dynamicColor) }
+            CashbacksTheme(settings = mainViewModel.settings.value) { isDarkTheme ->
+                val statusBarStyle = when {
+                    isDarkTheme.xor(mainViewModel.settings.value.dynamicColor) ->
+                        SystemBarStyle.dark(scrim = Color.TRANSPARENT)
+                    else -> SystemBarStyle.light(scrim = Color.TRANSPARENT, darkScrim = Color.TRANSPARENT)
+                }
+                val navigationBarStyle = when {
+                    isDarkTheme -> SystemBarStyle.dark(scrim = Color.TRANSPARENT)
+                    else -> SystemBarStyle.light(scrim = Color.TRANSPARENT, darkScrim = Color.RED)
+                }
+                enableEdgeToEdge(
+                    statusBarStyle = statusBarStyle,
+                    navigationBarStyle = navigationBarStyle,
                 )
-                enableEdgeToEdge(statusBarStyle = statusBarStyle)
                 NavigationScreen(
                     application = application as App,
                     isDarkTheme = isDarkTheme,

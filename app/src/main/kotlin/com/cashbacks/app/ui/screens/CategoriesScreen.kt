@@ -21,7 +21,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -38,20 +37,18 @@ import androidx.compose.material.icons.rounded.Menu
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
-import androidx.compose.material3.FabPosition
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedIconButton
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
@@ -64,6 +61,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.cashbacks.app.R
+import com.cashbacks.app.ui.composables.CollapsingToolbarScaffold
 import com.cashbacks.app.ui.composables.ListItemWithMaxCashback
 import com.cashbacks.app.ui.composables.NewNameTextField
 import com.cashbacks.app.ui.screens.navigation.AppScreens
@@ -94,13 +92,15 @@ fun CategoriesScreen(
         }
     }
 
-    val keyboardIsOpen by keyboardAsState()
-    if (!keyboardIsOpen) {
-        viewModel.addingCategoriesState = false
+    val keyboardIsOpen = keyboardAsState()
+    LaunchedEffect(keyboardIsOpen.value) {
+        if (!keyboardIsOpen.value) {
+            viewModel.addingCategoriesState.value = false
+        }
     }
 
 
-    Scaffold(
+    CollapsingToolbarScaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
             CenterAlignedTopAppBar(
@@ -140,7 +140,7 @@ fun CategoriesScreen(
         },
         floatingActionButton = {
             AnimatedVisibility(
-                visible = !viewModel.addingCategoriesState,
+                visible = !viewModel.addingCategoriesState.value,
                 enter = fadeIn(),
                 exit = fadeOut()
             ) {
@@ -159,16 +159,16 @@ fun CategoriesScreen(
                     },
                     containerColor = MaterialTheme.colorScheme.primaryContainer.animate(),
                     contentColor = MaterialTheme.colorScheme.onPrimaryContainer.animate(),
-                    expanded = !lazyListState.isScrollInProgress,
                     onClick = {
                         viewModel.onItemClick {
-                            viewModel.addingCategoriesState = true
+                            viewModel.addingCategoriesState.value = true
                             scope.launch {
-                                delay(800)
-                                lazyListState.smoothScrollToItem(viewModel.categories.lastIndex)
+                                delay(700)
+                                lazyListState.smoothScrollToItem(viewModel.categories.value.lastIndex)
                             }
                         }
                     },
+                    elevation = FloatingActionButtonDefaults.loweredElevation(),
                     modifier = Modifier.border(
                         width = 2.dp,
                         color = MaterialTheme.colorScheme.onPrimary.animate(),
@@ -177,7 +177,6 @@ fun CategoriesScreen(
                 )
             }
         },
-        floatingActionButtonPosition = FabPosition.Center,
         snackbarHost = {
             SnackbarHost(hostState = snackbarHostState) {
                 Snackbar(
@@ -191,11 +190,10 @@ fun CategoriesScreen(
     ) { contentPadding ->
 
         Crossfade(
-            targetState = viewModel.state,
+            targetState = viewModel.state.value,
             animationSpec = spring(stiffness = Spring.StiffnessLow),
             label = "categories_list_animation",
             modifier = Modifier
-                .imePadding()
                 .padding(contentPadding)
                 .fillMaxSize()
         ) { state ->
@@ -238,7 +236,7 @@ fun CategoriesScreen(
                 }
 
                 AnimatedVisibility(
-                    visible = state != ViewModelState.Loading && viewModel.addingCategoriesState,
+                    visible = state != ViewModelState.Loading && viewModel.addingCategoriesState.value,
                     enter = expandVertically(
                         animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing)
                     ),
@@ -251,7 +249,7 @@ fun CategoriesScreen(
                         placeholder = stringResource(R.string.category_placeholder)
                     ) { name ->
                         viewModel.addCategory(name)
-                        viewModel.addingCategoriesState = false
+                        viewModel.addingCategoriesState.value = false
                     }
                 }
             }
@@ -317,7 +315,7 @@ private fun CategoriesScreen(
         verticalArrangement = Arrangement.spacedBy(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        items(viewModel.categories) { category ->
+        items(viewModel.categories.value) { category ->
             ListItemWithMaxCashback(
                 name = category.name,
                 maxCashback = (category as BasicCategory).maxCashback,

@@ -114,6 +114,6 @@ sealed class AppScreens(
 
         override val args: Array<String> = Args.entries.toStringArray()
 
-        fun createUrl(id: Long) = "$root/$id"
+        fun createUrl(id: Long?) = "$root/$id"
     }
 }

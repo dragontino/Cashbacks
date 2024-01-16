@@ -13,6 +13,14 @@
     <string name="dynamic_color">Использовать в оформлении динамические цвета</string>
     <string name="dynamic_color_desc">Цветовая палитра приложения автоматически адаптируется и интегрируется с пользовательскими настройками</string>
 
+    <!-- Оформление -->
+    <string name="dark_theme">Тёмное</string>
+    <string name="light_theme">Светлое</string>
+    <string name="system_theme">Как на устройстве</string>
+    <string name="now">(сейчас %s)</string>
+
+    <string name="switchThemeText">Оформление:</string>
+
 
     <string name="empty_categories_list">Нажми + для добавления категорий</string>
     <string name="add_category">Добавить категорию</string>
@@ -26,12 +34,5 @@
     <string name="add_item">Добавить %s</string>
     <string name="no_cashbacks_for_shop">Нет кешбэков для этого магазина</string>
     <string name="empty_shops_list">Магазинов нет</string>
-
-    <!-- Оформление -->
-    <string name="dark_theme">Тёмное</string>
-    <string name="light_theme">Светлое</string>
-    <string name="system_theme">Как на устройстве</string>
-    <string name="now">(сейчас %s)</string>
-
-    <string name="switchThemeText">Оформление:</string>
+    <string name="empty_cashbacks_list">Кэшбеков нет</string>
 </resources>

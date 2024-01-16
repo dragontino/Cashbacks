@@ -29,14 +29,14 @@ class ShopRepositoryImpl(private val dao: ShopsDao) : ShopRepository {
     override suspend fun updateShopsInCategory(
         categoryId: Long,
         shops: List<BasicInfoShop>
-    ): List<Result<Unit>> {
+    ): Result<Unit> {
         val shopsDB = shops.map {
             ShopDB(id = it.id, categoryId = categoryId, name = it.name)
         }
-        return dao.updateShops(shopsDB).mapIndexed { index, id ->
+        return dao.updateShops(shopsDB).let { updatedCount ->
             when {
-                id < 0 -> Result.failure(
-                    InsertionException("Не удалось обновить магазин магазин ${shops[index].name}")
+                updatedCount < shops.size -> Result.failure(
+                    InsertionException("Не удалось обновить все магазины")
                 )
                 else -> Result.success(Unit)
             }
@@ -47,14 +47,14 @@ class ShopRepositoryImpl(private val dao: ShopsDao) : ShopRepository {
     override suspend fun deleteShopsFromCategory(
         categoryId: Long,
         shops: List<BasicInfoShop>
-    ): List<Result<Unit>> {
+    ): Result<Unit> {
         val shopsDB = shops
             .map { ShopDB(id = it.id, categoryId = categoryId, name = it.name) }
             .toTypedArray()
 
-        return dao.deleteShops(shops = shopsDB).map { id ->
+        return dao.deleteShops(shops = shopsDB).let { deletedCount ->
             when {
-                id < 0 -> Result.failure(Exception())
+                deletedCount < shops.size -> Result.failure(Exception())
                 else -> Result.success(Unit)
             }
         }

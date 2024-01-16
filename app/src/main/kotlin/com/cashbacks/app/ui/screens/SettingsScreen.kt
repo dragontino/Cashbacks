@@ -60,6 +60,7 @@ import com.cashbacks.app.R
 import com.cashbacks.app.model.ColorDesignMapper.title
 import com.cashbacks.app.ui.composables.BottomSheetContent
 import com.cashbacks.app.ui.composables.Header
+import com.cashbacks.app.ui.composables.ModalSheetDefaults
 import com.cashbacks.app.ui.composables.ModalSheetItems.TextItem
 import com.cashbacks.app.ui.screens.navigation.AppScreens
 import com.cashbacks.app.util.LoadingInBox
@@ -126,7 +127,7 @@ fun SettingsScreen(
         },
         sheetContent = {
             ThemeSheetContent(
-                currentDesign = viewModel.settings.colorDesign,
+                currentDesign = viewModel.settings.value.colorDesign,
                 updateDesign = {
                     viewModel.updateSettingsProperty(
                         property = Settings::colorDesign,
@@ -137,6 +138,7 @@ fun SettingsScreen(
                 }
             )
         },
+        sheetShape = ModalSheetDefaults.BottomSheetShape,
         sheetContainerColor = MaterialTheme.colorScheme.surface.animate(),
         sheetContentColor = MaterialTheme.colorScheme.onSurface.animate(),
         sheetDragHandle = null,
@@ -164,7 +166,7 @@ fun SettingsScreen(
             )
 
             AnimatedVisibility(
-                visible = viewModel.state == SettingsViewModel.State.Loading,
+                visible = viewModel.state.value == SettingsViewModel.State.Loading,
                 enter = fadeIn(tween(durationMillis = 50)),
                 exit = fadeOut(tween(durationMillis = 50))
             ) {
@@ -200,7 +202,7 @@ private fun SettingsContent(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .clickable(
-                        enabled = viewModel.state != SettingsViewModel.State.Loading,
+                        enabled = viewModel.state.value != SettingsViewModel.State.Loading,
                         onClick = openOrHideBottomSheet,
                     )
                     .clip(MaterialTheme.shapes.small)
@@ -230,7 +232,7 @@ private fun SettingsContent(
                         ) {
                             append(
                                 text = viewModel.constructThemeText(
-                                    currentTheme = viewModel.settings.colorDesign,
+                                    currentTheme = viewModel.settings.value.colorDesign,
                                     isDark = isDarkTheme,
                                     context = context
                                 )
@@ -260,12 +262,12 @@ private fun SettingsContent(
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             item {
                 SwitchItem(
-                    isChecked = viewModel.settings.dynamicColor,
+                    isChecked = viewModel.settings.value.dynamicColor,
                     header = Header(
                         title = stringResource(R.string.dynamic_color),
                         subtitle = stringResource(R.string.dynamic_color_desc)
                     ),
-                    enabled = viewModel.state != SettingsViewModel.State.Loading
+                    enabled = viewModel.state.value != SettingsViewModel.State.Loading
                 ) {
                     viewModel.updateSettingsProperty(
                         property = Settings::dynamicColor,

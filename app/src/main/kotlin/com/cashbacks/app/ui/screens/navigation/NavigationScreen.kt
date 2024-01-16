@@ -37,6 +37,8 @@ import com.cashbacks.app.ui.screens.CardsScreen
 import com.cashbacks.app.ui.screens.CategoriesScreen
 import com.cashbacks.app.ui.screens.CategoryInfoScreen
 import com.cashbacks.app.ui.screens.SettingsScreen
+import com.cashbacks.app.ui.screens.SingleCashbackScreen
+import com.cashbacks.app.viewmodel.CategoriesViewModel
 import com.cashbacks.app.viewmodel.CategoryInfoViewModel
 import com.cashbacks.app.viewmodel.MainViewModel
 import kotlinx.coroutines.delay
@@ -52,7 +54,7 @@ fun NavigationScreen(
     val scope = rememberCoroutineScope()
     val navController = rememberNavController()
     val currentBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentRoute by remember {
+    val currentRoute = remember {
         derivedStateOf {
             currentBackStackEntry?.destination?.route
         }
@@ -81,14 +83,14 @@ fun NavigationScreen(
             ModalNavigationDrawerContent {
                 ScreenTypeItem(
                     screen = AppScreens.Categories,
-                    selected = currentRoute == AppScreens.Categories.destinationRoute
+                    selected = currentRoute.value == AppScreens.Categories.destinationRoute
                 ) { screen ->
                     onDrawerItemClick(route = screen.createUrl())
                 }
 
                 ScreenTypeItem(
                     screen = AppScreens.BankCards,
-                    selected = currentRoute == AppScreens.BankCards.destinationRoute
+                    selected = currentRoute.value == AppScreens.BankCards.destinationRoute
                 ) { screen ->
                     onDrawerItemClick(route = screen.createUrl())
                 }
@@ -97,7 +99,7 @@ fun NavigationScreen(
 
                 ScreenTypeItem(
                     screen = AppScreens.Settings,
-                    selected = currentRoute == AppScreens.Settings.destinationRoute
+                    selected = currentRoute.value == AppScreens.Settings.destinationRoute
                 ) { screen ->
                     onDrawerItemClick(route = screen.createUrl())
                 }
@@ -137,8 +139,13 @@ fun NavigationScreen(
                     fadeOut(animationSpec = tween(durationMillis = 400, easing = FastOutSlowInEasing))
                 }
             ) {
+                val vmFactory = CategoriesViewModel.Factory(
+                    addCategoryUseCase = application.dependencyFactory.provideAddCategoryUseCase(),
+                    fetchCategoriesUseCase = application.dependencyFactory.provideFetchCategoriesUseCase(),
+                    deleteCategoryUseCase = application.dependencyFactory.provideDeleteCategoryUseCase()
+                )
                 CategoriesScreen(
-                    viewModel = viewModel(factory = application.viewModelFactory),
+                    viewModel = viewModel(factory = vmFactory),
                     openDrawer = { openDrawer() },
                     navigateTo = navController::navigateTo
                 )
@@ -189,7 +196,8 @@ fun NavigationScreen(
                 )
             ) {
                 val vmFactory = CategoryInfoViewModel.Factory(
-                    categoryUseCase = application.dependencyFactory.provideCategoriesUseCase(),
+                    categoryUseCase = application.dependencyFactory.provideEditCategoryUseCase(),
+                    deleteCategoryUseCase = application.dependencyFactory.provideDeleteCategoryUseCase(),
                     shopUseCase = application.dependencyFactory.provideShopUseCase(),
                     cashbackUseCase = application.dependencyFactory.provideCashbackCategoryUseCase(),
                     id = it.arguments?.getLong(AppScreens.Category.Args.Id.name) ?: 1,
@@ -198,9 +206,24 @@ fun NavigationScreen(
 
                 CategoryInfoScreen(
                     viewModel = viewModel(factory = vmFactory),
-                    navigateTo = navController::navigateTo,
+                    navigateTo = { route ->
+                        navController.navigateTo(route = route, parentScreen = AppScreens.Category)
+                    },
                     popBackStack = navController::popBackStack
                 )
+            }
+
+
+            composable(
+                route = AppScreens.Cashback.destinationRoute,
+                arguments = listOf(
+                    navArgument(AppScreens.Cashback.Args.Id.name) {
+                        type = NavType.StringType
+                        nullable = true
+                    }
+                )
+            ) {
+                SingleCashbackScreen()
             }
         }
     }

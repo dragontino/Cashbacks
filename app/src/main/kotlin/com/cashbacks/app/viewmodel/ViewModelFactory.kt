@@ -15,11 +15,6 @@ class ViewModelFactory(
                     settingsUseCase = application.dependencyFactory.provideSettingsUseCase()
                 ) as T
 
-            modelClass.isAssignableFrom(CategoriesViewModel::class.java) ->
-                CategoriesViewModel(
-                    categoryUseCase = application.dependencyFactory.provideCategoriesUseCase()
-                ) as T
-
             modelClass.isAssignableFrom(SettingsViewModel::class.java) ->
                 SettingsViewModel(
                     useCase = application.dependencyFactory.provideSettingsUseCase()

@@ -1,9 +1,8 @@
 package com.cashbacks.app.viewmodel
 
 import android.content.Context
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.cashbacks.app.R
@@ -26,21 +25,21 @@ class SettingsViewModel(
         Ready
     }
 
-    var settings by mutableStateOf(Settings())
-        private set
+    private val _settings = mutableStateOf(Settings())
+    val settings = derivedStateOf { _settings.value }
 
-    var state by mutableStateOf(State.Ready)
-        private set
+    private val _state = mutableStateOf(State.Ready)
+    val state = derivedStateOf { _state.value }
 
     init {
         flow {
             emit(State.Loading)
             delay(150)
             emit(State.Ready)
-        }.onEach { state = it }.launchIn(viewModelScope)
+        }.onEach { _state.value = it }.launchIn(viewModelScope)
 
         useCase.fetchSettings()
-            .onEach { settings = it }
+            .onEach { _settings.value = it }
             .launchIn(viewModelScope)
     }
 
@@ -63,10 +62,10 @@ class SettingsViewModel(
         error: (exception: Throwable) -> Unit = {}
     ) {
         viewModelScope.launch {
-            state = State.Loading
+            _state.value = State.Loading
             delay(200)
             val result = useCase.updateSettingsProperty(property.name, value)
-            state = State.Ready
+            _state.value = State.Ready
             result.exceptionOrNull()?.let { error(it) }
         }
     }

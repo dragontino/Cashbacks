@@ -22,6 +22,9 @@ abstract class CategoriesDao : CardsDao {
     @Update(entity = CategoryDB::class, onConflict = OnConflictStrategy.IGNORE)
     abstract suspend fun updateCategory(category: CategoryDB)
 
+    @Query("DELETE FROM Categories WHERE id = :id")
+    abstract suspend fun deleteCategoryById(id: Long): Int
+
 
     @Query("SELECT name FROM Categories WHERE name = :name")
     abstract suspend fun getCategoriesByName(name: String): List<String>
@@ -61,12 +64,12 @@ abstract class CategoriesDao : CardsDao {
             return@map BasicShop(
                 id = shopDB.id,
                 name = shopDB.name,
-                maxCashback = bankCard?.let { maxCashbackDB?.mapToCashback(it.mapToBankCard()) }
+                maxCashback = bankCard?.let { maxCashbackDB?.mapToCashback(it) }
             )
         }
         val cashbacks = categoryWithShopsAndCashbacks.cashbacks.map {
             val bankCard = getBasicInfoAboutBankCardById(it.bankCardId)
-            it.mapToCashback(bankCard.mapToBankCard())
+            it.mapToCashback(bankCard)
         }
 
         return Category(

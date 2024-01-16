@@ -14,7 +14,11 @@ class ShopUseCase(
         shops: List<BasicShop>,
     ): List<Result<Unit>> {
         return withContext(dispatcher) {
-            repository.addShopsToCategory(categoryId, shops)
+            println("shops = ${shops.joinToString("\n")}")
+            when {
+                shops.isEmpty() -> listOf()
+                else -> repository.addShopsToCategory(categoryId, shops)
+            }
         }
     }
 
@@ -22,9 +26,12 @@ class ShopUseCase(
     suspend fun updateShopsInCategory(
         categoryId: Long,
         shops: List<BasicShop>
-    ): List<Result<Unit>> {
+    ): Result<Unit> {
         return withContext(dispatcher) {
-            repository.updateShopsInCategory(categoryId, shops)
+            when {
+                shops.isEmpty() -> Result.success(Unit)
+                else -> repository.updateShopsInCategory(categoryId, shops)
+            }
         }
     }
 
@@ -32,9 +39,12 @@ class ShopUseCase(
     suspend fun deleteShopsFromCategory(
         categoryId: Long,
         shops: List<BasicShop>
-    ): List<Result<Unit>> {
+    ): Result<Unit> {
         return withContext(dispatcher) {
-            repository.deleteShopsFromCategory(categoryId, shops)
+            when {
+                shops.isEmpty() -> Result.success(Unit)
+                else -> repository.deleteShopsFromCategory(categoryId, shops)
+            }
         }
     }
 }

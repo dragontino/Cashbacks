@@ -3,17 +3,20 @@ package com.cashbacks.app.ui.screens
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -27,6 +30,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Save
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.ArrowBackIosNew
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material3.CardDefaults
@@ -34,16 +38,16 @@ import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
-import androidx.compose.material3.FabPosition
+import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SecondaryTabRow
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -52,6 +56,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -60,10 +65,14 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.cashbacks.app.R
+import com.cashbacks.app.ui.composables.CollapsingToolbarScaffold
+import com.cashbacks.app.ui.composables.DisposableEffectWithLifecycle
 import com.cashbacks.app.ui.composables.EditableTextField
 import com.cashbacks.app.ui.composables.ListItemWithMaxCashback
+import com.cashbacks.app.ui.composables.ModalSheetDefaults
 import com.cashbacks.app.ui.composables.NewNameTextField
 import com.cashbacks.app.ui.screens.navigation.AppScreens
+import com.cashbacks.app.ui.theme.CashbacksTheme
 import com.cashbacks.app.util.LoadingInBox
 import com.cashbacks.app.util.animate
 import com.cashbacks.app.viewmodel.CategoryInfoViewModel
@@ -72,7 +81,9 @@ import com.cashbacks.domain.model.BasicShop
 import com.cashbacks.domain.model.Cashback
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class,
+    ExperimentalLayoutApi::class
+)
 @Composable
 fun CategoryInfoScreen(
     viewModel: CategoryInfoViewModel,
@@ -85,7 +96,18 @@ fun CategoryInfoScreen(
     )
     val pagerState = rememberPagerState { tabPages.size }
 
-    Scaffold(
+    val keyboardIsOpen = keyboardAsState()
+    LaunchedEffect(keyboardIsOpen.value) {
+        if (!keyboardIsOpen.value) viewModel.addingShopState.value = false
+    }
+
+
+    DisposableEffectWithLifecycle(
+        onDestroy = viewModel::saveInfo
+    )
+
+
+    CollapsingToolbarScaffold(
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
@@ -97,27 +119,56 @@ fun CategoryInfoScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = popBackStack) {
-                        Icon(imageVector = Icons.Rounded.ArrowBackIosNew, contentDescription = "return")
+                        Icon(
+                            imageVector = when {
+                                viewModel.isEditing.value -> Icons.Rounded.Close
+                                else -> Icons.Rounded.ArrowBackIosNew
+                            },
+                            contentDescription = "return",
+                            modifier = Modifier.scale(1.2f)
+                        )
                     }
                 },
                 actions = {
-                    IconButton(onClick = { viewModel.isEditing = !viewModel.isEditing }) {
+                    IconButton(
+                        onClick = {
+                            if (viewModel.isEditing.value) {
+                                viewModel.saveInfo()
+                            }
+                            viewModel.isEditing.value = !viewModel.isEditing.value
+                        }
+                    ) {
                         Icon(
                             imageVector = when {
-                                viewModel.isEditing -> Icons.Outlined.Save
+                                viewModel.isEditing.value -> Icons.Outlined.Save
                                 else -> Icons.Rounded.Edit
                             },
                             contentDescription = null,
-                            modifier = Modifier.scale(1.1f)
+                            modifier = Modifier.scale(1.2f)
                         )
                     }
 
-                    if (viewModel.isEditing) {
-                        IconButton(onClick = { /*TODO*/ }) {
+                    AnimatedVisibility(
+                        visible = viewModel.isEditing.value,
+                        enter = slideInHorizontally(
+                            animationSpec = tween(durationMillis = 200, easing = LinearEasing),
+                            initialOffsetX = { it / 2 }
+                        ),
+                        exit = slideOutHorizontally(
+                            animationSpec = tween(durationMillis = 200, easing = LinearEasing),
+                            targetOffsetX = { it / 2 }
+                        )
+                    ) {
+                        IconButton(
+                            onClick = {
+                                viewModel.deleteCategory()
+                                popBackStack()
+                            },
+                        ) {
                             Icon(
                                 imageVector = Icons.Rounded.DeleteOutline,
                                 contentDescription = "delete category",
-                                modifier = Modifier.scale(1.1f)
+                                modifier = Modifier.scale(1.2f)
                             )
                         }
                     }
@@ -132,7 +183,7 @@ fun CategoryInfoScreen(
         },
         floatingActionButton = {
             AnimatedVisibility(
-                visible = viewModel.isEditing && viewModel.state != ViewModelState.Loading,
+                visible = viewModel.showFab.value,
                 enter = expandVertically(
                     animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)
                 ),
@@ -142,7 +193,7 @@ fun CategoryInfoScreen(
             ) {
                 ExtendedFloatingActionButton(
                     text = {
-                        val tabTitle = stringResource(tabPages[pagerState.currentPage].tabTitleRes)
+                        val tabTitle = stringResource(tabPages[pagerState.currentPage].titleRes)
                         Text(
                             text = stringResource(R.string.add_item, tabTitle),
                             style = MaterialTheme.typography.bodyMedium
@@ -152,14 +203,17 @@ fun CategoryInfoScreen(
                         Icon(imageVector = Icons.Rounded.Add, contentDescription = null)
                     },
                     onClick = {
-                        viewModel.addingShopState = true
+                        when (tabPages[pagerState.currentPage]) {
+                            AppScreens.Shop -> viewModel.addingShopState.value = true
+                            AppScreens.Cashback -> navigateTo(AppScreens.Cashback.createUrl(null))
+                        }
                     },
                     containerColor = MaterialTheme.colorScheme.primaryContainer.animate(),
-                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer.animate()
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer.animate(),
+                    elevation = FloatingActionButtonDefaults.loweredElevation()
                 )
             }
         },
-        floatingActionButtonPosition = FabPosition.Center,
         modifier = Modifier.fillMaxSize()
     ) { contentPadding ->
 
@@ -168,7 +222,6 @@ fun CategoryInfoScreen(
             animationSpec = tween(durationMillis = 400, easing = FastOutSlowInEasing),
             label = "category_info_animation",
             modifier = Modifier
-                .imePadding()
                 .padding(contentPadding)
                 .fillMaxSize()
         ) { viewModelState ->
@@ -177,7 +230,7 @@ fun CategoryInfoScreen(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
-                when (viewModelState) {
+                when (viewModelState.value) {
                     ViewModelState.Loading -> LoadingInBox(
                         modifier = Modifier
                             .fillMaxSize()
@@ -192,7 +245,7 @@ fun CategoryInfoScreen(
                 }
 
                 AnimatedVisibility(
-                    visible = viewModelState != ViewModelState.Loading && viewModel.addingShopState,
+                    visible = viewModelState.value != ViewModelState.Loading && viewModel.addingShopState.value,
                     enter = expandVertically(
                         animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing)
                     ),
@@ -205,7 +258,7 @@ fun CategoryInfoScreen(
                         placeholder = stringResource(R.string.shop_placeholder)
                     ) { name ->
                         viewModel.addShop(name)
-                        viewModel.addingShopState = false
+                        viewModel.addingShopState.value = false
                     }
                 }
             }
@@ -229,9 +282,9 @@ private fun CategoryInfoScreenContent(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         EditableTextField(
-            text = viewModel.category?.name ?: "",
-            onTextChange = { viewModel.category?.name = it },
-            readOnly = !viewModel.isEditing,
+            text = viewModel.category.value?.name ?: "",
+            onTextChange = { viewModel.category.value?.name = it },
+            readOnly = !viewModel.isEditing.value,
             label = stringResource(R.string.category_placeholder),
             imeAction = ImeAction.Done,
             shape = MaterialTheme.shapes.medium,
@@ -243,20 +296,26 @@ private fun CategoryInfoScreenContent(
         TabsLayout(
             pagerState = pagerState,
             pages = tabPages,
-            scrollEnabled = !viewModel.addingShopState,
+            scrollEnabled = !viewModel.addingShopState.value,
             modifier = Modifier
-                /*.shadow(elevation = 10.dp, shape = MaterialTheme.shapes.large)*/
+                .shadow(elevation = 20.dp, shape = ModalSheetDefaults.BottomSheetShape)
                 .background(MaterialTheme.colorScheme.background.animate())
                 .padding(top = 8.dp)
                 .padding(horizontal = 8.dp)
-                .clip(MaterialTheme.shapes.large)
+                .clip(ModalSheetDefaults.BottomSheetShape)
         ) { page ->
             val items = when (page) {
-                AppScreens.Shop -> viewModel.category?.shops ?: listOf()
-                AppScreens.Cashback -> viewModel.category?.cashbacks ?: listOf()
+                AppScreens.Shop -> viewModel.category.value?.shops ?: listOf()
+                AppScreens.Cashback -> viewModel.category.value?.cashbacks ?: listOf()
             }
 
-            TabPage(items = items) {
+            TabPage(
+                items = items,
+                placeholderText = when (page) {
+                    AppScreens.Cashback -> stringResource(R.string.empty_cashbacks_list)
+                    AppScreens.Shop -> stringResource(R.string.empty_shops_list)
+                }
+            ) {
                 when (it) {
                     is BasicShop -> ListItemWithMaxCashback(
                         name = it.name,
@@ -340,7 +399,11 @@ private fun TabsLayout(
 
 
 @Composable
-private fun <T> TabPage(items: List<T>, itemComposable: @Composable ((T) -> Unit)) {
+private fun <T> TabPage(
+    items: List<T>,
+    placeholderText: String,
+    itemComposable: @Composable ((T) -> Unit)
+) {
     val listState = rememberLazyListState()
 
     Crossfade(
@@ -354,7 +417,7 @@ private fun <T> TabPage(items: List<T>, itemComposable: @Composable ((T) -> Unit
                 modifier = Modifier.fillMaxSize()
             ) {
                 Text(
-                    text = stringResource(R.string.empty_shops_list),
+                    text = placeholderText,
                     color = MaterialTheme.colorScheme.onBackground.animate(),
                     style = MaterialTheme.typography.bodyMedium
                 )
@@ -421,11 +484,17 @@ private fun CashbackComposable(cashback: Cashback, onClick: () -> Unit) {
 @Preview
 @Composable
 private fun TabsLayoutPreview() {
-    TabsLayout(pages = arrayOf(AppScreens.Shop, AppScreens.Cashback)) {
-        Box(
-            modifier = Modifier.fillMaxSize()
+    CashbacksTheme(isDarkTheme = false) {
+        TabsLayout(
+            pages = arrayOf(AppScreens.Shop, AppScreens.Cashback),
+            modifier = Modifier.background(MaterialTheme.colorScheme.background)
         ) {
-            Text("Preview")
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("Preview")
+            }
         }
     }
 }

@@ -73,10 +73,7 @@ internal fun ModalNavigationDrawerContent(items: @Composable ColumnScope.() -> U
     val configuration = LocalConfiguration.current
 
     ModalDrawerSheet(
-        drawerShape = MaterialTheme.shapes.large.copy(
-            topStart = CornerSize(0.dp),
-            bottomStart = CornerSize(0.dp)
-        ),
+        drawerShape = ModalSheetDefaults.NavigationDrawerShape,
         drawerContainerColor = MaterialTheme.colorScheme.background.animate(),
         drawerContentColor = MaterialTheme.colorScheme.onBackground.animate(),
         windowInsets = WindowInsets.tappableElement.only(WindowInsetsSides.Bottom),
@@ -453,7 +450,8 @@ object ModalSheetDefaults {
         easing = FastOutSlowInEasing
     )
 
-    val Shape = RoundedCornerShape(18.dp)
+    val BottomSheetShape = RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp)
+    val NavigationDrawerShape = RoundedCornerShape(topEnd = 18.dp, bottomEnd = 18.dp)
 }
 
 

@@ -50,6 +50,7 @@ class CategoryRepositoryImpl(private val dao: CategoriesDao) : CategoryRepositor
     }
 
     override suspend fun deleteCategory(id: Long): Result<Unit> {
-        TODO("Not yet implemented")
+        val success = dao.deleteCategoryById(id) > 0
+        return if (success) Result.success(Unit) else Result.failure(Exception())
     }
 }

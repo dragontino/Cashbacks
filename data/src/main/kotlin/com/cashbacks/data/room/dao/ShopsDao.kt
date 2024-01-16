@@ -23,8 +23,8 @@ abstract class ShopsDao : CardsDao {
     open suspend fun getShop(id: Long): Shop? {
         val shopWithCashbacks = getShopById(id) ?: return null
         val cashbacks = shopWithCashbacks.cashbacks.map {
-            val bankCardDB = getBasicInfoAboutBankCardById(it.bankCardId)
-            it.mapToCashback(bankCardDB.mapToBankCard())
+            val basicBankCard = getBasicInfoAboutBankCardById(it.bankCardId)
+            it.mapToCashback(basicBankCard)
         }
 
         return Shop(

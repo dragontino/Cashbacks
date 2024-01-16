@@ -11,19 +11,28 @@ class CashbackShopUseCase(
 ) {
     suspend fun addCashbacksToShop(shopId: Long, cashbacks: List<Cashback>): List<Result<Unit>> {
         return withContext(dispatcher) {
-            repository.addCashbacksToShop(shopId, cashbacks)
+            when {
+                cashbacks.isEmpty() -> listOf()
+                else -> repository.addCashbacksToShop(shopId, cashbacks)
+            }
         }
     }
 
-    suspend fun updateCashbacksInShop(shopId: Long, cashbacks: List<Cashback>): List<Result<Unit>> {
+    suspend fun updateCashbacksInShop(shopId: Long, cashbacks: List<Cashback>): Result<Unit> {
         return withContext(dispatcher) {
-            repository.updateCashbacksInCategory(shopId, cashbacks)
+            when {
+                cashbacks.isEmpty() -> Result.success(Unit)
+                else -> repository.updateCashbacksInCategory(shopId, cashbacks)
+            }
         }
     }
 
-    suspend fun deleteCashbacksFromShop(shopId: Long, cashbacks: List<Cashback>): List<Result<Unit>> {
+    suspend fun deleteCashbacksFromShop(shopId: Long, cashbacks: List<Cashback>): Result<Unit> {
         return withContext(dispatcher) {
-            repository.deleteCashbacksFromCategory(shopId, cashbacks)
+            when {
+                cashbacks.isEmpty() -> Result.success(Unit)
+                else -> repository.deleteCashbacksFromCategory(shopId, cashbacks)
+            }
         }
     }
 }

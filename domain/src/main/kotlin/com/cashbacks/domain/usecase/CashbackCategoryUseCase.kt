@@ -11,19 +11,28 @@ class CashbackCategoryUseCase(
 ) {
     suspend fun addCashbacksToCategory(categoryId: Long, cashbacks: List<Cashback>): List<Result<Unit>> {
         return withContext(dispatcher) {
-            repository.addCashbacksToCategory(categoryId, cashbacks)
+            when {
+                cashbacks.isEmpty() -> listOf()
+                else -> repository.addCashbacksToCategory(categoryId, cashbacks)
+            }
         }
     }
 
-    suspend fun updateCashbacksInCategory(categoryId: Long, cashbacks: List<Cashback>): List<Result<Unit>> {
+    suspend fun updateCashbacksInCategory(categoryId: Long, cashbacks: List<Cashback>): Result<Unit> {
         return withContext(dispatcher) {
-            repository.updateCashbacksInCategory(categoryId, cashbacks)
+            when {
+                cashbacks.isEmpty() -> Result.success(Unit)
+                else -> repository.updateCashbacksInCategory(categoryId, cashbacks)
+            }
         }
     }
 
-    suspend fun deleteCashbacksFromCategory(categoryId: Long, cashbacks: List<Cashback>): List<Result<Unit>> {
+    suspend fun deleteCashbacksFromCategory(categoryId: Long, cashbacks: List<Cashback>): Result<Unit> {
         return withContext(dispatcher) {
-            repository.deleteCashbacksFromCategory(categoryId, cashbacks)
+            when {
+                cashbacks.isEmpty() -> Result.success(Unit)
+                else -> repository.deleteCashbacksFromCategory(categoryId, cashbacks)
+            }
         }
     }
 }

@@ -10,9 +10,12 @@ import com.cashbacks.domain.repository.CashbackRepository
 import com.cashbacks.domain.repository.CategoryRepository
 import com.cashbacks.domain.repository.SettingsRepository
 import com.cashbacks.domain.repository.ShopRepository
+import com.cashbacks.domain.usecase.AddCategoryUseCase
 import com.cashbacks.domain.usecase.CashbackCategoryUseCase
 import com.cashbacks.domain.usecase.CashbackShopUseCase
+import com.cashbacks.domain.usecase.DeleteCategoryUseCase
 import com.cashbacks.domain.usecase.EditCategoryUseCase
+import com.cashbacks.domain.usecase.FetchCategoriesUseCase
 import com.cashbacks.domain.usecase.GetCashbackUseCase
 import com.cashbacks.domain.usecase.GetShopUseCase
 import com.cashbacks.domain.usecase.SettingsUseCase
@@ -25,8 +28,22 @@ class DependencyFactory(private val application: Application) {
         dispatcher = Dispatchers.IO
     )
 
-    fun provideCategoriesUseCase() = EditCategoryUseCase(
+    fun provideAddCategoryUseCase() = AddCategoryUseCase(
+        repository = provideCategoryRepository(),
+        dispatcher = Dispatchers.IO
+    )
+
+    fun provideFetchCategoriesUseCase() = FetchCategoriesUseCase(
+        repository = provideCategoryRepository()
+    )
+
+    fun provideEditCategoryUseCase() = EditCategoryUseCase(
         categoryRepository = provideCategoryRepository(),
+        dispatcher = Dispatchers.IO
+    )
+
+    fun provideDeleteCategoryUseCase() = DeleteCategoryUseCase(
+        repository = provideCategoryRepository(),
         dispatcher = Dispatchers.IO
     )
 

@@ -1,8 +1,7 @@
 package com.cashbacks.app.viewmodel
 
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -32,21 +31,19 @@ class CategoriesViewModel(
         Ready
     }
 
-    var state by mutableStateOf(ViewModelState.Loading)
-        private set
+    val state = mutableStateOf(ViewModelState.Loading)
 
-    var categories: List<BasicInfoCategory> by mutableStateOf(listOf())
-        private set
+    val categories: MutableState<List<BasicInfoCategory>> = mutableStateOf(listOf())
 
-    var addingCategoriesState by mutableStateOf(false)
+    val addingCategoriesState = mutableStateOf(false)
 
     private val debounceOnClick: MutableStateFlow<(() -> Unit)?> = MutableStateFlow(null)
 
     init {
         fetchCategoriesUseCase.fetchCategories()
             .onEach {
-                categories = it
-                state = if (it.isEmpty()) ViewModelState.EmptyList else ViewModelState.Ready
+                categories.value = it
+                state.value = if (it.isEmpty()) ViewModelState.EmptyList else ViewModelState.Ready
             }
             .launchIn(viewModelScope)
 
@@ -62,7 +59,7 @@ class CategoriesViewModel(
 
     fun addCategory(name: String) {
         viewModelScope.launch {
-            state = ViewModelState.Loading
+            state.value = ViewModelState.Loading
             delay(100)
             addCategoryUseCase.addCategory(
                 BasicCategory(
@@ -71,7 +68,7 @@ class CategoriesViewModel(
                     maxCashback = null,
                 ),
             )
-            state = ViewModelState.Ready
+            state.value = ViewModelState.Ready
         }
     }
 

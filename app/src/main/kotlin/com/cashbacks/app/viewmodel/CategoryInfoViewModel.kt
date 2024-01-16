@@ -1,9 +1,9 @@
 package com.cashbacks.app.viewmodel
 
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.State
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -16,6 +16,7 @@ import com.cashbacks.domain.usecase.DeleteCategoryUseCase
 import com.cashbacks.domain.usecase.EditCategoryUseCase
 import com.cashbacks.domain.usecase.ShopUseCase
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -31,57 +32,61 @@ class CategoryInfoViewModel(
         Ready
     }
 
-    var state by mutableStateOf(ViewModelState.Ready)
-        private set
+    private val _state = mutableStateOf(ViewModelState.Ready)
+    val state: State<ViewModelState> = derivedStateOf { _state.value }
 
-    var id: Long? by mutableStateOf(null)
+    val idFlow: MutableStateFlow<Long?> = MutableStateFlow(null)
 
-    var category: ComposableCategory? by mutableStateOf(null)
-        private set
+    private val _category: MutableState<ComposableCategory?> = mutableStateOf(null)
+    val category: State<ComposableCategory?> = derivedStateOf { _category.value }
 
-    var isEditing by mutableStateOf(false)
+    val isEditing = mutableStateOf(false)
 
-    var addingShopState by mutableStateOf(false)
+    val addingShopState = mutableStateOf(false)
+
+    val showFab = derivedStateOf {
+        isEditing.value && state.value != ViewModelState.Loading && !addingShopState.value
+    }
 
     init {
-        snapshotFlow { id }
-            .map { id ->
-                if (id != null) {
-                    state = ViewModelState.Loading
-                    delay(250)
+        idFlow.map { id ->
+            if (id != null) {
+                _state.value = ViewModelState.Loading
+                delay(250)
 
-                    categoryUseCase
-                        .getCategoryById(id)
-                        .getOrNull()
-                        ?.let { category = ComposableCategory(it) }
-                        .also { state = ViewModelState.Ready }
-                }
+                categoryUseCase
+                    .getCategoryById(id)
+                    .getOrNull()
+                    ?.let { _category.value = ComposableCategory(it) }
+                    .also { _state.value = ViewModelState.Ready }
             }
-            .launchIn(viewModelScope)
+        }.launchIn(viewModelScope)
     }
 
 
     fun addShop(name: String) {
         viewModelScope.launch {
-            state = ViewModelState.Loading
+            _state.value = ViewModelState.Loading
             delay(100)
-            val shop = BasicShop(id = 1, name = name, maxCashback = null)
-            category?.shops?.add(shop)
-            state = ViewModelState.Ready
+            // TODO: 16.01.2024 изменить на уникальный id
+            val newId = category.value?.shops?.maxOf { it.id } ?: 0
+            val shop = BasicShop(id = newId + 1, name = name, maxCashback = null)
+            _category.value?.shops?.add(shop)
+            _state.value = ViewModelState.Ready
         }
     }
 
 
     fun saveInfo() {
         viewModelScope.launch {
-            val category = this@CategoryInfoViewModel.category ?: return@launch
-            state = ViewModelState.Loading
+            val category = _category.value ?: return@launch
+            _state.value = ViewModelState.Loading
             delay(100)
             // TODO: 15.01.2024 сделать обработку ошибок
             categoryUseCase.updateCategory(category.mapToCategory())
             saveShops(category.id, category.shops)
             saveCashbacks(category.id, category.cashbacks)
-            state = ViewModelState.Ready
+            _state.value = ViewModelState.Ready
         }
     }
 
@@ -90,6 +95,8 @@ class CategoryInfoViewModel(
         val newShops = mutableListOf<BasicShop>()
         val updatedShops = mutableListOf<BasicShop>()
         val deletedShops = mutableListOf<BasicShop>()
+
+        println("info = ${shops.info}")
 
         shops.forEach {
             when (shops.info[it.id]) {
@@ -118,10 +125,10 @@ class CategoryInfoViewModel(
 
     fun deleteCategory() {
         viewModelScope.launch {
-            state = ViewModelState.Loading
+            _state.value = ViewModelState.Loading
             delay(100)
-
-            state = ViewModelState.Ready
+            idFlow.value?.let { deleteCategoryUseCase.deleteCategory(it) }
+            _state.value = ViewModelState.Ready
         }
     }
 
@@ -142,8 +149,8 @@ class CategoryInfoViewModel(
                 shopUseCase,
                 cashbackUseCase
             ).apply {
-                id = this@Factory.id
-                isEditing = this@Factory.isEditing
+                idFlow.value = this@Factory.id
+                isEditing.value = this@Factory.isEditing
             } as T
         }
     }

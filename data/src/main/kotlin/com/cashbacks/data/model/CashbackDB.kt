@@ -5,6 +5,7 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import com.cashbacks.domain.model.BasicBankCard
 import com.cashbacks.domain.model.BasicInfoBankCard
 import com.cashbacks.domain.model.Cashback
 
@@ -42,6 +43,20 @@ data class CashbackDB(
     val expirationDate: String? = "",
     val comment: String = ""
 ) {
+    constructor(
+        cashback: Cashback,
+        categoryId: Long? = null,
+        shopId: Long? = null
+    ) : this(
+        id = cashback.id,
+        shopId = shopId,
+        categoryId = categoryId,
+        bankCardId = cashback.bankCard.id,
+        amount = cashback.amount,
+        expirationDate = cashback.expirationDate,
+        comment = cashback.comment
+    )
+
     fun mapToCashback(bankCard: BasicInfoBankCard) = Cashback(
         id = id,
         amount = amount,
@@ -55,7 +70,7 @@ data class CashbackDB(
 data class CashbackWithBankCardDB(
     val id: Long,
     @Embedded(prefix = "card_")
-    val bankCard: BasicBankCardDB,
+    val bankCard: BasicBankCard,
     val amount: String,
     val expirationDate: String?,
     val comment: String
@@ -65,6 +80,6 @@ data class CashbackWithBankCardDB(
         amount = amount,
         expirationDate = expirationDate,
         comment = comment,
-        bankCard = bankCard.mapToBankCard()
+        bankCard = bankCard
     )
 }
