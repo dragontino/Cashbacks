@@ -5,93 +5,111 @@ import com.cashbacks.data.room.dao.CashbacksDao
 import com.cashbacks.domain.model.Cashback
 import com.cashbacks.domain.model.InsertionException
 import com.cashbacks.domain.repository.CashbackRepository
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 
 class CashbackRepositoryImpl(private val dao: CashbacksDao) : CashbackRepository {
-    override suspend fun addCashbacksToCategory(
-        categoryId: Long,
-        cashbacks: List<Cashback>
-    ): List<Result<Unit>> {
-        val cashbacksDB = cashbacks.map { CashbackDB(it, categoryId = categoryId) }
-        return addCashbacks(cashbacksDB)
+    override suspend fun addCashbackToCategory(categoryId: Long, cashback: Cashback): Result<Unit> {
+        val cashbacksDB = CashbackDB(cashback, categoryId = categoryId)
+        return addCashback(cashbacksDB)
     }
 
-    override suspend fun addCashbacksToShop(
+    override suspend fun addCashbackToShop(
         shopId: Long,
-        cashbacks: List<Cashback>
-    ): List<Result<Unit>> {
-        val cashbacksDB = cashbacks.map { CashbackDB(it, shopId = shopId) }
-        return addCashbacks(cashbacksDB)
+        cashback: Cashback
+    ): Result<Unit> {
+        val cashbackDB = CashbackDB(cashback, shopId = shopId)
+        return addCashback(cashbackDB)
     }
 
 
-    private suspend fun addCashbacks(cashbacks: List<CashbackDB>): List<Result<Unit>> {
-        return dao.addCashbacks(cashbacks).mapIndexed { index, id ->
+    private suspend fun addCashback(cashback: CashbackDB): Result<Unit> {
+        return dao.addCashback(cashback).let { id ->
             when {
                 id < 0 -> Result.failure(
-                    InsertionException("Не удалось добавить кэшбек ${cashbacks[index]} в базу данных")
+                    InsertionException("Не удалось добавить кэшбек $cashback в базу данных")
                 )
+
                 else -> Result.success(Unit)
             }
         }
     }
 
 
-    override suspend fun updateCashbacksInCategory(
+    override suspend fun updateCashbackInCategory(
         categoryId: Long,
-        cashbacks: List<Cashback>
+        cashback: Cashback
     ): Result<Unit> {
-        val cashbacksDB = cashbacks.map { CashbackDB(it, categoryId = categoryId) }
-        return updateCashbacks(cashbacksDB)
+        val cashbackDB = CashbackDB(cashback, categoryId = categoryId)
+        return updateCashback(cashbackDB)
     }
 
-    override suspend fun updateCashbacksInShop(
+    override suspend fun updateCashbackInShop(
         shopId: Long,
-        cashbacks: List<Cashback>
+        cashback: Cashback
     ): Result<Unit> {
-        val cashbacksDB = cashbacks.map { CashbackDB(it, shopId = shopId) }
-        return updateCashbacks(cashbacksDB)
+        val cashbackDB = CashbackDB(cashback, shopId = shopId)
+        return updateCashback(cashbackDB)
     }
 
 
-    private suspend fun updateCashbacks(cashbacks: List<CashbackDB>): Result<Unit> {
-        val updatedCount = dao.updateCashbacks(cashbacks)
+    private suspend fun updateCashback(cashback: CashbackDB): Result<Unit> {
+        val updatedCount = dao.updateCashback(cashback)
         return when {
-            updatedCount < cashbacks.size -> Result.failure(
-                InsertionException("Не удалось обновить все кэшбеки")
+            updatedCount < 0 -> Result.failure(
+                InsertionException("Не удалось обновить кэшбек")
             )
-
             else -> Result.success(Unit)
         }
     }
 
 
-    override suspend fun deleteCashbacksFromCategory(
+    override suspend fun deleteCashbackFromCategory(
         categoryId: Long,
-        cashbacks: List<Cashback>
+        cashback: Cashback
     ): Result<Unit> {
-        val cashbacksDB = cashbacks.map { CashbackDB(it, categoryId = categoryId) }
-        return deleteCashbacks(cashbacksDB)
+        val cashbackDB = CashbackDB(cashback, categoryId = categoryId)
+        return deleteCashback(cashbackDB)
     }
 
-    override suspend fun deleteCashbacksFromShop(
+    override suspend fun deleteCashbackFromShop(
         shopId: Long,
-        cashbacks: List<Cashback>
+        cashback: Cashback
     ): Result<Unit> {
-        val cashbacksDB = cashbacks.map { CashbackDB(it, shopId = shopId) }
-        return deleteCashbacks(cashbacksDB)
+        val cashbackDB = CashbackDB(cashback, shopId = shopId)
+        return deleteCashback(cashbackDB)
     }
 
 
-    private suspend fun deleteCashbacks(cashbacks: List<CashbackDB>): Result<Unit> {
-        val deletedCount = dao.deleteCashbacks(cashbacks)
+    private suspend fun deleteCashback(cashback: CashbackDB): Result<Unit> {
+        val deletedCount = dao.deleteCashbacks(cashback)
         return when {
-            deletedCount < cashbacks.size -> Result.failure(Exception())
+            deletedCount < 0 -> Result.failure(Exception())
             else -> Result.success(Unit)
         }
     }
 
 
     override suspend fun getCashbackById(id: Long): Result<Cashback> {
-        TODO("Not yet implemented")
+        return dao.getCashbackById(id).let {
+            when (it) {
+                null -> Result.failure(Exception())
+                else -> Result.success(it.mapToCashback())
+            }
+        }
+    }
+
+
+    override fun fetchCashbacksFromCategory(categoryId: Long): Flow<List<Cashback>> {
+        return dao.fetchCashbacksFromCategory(categoryId).map { list ->
+            list.map { it.mapToCashback() }
+        }
+    }
+
+
+    override fun fetchCashbacksFromShop(shopId: Long): Flow<List<Cashback>> {
+        return dao.fetchCashbacksFromShop(shopId).map { list ->
+            list.map { it.mapToCashback() }
+        }
     }
 }

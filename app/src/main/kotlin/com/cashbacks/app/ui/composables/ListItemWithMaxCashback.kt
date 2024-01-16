@@ -1,8 +1,6 @@
 package com.cashbacks.app.ui.composables
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -10,9 +8,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
@@ -20,9 +20,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -37,65 +34,72 @@ internal fun ListItemWithMaxCashback(
     name: String,
     maxCashback: Cashback?,
     cashbackPlaceholder: String,
+    modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
-    val clickableModifier = when (maxCashback) {
-        null -> Modifier
-        else -> Modifier.clickable(onClick = onClick)
-    }
-
-    ListItem(
-        headlineContent = {
-            Text(
-                text = name,
-                style = MaterialTheme.typography.bodyMedium
-            )
-        },
-        supportingContent = {
-            if (maxCashback == null) {
-                Text(
-                    text = cashbackPlaceholder,
-                    style = MaterialTheme.typography.bodySmall
+    ScrollableListItem(
+        onClick = maxCashback?.let { onClick },
+        modifier = Modifier
+            .then(modifier)
+            .fillMaxWidth(),
+        hiddenContent = {
+            IconButton(
+                onClick = onClick,
+                colors = IconButtonDefaults.iconButtonColors(
+                    contentColor = MaterialTheme.colorScheme.primary.animate()
+                )
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.Edit,
+                    contentDescription = "edit"
                 )
             }
-        },
-        trailingContent = {
-            when (maxCashback) {
-                null -> IconButton(onClick = onClick) {
-                    Icon(
-                        imageVector = Icons.Rounded.Edit,
-                        contentDescription = "edit"
+
+            IconButton(
+                onClick = { /*TODO*/ },
+                colors = IconButtonDefaults.iconButtonColors(
+                    contentColor = MaterialTheme.colorScheme.primary.animate()
+                )
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.DeleteOutline,
+                    contentDescription = "delete"
+                )
+            }
+        }
+    ) {
+        ListItem(
+            headlineContent = {
+                Text(
+                    text = name,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            },
+            supportingContent = {
+                if (maxCashback == null) {
+                    Text(
+                        text = cashbackPlaceholder,
+                        style = MaterialTheme.typography.bodySmall
                     )
                 }
-                else -> BasicInfoAboutCashback(cashback = maxCashback)
-            }
-        },
-        colors = ListItemDefaults.colors(
-            containerColor = Color.Transparent,
-            supportingColor = MaterialTheme.colorScheme.error.animate(),
-            trailingIconColor = MaterialTheme.colorScheme.primary.animate()
-        ),
-        modifier = Modifier
-            .then(clickableModifier)
-            .clip(MaterialTheme.shapes.small)
-            .border(
-                width = 1.5.dp,
-                brush = Brush.linearGradient(
-                    colors = listOf(
-                        MaterialTheme.colorScheme.primary,
-                        MaterialTheme.colorScheme.secondary,
-                        MaterialTheme.colorScheme.tertiary,
-                    ).map { it.animate() }
-                ),
-                shape = MaterialTheme.shapes.small
+            },
+            trailingContent = {
+                if (maxCashback != null) {
+                    BasicInfoAboutCashback(cashback = maxCashback)
+                }
+            },
+            colors = ListItemDefaults.colors(
+                containerColor = MaterialTheme.colorScheme.background.animate(),
+                supportingColor = MaterialTheme.colorScheme.error.animate(),
+                trailingIconColor = MaterialTheme.colorScheme.primary.animate()
             )
-            .fillMaxWidth()
-    )
+        )
+    }
 }
 
 
 @Composable
-private fun BasicInfoAboutCashback(cashback: Cashback) {
+fun BasicInfoAboutCashback(cashback: Cashback) {
     val textColor = MaterialTheme.colorScheme.onBackground.animate()
 
     Row(

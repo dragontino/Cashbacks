@@ -10,16 +10,19 @@ import com.cashbacks.domain.repository.CashbackRepository
 import com.cashbacks.domain.repository.CategoryRepository
 import com.cashbacks.domain.repository.SettingsRepository
 import com.cashbacks.domain.repository.ShopRepository
-import com.cashbacks.domain.usecase.AddCategoryUseCase
-import com.cashbacks.domain.usecase.CashbackCategoryUseCase
-import com.cashbacks.domain.usecase.CashbackShopUseCase
-import com.cashbacks.domain.usecase.DeleteCategoryUseCase
-import com.cashbacks.domain.usecase.EditCategoryUseCase
-import com.cashbacks.domain.usecase.FetchCategoriesUseCase
-import com.cashbacks.domain.usecase.GetCashbackUseCase
-import com.cashbacks.domain.usecase.GetShopUseCase
-import com.cashbacks.domain.usecase.SettingsUseCase
-import com.cashbacks.domain.usecase.ShopUseCase
+import com.cashbacks.domain.usecase.cashback.CashbackCategoryUseCase
+import com.cashbacks.domain.usecase.cashback.CashbackShopUseCase
+import com.cashbacks.domain.usecase.cashback.EditCashbackUseCase
+import com.cashbacks.domain.usecase.cashback.FetchCashbacksUseCase
+import com.cashbacks.domain.usecase.categories.AddCategoryUseCase
+import com.cashbacks.domain.usecase.categories.DeleteCategoryUseCase
+import com.cashbacks.domain.usecase.categories.EditCategoryUseCase
+import com.cashbacks.domain.usecase.categories.FetchCategoriesUseCase
+import com.cashbacks.domain.usecase.settings.SettingsUseCase
+import com.cashbacks.domain.usecase.shops.AddShopUseCase
+import com.cashbacks.domain.usecase.shops.DeleteShopUseCase
+import com.cashbacks.domain.usecase.shops.EditShopUseCase
+import com.cashbacks.domain.usecase.shops.FetchShopsUseCase
 import kotlinx.coroutines.Dispatchers
 
 class DependencyFactory(private val application: Application) {
@@ -30,6 +33,11 @@ class DependencyFactory(private val application: Application) {
 
     fun provideAddCategoryUseCase() = AddCategoryUseCase(
         repository = provideCategoryRepository(),
+        dispatcher = Dispatchers.IO
+    )
+
+    fun provideAddShopUseCase() = AddShopUseCase(
+        repository = provideShopRepository(),
         dispatcher = Dispatchers.IO
     )
 
@@ -47,7 +55,12 @@ class DependencyFactory(private val application: Application) {
         dispatcher = Dispatchers.IO
     )
 
-    fun provideShopUseCase() = ShopUseCase(
+    fun provideShopUseCase() = EditShopUseCase(
+        repository = provideShopRepository(),
+        dispatcher = Dispatchers.IO
+    )
+
+    fun provideDeleteShopUseCase() = DeleteShopUseCase(
         repository = provideShopRepository(),
         dispatcher = Dispatchers.IO
     )
@@ -62,14 +75,17 @@ class DependencyFactory(private val application: Application) {
         dispatcher = Dispatchers.IO
     )
 
-    fun provideGetShopUseCase() = GetShopUseCase(
-        repository = provideShopRepository(),
+    fun provideFetchShopsUseCase() = FetchShopsUseCase(
+        repository = provideShopRepository()
+    )
+
+    fun provideEditCashbackUseCase() = EditCashbackUseCase(
+        repository = provideCashbackRepository(),
         dispatcher = Dispatchers.IO
     )
 
-    fun provideGetCashbackUseCase() = GetCashbackUseCase(
-        repository = provideCashbackRepository(),
-        dispatcher = Dispatchers.IO
+    fun provideFetchCashbacksUseCase() = FetchCashbacksUseCase(
+        repository = provideCashbackRepository()
     )
 
 

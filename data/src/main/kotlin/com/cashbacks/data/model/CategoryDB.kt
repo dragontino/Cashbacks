@@ -3,9 +3,7 @@ package com.cashbacks.data.model
 import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import androidx.room.Relation
-import com.cashbacks.domain.model.BasicCategory
-import com.cashbacks.domain.model.BasicInfoCategory
+import com.cashbacks.domain.model.Category
 
 @Entity(tableName = "Categories")
 data class CategoryDB(
@@ -13,32 +11,24 @@ data class CategoryDB(
     val id: Long,
     val name: String,
 ) {
-    constructor(category: BasicInfoCategory) : this(
+    constructor(category: Category) : this(
         id = category.id,
         name = category.name
     )
+
+    fun mapToCategory() = Category(id, name, maxCashback = null)
 }
 
 
-data class BasicCategoryDB(
+data class CategoryWithCashbackDB(
     val id: Long,
     val name: String,
     @Embedded(prefix = "cashback_")
     val maxCashbackDB: CashbackWithBankCardDB?
 ) {
-    fun mapToCategory() = BasicCategory(
+    fun mapToCategory() = Category(
         id = id,
         name = name,
         maxCashback = maxCashbackDB?.mapToCashback()
     )
 }
-
-
-data class CategoryWithShopsAndCashbacks(
-    @Embedded
-    val categoryDB: CategoryDB,
-    @Relation(parentColumn = "id", entityColumn = "categoryId", entity = ShopDB::class)
-    val shops: List<ShopDB>,
-    @Relation(parentColumn = "id", entityColumn = "categoryId", entity = CashbackDB::class)
-    val cashbacks: List<CashbackDB>
-)

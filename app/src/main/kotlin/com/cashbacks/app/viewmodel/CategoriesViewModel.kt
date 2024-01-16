@@ -1,15 +1,15 @@
 package com.cashbacks.app.viewmodel
 
-import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.cashbacks.domain.model.BasicCategory
-import com.cashbacks.domain.model.BasicInfoCategory
-import com.cashbacks.domain.usecase.AddCategoryUseCase
-import com.cashbacks.domain.usecase.DeleteCategoryUseCase
-import com.cashbacks.domain.usecase.FetchCategoriesUseCase
+import com.cashbacks.domain.model.Category
+import com.cashbacks.domain.usecase.categories.AddCategoryUseCase
+import com.cashbacks.domain.usecase.categories.DeleteCategoryUseCase
+import com.cashbacks.domain.usecase.categories.FetchCategoriesUseCase
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,9 +31,13 @@ class CategoriesViewModel(
         Ready
     }
 
-    val state = mutableStateOf(ViewModelState.Loading)
+    private val _state = mutableStateOf(ViewModelState.Loading)
+    val state = derivedStateOf { _state.value }
 
-    val categories: MutableState<List<BasicInfoCategory>> = mutableStateOf(listOf())
+    private val _categories = mutableStateOf(listOf<Category>())
+    val categories = derivedStateOf { _categories.value }
+
+    val swipedItemIndex = mutableIntStateOf(-1)
 
     val addingCategoriesState = mutableStateOf(false)
 
@@ -42,8 +46,8 @@ class CategoriesViewModel(
     init {
         fetchCategoriesUseCase.fetchCategories()
             .onEach {
-                categories.value = it
-                state.value = if (it.isEmpty()) ViewModelState.EmptyList else ViewModelState.Ready
+                _categories.value = it
+                _state.value = if (it.isEmpty()) ViewModelState.EmptyList else ViewModelState.Ready
             }
             .launchIn(viewModelScope)
 
@@ -59,16 +63,23 @@ class CategoriesViewModel(
 
     fun addCategory(name: String) {
         viewModelScope.launch {
-            state.value = ViewModelState.Loading
+            _state.value = ViewModelState.Loading
             delay(100)
             addCategoryUseCase.addCategory(
-                BasicCategory(
-                    id = 1,
-                    name = name,
-                    maxCashback = null,
-                ),
+                Category(id = 0, name = name, maxCashback = null),
             )
-            state.value = ViewModelState.Ready
+            _state.value = ViewModelState.Ready
+        }
+    }
+
+
+    fun deleteCategory(category: Category, error: (message: String) -> Unit) {
+        viewModelScope.launch {
+            _state.value = ViewModelState.Loading
+            delay(100)
+            deleteCategoryUseCase.deleteCategory(category, error)
+            delay(100)
+            _state.value = ViewModelState.Ready
         }
     }
 

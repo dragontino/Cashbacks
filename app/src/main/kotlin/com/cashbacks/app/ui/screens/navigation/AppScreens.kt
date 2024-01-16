@@ -65,11 +65,12 @@ sealed class AppScreens(
         titleRes = R.string.category_title
     ) {
         enum class Args {
-            Id
+            Id,
+            IsEdit
         }
 
         override val args: Array<String> = Args.entries.toStringArray()
-        fun createUrl(id: Long) = "$root/$id"
+        fun createUrl(id: Long, isEdit: Boolean) = "$root/$id/$isEdit"
     }
 
     data object BankCard : AppScreens(root = "card", titleRes = R.string.bank_card) {

@@ -1,10 +1,11 @@
 package com.cashbacks.data.model
 
+import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
-import androidx.room.Relation
+import com.cashbacks.domain.model.Shop
 
 @Entity(
     tableName = "Shops",
@@ -23,12 +24,24 @@ data class ShopDB(
     val id: Long,
     val categoryId: Long,
     val name: String = "",
-)
+) {
+    fun mapToShop() = Shop(
+        id = id,
+        name = name,
+        maxCashback = null
+    )
+}
 
 
-data class ShopWithCashbacks(
+data class ShopWithMaxCashbackDB(
     val id: Long,
     val name: String,
-    @Relation(parentColumn = "id", entityColumn = "shopId")
-    val cashbacks: List<CashbackDB>
-)
+    @Embedded(prefix = "cashback_")
+    val maxCashback: CashbackWithBankCardDB?
+) {
+    fun mapToShop() = Shop(
+        id = id,
+        name = name,
+        maxCashback = maxCashback?.mapToCashback()
+    )
+}

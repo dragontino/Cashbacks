@@ -1,4 +1,4 @@
-package com.cashbacks.domain.usecase
+package com.cashbacks.domain.usecase.settings
 
 import android.util.Log
 import com.cashbacks.domain.model.Settings

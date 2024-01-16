@@ -133,7 +133,13 @@ fun NavigationScreen(
             composable(
                 route = AppScreens.Categories.destinationRoute,
                 enterTransition = {
-                    fadeIn(animationSpec = tween(durationMillis = 400, delayMillis = 200, easing = FastOutSlowInEasing))
+                    fadeIn(
+                        animationSpec = tween(
+                            durationMillis = 400,
+                            delayMillis = 200,
+                            easing = FastOutSlowInEasing,
+                        ),
+                    )
                 },
                 exitTransition = {
                     fadeOut(animationSpec = tween(durationMillis = 400, easing = FastOutSlowInEasing))
@@ -192,16 +198,22 @@ fun NavigationScreen(
                 arguments = listOf(
                     navArgument(AppScreens.Category.Args.Id.name) {
                         type = NavType.LongType
+                    },
+                    navArgument(AppScreens.Category.Args.IsEdit.name) {
+                        type = NavType.BoolType
                     }
                 )
             ) {
                 val vmFactory = CategoryInfoViewModel.Factory(
-                    categoryUseCase = application.dependencyFactory.provideEditCategoryUseCase(),
+                    editCategoryUseCase = application.dependencyFactory.provideEditCategoryUseCase(),
+                    addShopUseCase = application.dependencyFactory.provideAddShopUseCase(),
                     deleteCategoryUseCase = application.dependencyFactory.provideDeleteCategoryUseCase(),
-                    shopUseCase = application.dependencyFactory.provideShopUseCase(),
-                    cashbackUseCase = application.dependencyFactory.provideCashbackCategoryUseCase(),
-                    id = it.arguments?.getLong(AppScreens.Category.Args.Id.name) ?: 1,
-                    isEditing = false
+                    deleteShopUseCase = application.dependencyFactory.provideDeleteShopUseCase(),
+                    deleteCashbackUseCase = application.dependencyFactory.provideCashbackCategoryUseCase(),
+                    fetchShopsUseCase = application.dependencyFactory.provideFetchShopsUseCase(),
+                    fetchCashbacksUseCase = application.dependencyFactory.provideFetchCashbacksUseCase(),
+                    categoryId = it.arguments?.getLong(AppScreens.Category.Args.Id.name) ?: 1,
+                    isEditing = it.arguments?.getBoolean(AppScreens.Category.Args.IsEdit.name) ?: false
                 )
 
                 CategoryInfoScreen(

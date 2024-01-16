@@ -1,16 +1,17 @@
-package com.cashbacks.domain.usecase
+package com.cashbacks.domain.usecase.categories
 
+import com.cashbacks.domain.model.Category
 import com.cashbacks.domain.repository.CategoryRepository
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 
-class DeleteCategoryUseCase(
+class AddCategoryUseCase(
     private val repository: CategoryRepository,
     private val dispatcher: CoroutineDispatcher
 ) {
-    suspend fun deleteCategory(id: Long): Result<Unit> {
+    suspend fun addCategory(category: Category): Result<Unit> {
         return withContext(dispatcher) {
-            repository.deleteCategory(id)
+            repository.addCategory(category)
         }
     }
 }

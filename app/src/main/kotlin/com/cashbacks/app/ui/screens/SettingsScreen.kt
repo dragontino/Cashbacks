@@ -57,11 +57,12 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.cashbacks.app.R
+import com.cashbacks.app.model.ColorDesignMapper.icon
 import com.cashbacks.app.model.ColorDesignMapper.title
 import com.cashbacks.app.ui.composables.BottomSheetContent
 import com.cashbacks.app.ui.composables.Header
 import com.cashbacks.app.ui.composables.ModalSheetDefaults
-import com.cashbacks.app.ui.composables.ModalSheetItems.TextItem
+import com.cashbacks.app.ui.composables.ModalSheetItems.IconTextItem
 import com.cashbacks.app.ui.screens.navigation.AppScreens
 import com.cashbacks.app.util.LoadingInBox
 import com.cashbacks.app.util.animate
@@ -144,7 +145,7 @@ fun SettingsScreen(
         sheetDragHandle = null,
         sheetPeekHeight = 0.dp,
         sheetShadowElevation = 400.dp,
-        sheetTonalElevation = 200.dp
+        sheetTonalElevation = 100.dp
     ) { contentPadding ->
         Box(
             modifier = Modifier
@@ -352,9 +353,11 @@ private fun ColumnScope.ThemeSheetContent(
     updateDesign: (newDesign: ColorDesign) -> Unit,
 ) = BottomSheetContent {
     ColorDesign.entries.forEach { design ->
-        TextItem(
+        IconTextItem(
+            icon = design.icon,
             text = design.title(LocalContext.current),
             selected = design == currentDesign,
+            iconTintColor = MaterialTheme.colorScheme.primary.animate(),
             onClick = { updateDesign(design) }
         )
     }

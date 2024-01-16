@@ -8,36 +8,42 @@ import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Update
 import com.cashbacks.data.model.ShopDB
-import com.cashbacks.data.model.ShopWithCashbacks
-import com.cashbacks.domain.model.Shop
+import com.cashbacks.data.model.ShopWithMaxCashbackDB
+import kotlinx.coroutines.flow.Flow
 
 @Dao
-abstract class ShopsDao : CardsDao {
+interface ShopsDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
-    abstract suspend fun addShops(shops: List<ShopDB>): List<Long>
+    suspend fun addShop(shop: ShopDB): Long
 
     @Update(onConflict = OnConflictStrategy.IGNORE)
-    abstract suspend fun updateShops(shops: List<ShopDB>): Int
-
-    @Transaction
-    open suspend fun getShop(id: Long): Shop? {
-        val shopWithCashbacks = getShopById(id) ?: return null
-        val cashbacks = shopWithCashbacks.cashbacks.map {
-            val basicBankCard = getBasicInfoAboutBankCardById(it.bankCardId)
-            it.mapToCashback(basicBankCard)
-        }
-
-        return Shop(
-            id = shopWithCashbacks.id,
-            name = shopWithCashbacks.name,
-            cashbacks = cashbacks
-        )
-    }
-
-    @Transaction
-    @Query("SELECT id, name FROM Shops WHERE id = :id")
-    protected abstract suspend fun getShopById(id: Long): ShopWithCashbacks?
+    suspend fun updateShop(shop: ShopDB): Int
 
     @Delete
-    abstract suspend fun deleteShops(vararg shops: ShopDB): Int
+    suspend fun deleteShop(shop: ShopDB): Int
+
+    @Query(
+        """
+        SELECT s.id, s.name, 
+               cash.id AS cashback_id, cash.amount AS cashback_amount, 
+               cash.expirationDate AS cashback_expirationDate, cash.comment AS cashback_comment,
+               card.id AS cashback_card_id, card.name AS cashback_card_name,
+               card.number AS cashback_card_number, card.paymentSystem AS cashback_card_paymentSystem
+        FROM Shops AS s
+        LEFT JOIN (
+            SELECT id, shopId, amount, expirationDate, comment, bankCardId 
+            FROM Cashbacks
+            ORDER BY amount DESC
+            LIMIT 1
+        ) AS cash ON s.id = cash.shopId
+        LEFT JOIN Cards AS card ON cash.bankCardId = card.id
+        WHERE s.categoryId = :categoryId
+        ORDER BY s.name ASC
+        """,
+    )
+    fun fetchShops(categoryId: Long): Flow<List<ShopWithMaxCashbackDB>>
+
+    @Transaction
+    @Query("SELECT * FROM Shops WHERE id = :id")
+    suspend fun getShopById(id: Long): ShopDB?
 }

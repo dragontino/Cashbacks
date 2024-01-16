@@ -5,7 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.cashbacks.domain.model.Settings
-import com.cashbacks.domain.usecase.SettingsUseCase
+import com.cashbacks.domain.usecase.settings.SettingsUseCase
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 

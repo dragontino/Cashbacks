@@ -9,7 +9,7 @@ import com.cashbacks.app.R
 import com.cashbacks.app.model.ColorDesignMapper.title
 import com.cashbacks.domain.model.ColorDesign
 import com.cashbacks.domain.model.Settings
-import com.cashbacks.domain.usecase.SettingsUseCase
+import com.cashbacks.domain.usecase.settings.SettingsUseCase
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.launchIn

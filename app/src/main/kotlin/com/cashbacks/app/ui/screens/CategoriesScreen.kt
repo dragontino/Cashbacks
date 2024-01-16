@@ -18,27 +18,31 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.DataArray
+import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.Menu
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedIconButton
 import androidx.compose.material3.Snackbar
@@ -48,10 +52,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.State
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
@@ -61,17 +64,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.cashbacks.app.R
+import com.cashbacks.app.ui.composables.BasicInfoAboutCashback
 import com.cashbacks.app.ui.composables.CollapsingToolbarScaffold
-import com.cashbacks.app.ui.composables.ListItemWithMaxCashback
 import com.cashbacks.app.ui.composables.NewNameTextField
+import com.cashbacks.app.ui.composables.ScrollableListItem
 import com.cashbacks.app.ui.screens.navigation.AppScreens
 import com.cashbacks.app.util.LoadingInBox
 import com.cashbacks.app.util.animate
+import com.cashbacks.app.util.keyboardAsState
 import com.cashbacks.app.util.smoothScrollToItem
 import com.cashbacks.app.viewmodel.CategoriesViewModel
 import com.cashbacks.app.viewmodel.CategoriesViewModel.ViewModelState
-import com.cashbacks.domain.model.BasicCategory
-import com.cashbacks.domain.model.BasicInfoCategory
+import com.cashbacks.domain.model.Category
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -226,11 +230,18 @@ fun CategoriesScreen(
                     ViewModelState.Ready -> CategoriesScreen(
                         viewModel = viewModel,
                         listState = lazyListState,
-                        onClick = {
+                        onClick = { category, isEdit ->
                             viewModel.onItemClick {
-                                navigateTo(AppScreens.Category.createUrl(id = it.id))
+                                viewModel.swipedItemIndex.intValue = -1
+                                navigateTo(
+                                    AppScreens.Category.createUrl(
+                                        id = category.id,
+                                        isEdit = isEdit,
+                                    ),
+                                )
                             }
                         },
+                        showSnackbar = ::showSnackbar,
                         modifier = Modifier.fillMaxSize()
                     )
                 }
@@ -255,15 +266,6 @@ fun CategoriesScreen(
             }
         }
     }
-}
-
-
-
-@ExperimentalLayoutApi
-@Composable
-fun keyboardAsState(): State<Boolean> {
-    val isImeVisible = WindowInsets.isImeVisible
-    return rememberUpdatedState(newValue = isImeVisible)
 }
 
 
@@ -306,7 +308,8 @@ private fun CategoriesScreen(
     viewModel: CategoriesViewModel,
     listState: LazyListState,
     modifier: Modifier = Modifier,
-    onClick: (BasicInfoCategory) -> Unit
+    onClick: (category: Category, isEdit: Boolean) -> Unit,
+    showSnackbar: (message: String) -> Unit
 ) {
     LazyColumn(
         state = listState,
@@ -315,13 +318,65 @@ private fun CategoriesScreen(
         verticalArrangement = Arrangement.spacedBy(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        items(viewModel.categories.value) { category ->
-            ListItemWithMaxCashback(
-                name = category.name,
-                maxCashback = (category as BasicCategory).maxCashback,
-                cashbackPlaceholder = stringResource(R.string.no_cashbacks_for_category),
-                onClick = { onClick(category) }
-            )
+        itemsIndexed(viewModel.categories.value) { index, category ->
+            ScrollableListItem(
+                onClick = { onClick(category, false) },
+                hiddenContent = {
+                    IconButton(
+                        onClick = { onClick(category, true) },
+                        colors = IconButtonDefaults.iconButtonColors(
+                            contentColor = MaterialTheme.colorScheme.primary.animate()
+                        )
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Edit,
+                            contentDescription = "edit",
+                            modifier = Modifier.scale(1.1f)
+                        )
+                    }
+
+                    IconButton(
+                        onClick = { viewModel.deleteCategory(category, showSnackbar) },
+                        colors = IconButtonDefaults.iconButtonColors(
+                            contentColor = MaterialTheme.colorScheme.primary.animate()
+                        )
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.DeleteOutline,
+                            contentDescription = "delete",
+                            modifier = Modifier.scale(1.1f)
+                        )
+                    }
+                },
+                isSwiped = remember {
+                    derivedStateOf { viewModel.swipedItemIndex.intValue == index }
+                }
+            ) {
+                ListItem(
+                    headlineContent = {
+                        Text(
+                            text = category.name,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    },
+                    supportingContent = {
+                        if (category.maxCashback == null) {
+                            Text(
+                                text = stringResource(R.string.no_cashbacks_for_category),
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    },
+                    trailingContent = {
+                        category.maxCashback?.let { BasicInfoAboutCashback(cashback = it) }
+                    },
+                    colors = ListItemDefaults.colors(
+                        containerColor = MaterialTheme.colorScheme.background.animate(),
+                        supportingColor = MaterialTheme.colorScheme.error.animate(),
+                        trailingIconColor = MaterialTheme.colorScheme.primary.animate()
+                    )
+                )
+            }
         }
         item {
             Spacer(modifier = Modifier.height(70.dp))

@@ -1,7 +1,6 @@
-package com.cashbacks.domain.usecase
+package com.cashbacks.domain.usecase.categories
 
 import android.util.Log
-import com.cashbacks.domain.model.BasicInfoCategory
 import com.cashbacks.domain.model.Category
 import com.cashbacks.domain.repository.CategoryRepository
 import kotlinx.coroutines.CoroutineDispatcher
@@ -15,7 +14,7 @@ class EditCategoryUseCase(
         const val TAG = "CategoriesUseCase"
     }
 
-    suspend fun updateCategory(category: BasicInfoCategory): Result<Unit> {
+    suspend fun updateCategory(category: Category): Result<Unit> {
         return withContext(dispatcher) {
             categoryRepository.updateCategory(category)
         }

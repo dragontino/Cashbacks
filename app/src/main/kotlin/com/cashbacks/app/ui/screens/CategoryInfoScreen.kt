@@ -1,14 +1,15 @@
 package com.cashbacks.app.ui.screens
 
+import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -27,12 +28,11 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Save
+import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.EditOff
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.ArrowBackIosNew
-import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.DeleteOutline
-import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ElevatedCard
@@ -48,8 +48,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.State
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -75,10 +77,11 @@ import com.cashbacks.app.ui.screens.navigation.AppScreens
 import com.cashbacks.app.ui.theme.CashbacksTheme
 import com.cashbacks.app.util.LoadingInBox
 import com.cashbacks.app.util.animate
+import com.cashbacks.app.util.keyboardAsState
 import com.cashbacks.app.viewmodel.CategoryInfoViewModel
 import com.cashbacks.app.viewmodel.CategoryInfoViewModel.ViewModelState
-import com.cashbacks.domain.model.BasicShop
 import com.cashbacks.domain.model.Cashback
+import com.cashbacks.domain.model.Shop
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class,
@@ -103,83 +106,90 @@ fun CategoryInfoScreen(
 
 
     DisposableEffectWithLifecycle(
-        onDestroy = viewModel::saveInfo
+        onDestroy = viewModel::saveCategory
     )
+
+    BackHandler {
+        if (viewModel.isEditing.value) {
+            viewModel.saveCategory()
+            viewModel.isEditing.value = false
+        } else {
+            popBackStack()
+        }
+    }
 
 
     CollapsingToolbarScaffold(
         topBar = {
-            CenterAlignedTopAppBar(
-                title = {
-                    Text(
-                        text = stringResource(AppScreens.Category.titleRes),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = popBackStack) {
-                        Icon(
-                            imageVector = when {
-                                viewModel.isEditing.value -> Icons.Rounded.Close
-                                else -> Icons.Rounded.ArrowBackIosNew
-                            },
-                            contentDescription = "return",
-                            modifier = Modifier.scale(1.2f)
+            if (viewModel.categoryState.value != ViewModelState.Loading) {
+                CenterAlignedTopAppBar(
+                    title = {
+                        Text(
+                            text = stringResource(AppScreens.Category.titleRes),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
                         )
-                    }
-                },
-                actions = {
-                    IconButton(
-                        onClick = {
-                            if (viewModel.isEditing.value) {
-                                viewModel.saveInfo()
+                    },
+                    navigationIcon = {
+                        AnimatedContent(
+                            targetState = viewModel.isEditing.value,
+                            contentAlignment = Alignment.Center,
+                            transitionSpec = {
+                                expandHorizontally() togetherWith shrinkVertically()
+                            },
+                            label = "navigationIconAnimation"
+                        ) { isEditing ->
+                            IconButton(
+                                onClick = {
+                                    if (isEditing) {
+                                        viewModel.deleteCategory()
+                                    }
+                                    popBackStack()
+                                }
+                            ) {
+                                Icon(
+                                    imageVector = when {
+                                        isEditing -> Icons.Rounded.DeleteOutline
+                                        else -> Icons.Rounded.ArrowBackIosNew
+                                    },
+                                    contentDescription = null,
+                                    modifier = Modifier.scale(1.2f)
+                                )
                             }
-                            viewModel.isEditing.value = !viewModel.isEditing.value
                         }
-                    ) {
-                        Icon(
-                            imageVector = when {
-                                viewModel.isEditing.value -> Icons.Outlined.Save
-                                else -> Icons.Rounded.Edit
-                            },
-                            contentDescription = null,
-                            modifier = Modifier.scale(1.2f)
-                        )
-                    }
-
-                    AnimatedVisibility(
-                        visible = viewModel.isEditing.value,
-                        enter = slideInHorizontally(
-                            animationSpec = tween(durationMillis = 200, easing = LinearEasing),
-                            initialOffsetX = { it / 2 }
-                        ),
-                        exit = slideOutHorizontally(
-                            animationSpec = tween(durationMillis = 200, easing = LinearEasing),
-                            targetOffsetX = { it / 2 }
-                        )
-                    ) {
-                        IconButton(
-                            onClick = {
-                                viewModel.deleteCategory()
-                                popBackStack()
-                            },
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.DeleteOutline,
-                                contentDescription = "delete category",
-                                modifier = Modifier.scale(1.2f)
-                            )
+                    },
+                    actions = {
+                        Crossfade(
+                            targetState = viewModel.isEditing.value,
+                            label = "actionIconsAnimation"
+                        ) { isEditing ->
+                            IconButton(
+                                onClick = {
+                                    if (isEditing) {
+                                        viewModel.saveCategory()
+                                    }
+                                    viewModel.isEditing.value = !isEditing
+                                },
+                            ) {
+                                Icon(
+                                    imageVector = when {
+                                        isEditing -> Icons.Outlined.EditOff
+                                        else -> Icons.Outlined.Edit
+                                    },
+                                    contentDescription = null,
+                                    modifier = Modifier.scale(1.2f)
+                                )
+                            }
                         }
-                    }
-                },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary.animate(),
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary.animate(),
-                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary.animate(),
-                    actionIconContentColor = MaterialTheme.colorScheme.onPrimary.animate()
+                    },
+                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.primary.animate(),
+                        titleContentColor = MaterialTheme.colorScheme.onPrimary.animate(),
+                        navigationIconContentColor = MaterialTheme.colorScheme.onPrimary.animate(),
+                        actionIconContentColor = MaterialTheme.colorScheme.onPrimary.animate()
+                    )
                 )
-            )
+            }
         },
         floatingActionButton = {
             AnimatedVisibility(
@@ -218,7 +228,7 @@ fun CategoryInfoScreen(
     ) { contentPadding ->
 
         Crossfade(
-            targetState = viewModel.state,
+            targetState = viewModel.categoryState.value,
             animationSpec = tween(durationMillis = 400, easing = FastOutSlowInEasing),
             label = "category_info_animation",
             modifier = Modifier
@@ -230,7 +240,7 @@ fun CategoryInfoScreen(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
-                when (viewModelState.value) {
+                when (viewModelState) {
                     ViewModelState.Loading -> LoadingInBox(
                         modifier = Modifier
                             .fillMaxSize()
@@ -245,7 +255,7 @@ fun CategoryInfoScreen(
                 }
 
                 AnimatedVisibility(
-                    visible = viewModelState.value != ViewModelState.Loading && viewModel.addingShopState.value,
+                    visible = viewModelState != ViewModelState.Loading && viewModel.addingShopState.value,
                     enter = expandVertically(
                         animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing)
                     ),
@@ -282,8 +292,8 @@ private fun CategoryInfoScreenContent(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         EditableTextField(
-            text = viewModel.category.value?.name ?: "",
-            onTextChange = { viewModel.category.value?.name = it },
+            text = viewModel.category.value.name,
+            onTextChange = viewModel.category.value::name::set,
             readOnly = !viewModel.isEditing.value,
             label = stringResource(R.string.category_placeholder),
             imeAction = ImeAction.Done,
@@ -304,25 +314,29 @@ private fun CategoryInfoScreenContent(
                 .padding(horizontal = 8.dp)
                 .clip(ModalSheetDefaults.BottomSheetShape)
         ) { page ->
-            val items = when (page) {
-                AppScreens.Shop -> viewModel.category.value?.shops ?: listOf()
-                AppScreens.Cashback -> viewModel.category.value?.cashbacks ?: listOf()
-            }
 
             TabPage(
-                items = items,
+                items = when (page) {
+                    AppScreens.Shop -> viewModel.shopsLiveData.observeAsState(listOf())
+                    AppScreens.Cashback -> viewModel.cashbacksLiveData.observeAsState(listOf())
+                },
+                vmState = when (page) {
+                    AppScreens.Shop -> viewModel.shopsState
+                    AppScreens.Cashback -> viewModel.cashbacksState
+                },
                 placeholderText = when (page) {
                     AppScreens.Cashback -> stringResource(R.string.empty_cashbacks_list)
                     AppScreens.Shop -> stringResource(R.string.empty_shops_list)
                 }
             ) {
                 when (it) {
-                    is BasicShop -> ListItemWithMaxCashback(
+                    is Shop -> ListItemWithMaxCashback(
                         name = it.name,
                         maxCashback = it.maxCashback,
                         cashbackPlaceholder = stringResource(R.string.no_cashbacks_for_shop),
                         onClick = {}
                     )
+
                     is Cashback -> CashbackComposable(cashback = it, onClick = {})
                 }
             }
@@ -400,36 +414,41 @@ private fun TabsLayout(
 
 @Composable
 private fun <T> TabPage(
-    items: List<T>,
+    items: State<List<T>>,
+    vmState: State<ViewModelState>,
     placeholderText: String,
     itemComposable: @Composable ((T) -> Unit)
 ) {
     val listState = rememberLazyListState()
 
     Crossfade(
-        targetState = items.isEmpty(),
+        targetState = vmState.value,
         label = "tabItems"
-    ) { isEmpty ->
-
-        if (isEmpty) {
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier.fillMaxSize()
-            ) {
-                Text(
-                    text = placeholderText,
-                    color = MaterialTheme.colorScheme.onBackground.animate(),
-                    style = MaterialTheme.typography.bodyMedium
-                )
-            }
-        } else {
-            LazyColumn(
-                state = listState,
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.fillMaxSize()
-            ) {
-                items(items, itemContent = { itemComposable(it) })
+    ) { state ->
+        when (state) {
+            ViewModelState.Loading -> LoadingInBox()
+            ViewModelState.Ready -> {
+                if (items.value.isEmpty()) {
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        Text(
+                            text = placeholderText,
+                            color = MaterialTheme.colorScheme.onBackground.animate(),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                } else {
+                    LazyColumn(
+                        state = listState,
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        items(items.value, itemContent = { itemComposable(it) })
+                    }
+                }
             }
         }
     }
@@ -437,7 +456,7 @@ private fun <T> TabPage(
 
 
 @Composable
-private fun ShopComposable(shop: BasicShop, onClick: () -> Unit) {
+private fun ShopComposable(shop: Shop, onClick: () -> Unit) {
     ElevatedCard(
         onClick = onClick,
         shape = MaterialTheme.shapes.medium,
