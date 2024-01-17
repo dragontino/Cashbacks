@@ -121,75 +121,75 @@ fun CategoryInfoScreen(
 
     CollapsingToolbarScaffold(
         topBar = {
-            if (viewModel.categoryState.value != ViewModelState.Loading) {
-                CenterAlignedTopAppBar(
-                    title = {
-                        Text(
-                            text = stringResource(AppScreens.Category.titleRes),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                    },
-                    navigationIcon = {
-                        AnimatedContent(
-                            targetState = viewModel.isEditing.value,
-                            contentAlignment = Alignment.Center,
-                            transitionSpec = {
-                                expandHorizontally() togetherWith shrinkVertically()
-                            },
-                            label = "navigationIconAnimation"
-                        ) { isEditing ->
-                            IconButton(
-                                onClick = {
-                                    if (isEditing) {
-                                        viewModel.deleteCategory()
-                                    }
-                                    popBackStack()
-                                }
-                            ) {
-                                Icon(
-                                    imageVector = when {
-                                        isEditing -> Icons.Rounded.DeleteOutline
-                                        else -> Icons.Rounded.ArrowBackIosNew
-                                    },
-                                    contentDescription = null,
-                                    modifier = Modifier.scale(1.2f)
-                                )
-                            }
-                        }
-                    },
-                    actions = {
-                        Crossfade(
-                            targetState = viewModel.isEditing.value,
-                            label = "actionIconsAnimation"
-                        ) { isEditing ->
-                            IconButton(
-                                onClick = {
-                                    if (isEditing) {
-                                        viewModel.saveCategory()
-                                    }
-                                    viewModel.isEditing.value = !isEditing
-                                },
-                            ) {
-                                Icon(
-                                    imageVector = when {
-                                        isEditing -> Icons.Outlined.EditOff
-                                        else -> Icons.Outlined.Edit
-                                    },
-                                    contentDescription = null,
-                                    modifier = Modifier.scale(1.2f)
-                                )
-                            }
-                        }
-                    },
-                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.primary.animate(),
-                        titleContentColor = MaterialTheme.colorScheme.onPrimary.animate(),
-                        navigationIconContentColor = MaterialTheme.colorScheme.onPrimary.animate(),
-                        actionIconContentColor = MaterialTheme.colorScheme.onPrimary.animate()
+            CenterAlignedTopAppBar(
+                title = {
+                    Text(
+                        text = stringResource(AppScreens.Category.titleRes),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
                     )
+                },
+                navigationIcon = {
+                    AnimatedContent(
+                        targetState = viewModel.isEditing.value,
+                        contentAlignment = Alignment.Center,
+                        transitionSpec = {
+                            expandHorizontally() togetherWith shrinkVertically()
+                        },
+                        label = "navigationIconAnimation"
+                    ) { isEditing ->
+                        IconButton(
+                            onClick = {
+                                if (isEditing) {
+                                    viewModel.deleteCategory()
+                                }
+                                popBackStack()
+                            },
+                            enabled = viewModel.categoryState.value != ViewModelState.Loading
+                        ) {
+                            Icon(
+                                imageVector = when {
+                                    isEditing -> Icons.Rounded.DeleteOutline
+                                    else -> Icons.Rounded.ArrowBackIosNew
+                                },
+                                contentDescription = null,
+                                modifier = Modifier.scale(1.2f)
+                            )
+                        }
+                    }
+                },
+                actions = {
+                    Crossfade(
+                        targetState = viewModel.isEditing.value,
+                        label = "actionIconsAnimation"
+                    ) { isEditing ->
+                        IconButton(
+                            onClick = {
+                                if (isEditing) {
+                                    viewModel.saveCategory()
+                                }
+                                viewModel.isEditing.value = !isEditing
+                            },
+                            enabled = viewModel.categoryState.value != ViewModelState.Loading
+                        ) {
+                            Icon(
+                                imageVector = when {
+                                    isEditing -> Icons.Outlined.EditOff
+                                    else -> Icons.Outlined.Edit
+                                },
+                                contentDescription = null,
+                                modifier = Modifier.scale(1.2f)
+                            )
+                        }
+                    }
+                },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primary.animate(),
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary.animate(),
+                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary.animate(),
+                    actionIconContentColor = MaterialTheme.colorScheme.onPrimary.animate()
                 )
-            }
+            )
         },
         floatingActionButton = {
             AnimatedVisibility(
