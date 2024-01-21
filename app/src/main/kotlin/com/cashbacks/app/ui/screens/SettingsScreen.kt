@@ -2,6 +2,8 @@ package com.cashbacks.app.ui.screens
 
 import android.os.Build
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -22,23 +24,28 @@ import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForwardIos
 import androidx.compose.material.icons.rounded.Menu
-import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SheetValue
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.rememberBottomSheetScaffoldState
-import androidx.compose.material3.rememberStandardBottomSheetState
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -78,22 +85,16 @@ fun SettingsScreen(
     isDarkTheme: Boolean,
     openDrawer: () -> Unit
 ) {
-    val scaffoldState = rememberBottomSheetScaffoldState(
-        bottomSheetState = rememberStandardBottomSheetState(
-            initialValue = SheetValue.Hidden,
-            skipHiddenState = false
-        )
-    )
+    val snackbarHostState = remember(::SnackbarHostState)
     val scope = rememberCoroutineScope()
 
     val showSnackbar = { message: String ->
         scope.launch {
-            scaffoldState.snackbarHostState.showSnackbar(message)
+            snackbarHostState.showSnackbar(message)
         }
     }
 
-    BottomSheetScaffold(
-        scaffoldState = scaffoldState,
+    Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
@@ -116,7 +117,7 @@ fun SettingsScreen(
             )
         },
         snackbarHost = {
-            SnackbarHost(hostState = scaffoldState.snackbarHostState) {
+            SnackbarHost(hostState = snackbarHostState) {
                 Snackbar(
                     snackbarData = it,
                     shape = MaterialTheme.shapes.medium,
@@ -126,26 +127,6 @@ fun SettingsScreen(
                 )
             }
         },
-        sheetContent = {
-            ThemeSheetContent(
-                currentDesign = viewModel.settings.value.colorDesign,
-                updateDesign = {
-                    viewModel.updateSettingsProperty(
-                        property = Settings::colorDesign,
-                        value = it.name,
-                        error = { exception -> exception.message?.let(showSnackbar) }
-                    )
-                    scope.launch { scaffoldState.bottomSheetState.hide() }
-                }
-            )
-        },
-        sheetShape = ModalSheetDefaults.BottomSheetShape,
-        sheetContainerColor = MaterialTheme.colorScheme.surface.animate(),
-        sheetContentColor = MaterialTheme.colorScheme.onSurface.animate(),
-        sheetDragHandle = null,
-        sheetPeekHeight = 0.dp,
-        sheetShadowElevation = 400.dp,
-        sheetTonalElevation = 100.dp
     ) { contentPadding ->
         Box(
             modifier = Modifier
@@ -155,14 +136,6 @@ fun SettingsScreen(
             SettingsContent(
                 viewModel = viewModel,
                 isDarkTheme = isDarkTheme,
-                openOrHideBottomSheet = {
-                    scope.launch {
-                        when (scaffoldState.bottomSheetState.currentValue) {
-                            SheetValue.Expanded -> scaffoldState.bottomSheetState.hide()
-                            else -> scaffoldState.bottomSheetState.expand()
-                        }
-                    }
-                },
                 showSnackbar = { showSnackbar(it) }
             )
 
@@ -182,14 +155,17 @@ fun SettingsScreen(
 
 
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SettingsContent(
     viewModel: SettingsViewModel,
     isDarkTheme: Boolean,
-    openOrHideBottomSheet: () -> Unit,
     showSnackbar: (message: String) -> Unit
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val bottomSheetState = rememberModalBottomSheetState()
+    var isSheetOpen by rememberSaveable { mutableStateOf(false) }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -202,15 +178,17 @@ private fun SettingsContent(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
-                    .clickable(
-                        enabled = viewModel.state.value != SettingsViewModel.State.Loading,
-                        onClick = openOrHideBottomSheet,
-                    )
+                    .clickable(enabled = viewModel.state.value != SettingsViewModel.State.Loading) {
+                        isSheetOpen = true
+                    }
                     .clip(MaterialTheme.shapes.small)
                     .border(
                         width = 2.dp,
                         color = MaterialTheme.colorScheme.onBackground.animate(),
                         shape = MaterialTheme.shapes.small
+                    )
+                    .animateContentSize(
+                        animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)
                     )
                     .background(MaterialTheme.colorScheme.surface.animate())
                     .padding(16.dp)
@@ -279,6 +257,33 @@ private fun SettingsContent(
                     )
                 }
             }
+        }
+    }
+
+    if (isSheetOpen) {
+        ModalBottomSheet(
+            sheetState = bottomSheetState,
+            onDismissRequest = { isSheetOpen = false },
+            shape = ModalSheetDefaults.BottomSheetShape,
+            containerColor = MaterialTheme.colorScheme.surface.animate(),
+            contentColor = MaterialTheme.colorScheme.onSurface.animate(),
+            dragHandle = null,
+            tonalElevation = 50.dp
+        ) {
+            ThemeSheetContent(
+                currentDesign = viewModel.settings.value.colorDesign,
+                updateDesign = {
+                    viewModel.updateSettingsProperty(
+                        property = Settings::colorDesign,
+                        value = it.name,
+                        error = { exception -> exception.message?.let(showSnackbar) }
+                    )
+                    scope.launch {
+                        isSheetOpen = false
+                        bottomSheetState.hide()
+                    }
+                }
+            )
         }
     }
 }

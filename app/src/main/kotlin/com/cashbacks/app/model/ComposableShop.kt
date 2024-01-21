@@ -6,15 +6,17 @@ import androidx.compose.runtime.setValue
 import com.cashbacks.domain.model.Shop
 
 class ComposableShop(
-    val id: Long,
-    name: String = ""
+    val id: Long = 0,
+    private val initialName: String = ""
 ) {
     constructor(shop: Shop) : this(
         id = shop.id,
-        name = shop.name
+        initialName = shop.name
     )
 
-    var name by mutableStateOf(name)
+    var name by mutableStateOf(initialName)
+
+    val isChanged get() = name != initialName
 
     fun mapToShop() = Shop(
         id = id,

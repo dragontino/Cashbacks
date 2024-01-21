@@ -37,10 +37,12 @@ import com.cashbacks.app.ui.screens.CardsScreen
 import com.cashbacks.app.ui.screens.CategoriesScreen
 import com.cashbacks.app.ui.screens.CategoryInfoScreen
 import com.cashbacks.app.ui.screens.SettingsScreen
+import com.cashbacks.app.ui.screens.ShopScreen
 import com.cashbacks.app.ui.screens.SingleCashbackScreen
 import com.cashbacks.app.viewmodel.CategoriesViewModel
 import com.cashbacks.app.viewmodel.CategoryInfoViewModel
 import com.cashbacks.app.viewmodel.MainViewModel
+import com.cashbacks.app.viewmodel.ShopViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -232,10 +234,46 @@ fun NavigationScreen(
                     navArgument(AppScreens.Cashback.Args.Id.name) {
                         type = NavType.StringType
                         nullable = true
+                    },
+                    navArgument(AppScreens.Cashback.Args.IsEdit.name) {
+                        type = NavType.BoolType
                     }
                 )
             ) {
                 SingleCashbackScreen()
+            }
+
+            composable(
+                route = AppScreens.Shop.destinationRoute,
+                arguments = listOf(
+                    navArgument(AppScreens.Shop.Args.CategoryId.name) {
+                        type = NavType.LongType
+                    },
+                    navArgument(AppScreens.Shop.Args.ShopId.name) {
+                        type = NavType.LongType
+                    },
+                    navArgument(AppScreens.Shop.Args.IsEdit.name) {
+                        type = NavType.BoolType
+                    }
+                )
+            ) {
+                val vmFactory = ShopViewModel.Factory(
+                    fetchCashbacksUseCase = application.dependencyFactory.provideFetchCashbacksUseCase(),
+                    editShopUseCase = application.dependencyFactory.provideShopUseCase(),
+                    deleteShopUseCase = application.dependencyFactory.provideDeleteShopUseCase(),
+                    deleteCashbackUseCase = application.dependencyFactory.provideCashbackShopUseCase(),
+                    categoryId = it.arguments?.getLong(AppScreens.Shop.Args.CategoryId.name) ?: 0,
+                    shopId = it.arguments?.getLong(AppScreens.Shop.Args.ShopId.name) ?: 0,
+                    isEditing = it.arguments?.getBoolean(AppScreens.Shop.Args.IsEdit.name) ?: false
+                )
+
+                ShopScreen(
+                    viewModel = viewModel(factory = vmFactory),
+                    popBackStack = navController::popBackStack,
+                    navigateTo = { route ->
+                        navController.navigateTo(route = route, parentScreen = AppScreens.Category)
+                    }
+                )
             }
         }
     }

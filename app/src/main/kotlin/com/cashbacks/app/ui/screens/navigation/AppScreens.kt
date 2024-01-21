@@ -70,7 +70,7 @@ sealed class AppScreens(
         }
 
         override val args: Array<String> = Args.entries.toStringArray()
-        fun createUrl(id: Long, isEdit: Boolean) = "$root/$id/$isEdit"
+        fun createUrl(id: Long, isEdit: Boolean = false) = "$root/$id/$isEdit"
     }
 
     data object BankCard : AppScreens(root = "card", titleRes = R.string.bank_card) {
@@ -96,12 +96,15 @@ sealed class AppScreens(
         tabTitleRes = R.string.tab_shops
     ) {
         enum class Args {
-            Id
+            CategoryId,
+            ShopId,
+            IsEdit
         }
 
         override val args: Array<String> = Args.entries.toStringArray()
 
-        fun createUrl(id: Long) = "$root/$id"
+        fun createUrl(categoryId: Long, shopId: Long, isEdit: Boolean = false) =
+            "$root/$categoryId/$shopId/$isEdit"
     }
 
     data object Cashback : TabPages(
@@ -110,11 +113,12 @@ sealed class AppScreens(
         tabTitleRes = R.string.tab_cashbacks
     ) {
         enum class Args {
-            Id
+            Id,
+            IsEdit
         }
 
         override val args: Array<String> = Args.entries.toStringArray()
 
-        fun createUrl(id: Long?) = "$root/$id"
+        fun createUrl(id: Long?, isEdit: Boolean = false) = "$root/$id/$isEdit"
     }
 }

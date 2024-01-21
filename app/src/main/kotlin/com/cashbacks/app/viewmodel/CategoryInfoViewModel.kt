@@ -29,7 +29,7 @@ class CategoryInfoViewModel(
     fetchCashbacksUseCase: FetchCashbacksUseCase,
     private val deleteShopUseCase: DeleteShopUseCase,
     private val deleteCashbackUseCase: CashbackCategoryUseCase,
-    private val categoryId: Long,
+    val categoryId: Long,
     isEditing: Boolean
     ) : ViewModel() {
     enum class ViewModelState {
@@ -82,11 +82,13 @@ class CategoryInfoViewModel(
     fun saveCategory() {
         viewModelScope.launch {
             val category = _category.value
-            _categoryState.value = ViewModelState.Loading
-            delay(100)
-            editCategoryUseCase.updateCategory(category.mapToCategory())
-            delay(100)
-            _categoryState.value = ViewModelState.Ready
+            if (category.isChanged) {
+                _categoryState.value = ViewModelState.Loading
+                delay(100)
+                editCategoryUseCase.updateCategory(category.mapToCategory())
+                delay(100)
+                _categoryState.value = ViewModelState.Ready
+            }
         }
     }
 

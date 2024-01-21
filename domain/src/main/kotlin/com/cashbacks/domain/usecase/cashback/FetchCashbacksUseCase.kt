@@ -10,4 +10,8 @@ class FetchCashbacksUseCase(
     fun fetchCashbacksFromCategory(categoryId: Long): Flow<List<Cashback>> {
         return repository.fetchCashbacksFromCategory(categoryId)
     }
+
+    fun fetchCashbacksFromShop(shopId: Long): Flow<List<Cashback>> {
+        return repository.fetchCashbacksFromShop(shopId)
+    }
 }

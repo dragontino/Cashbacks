@@ -29,18 +29,14 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.DataArray
-import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.Menu
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
@@ -52,7 +48,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -64,8 +59,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.cashbacks.app.R
-import com.cashbacks.app.ui.composables.BasicInfoAboutCashback
+import com.cashbacks.app.ui.composables.BasicInfoCashback
 import com.cashbacks.app.ui.composables.CollapsingToolbarScaffold
+import com.cashbacks.app.ui.composables.EditDeleteContent
 import com.cashbacks.app.ui.composables.NewNameTextField
 import com.cashbacks.app.ui.composables.ScrollableListItem
 import com.cashbacks.app.ui.screens.navigation.AppScreens
@@ -322,34 +318,16 @@ private fun CategoriesScreen(
             ScrollableListItem(
                 onClick = { onClick(category, false) },
                 hiddenContent = {
-                    IconButton(
-                        onClick = { onClick(category, true) },
-                        colors = IconButtonDefaults.iconButtonColors(
-                            contentColor = MaterialTheme.colorScheme.primary.animate()
-                        )
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.Edit,
-                            contentDescription = "edit",
-                            modifier = Modifier.scale(1.1f)
-                        )
-                    }
-
-                    IconButton(
-                        onClick = { viewModel.deleteCategory(category, showSnackbar) },
-                        colors = IconButtonDefaults.iconButtonColors(
-                            contentColor = MaterialTheme.colorScheme.primary.animate()
-                        )
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.DeleteOutline,
-                            contentDescription = "delete",
-                            modifier = Modifier.scale(1.1f)
-                        )
-                    }
+                    EditDeleteContent(
+                        onEditClick = { onClick(category, true) },
+                        onDeleteClick = {
+                            viewModel.deleteCategory(category, showSnackbar)
+                        }
+                    )
                 },
-                isSwiped = remember {
-                    derivedStateOf { viewModel.swipedItemIndex.intValue == index }
+                initialAlignment = when (viewModel.swipedItemIndex.intValue) {
+                    index -> Alignment.Start
+                    else -> Alignment.End
                 }
             ) {
                 ListItem(
@@ -368,7 +346,7 @@ private fun CategoriesScreen(
                         }
                     },
                     trailingContent = {
-                        category.maxCashback?.let { BasicInfoAboutCashback(cashback = it) }
+                        category.maxCashback?.let { BasicInfoCashback(cashback = it) }
                     },
                     colors = ListItemDefaults.colors(
                         containerColor = MaterialTheme.colorScheme.background.animate(),

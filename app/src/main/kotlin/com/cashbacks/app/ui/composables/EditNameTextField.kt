@@ -69,7 +69,7 @@ import com.cashbacks.app.util.animate
 
 @Composable
 fun EditNameTextField(
-    text: String,
+    name: String,
     heading: String,
     modifier: Modifier = Modifier,
     textStyle: TextStyle = MaterialTheme.typography.bodyMedium,
@@ -78,7 +78,7 @@ fun EditNameTextField(
     trailingActions: @Composable (RowScope.() -> Unit) = {}
 ) {
     EditNameTextField(
-        text = TextFieldValue(text),
+        text = TextFieldValue(name),
         heading = heading,
         textStyle = textStyle,
         modifier = modifier,
@@ -92,7 +92,7 @@ fun EditNameTextField(
 
 @Composable
 fun EditNameTextField(
-    text: AnnotatedString,
+    name: AnnotatedString,
     heading: String,
     modifier: Modifier = Modifier,
     textStyle: TextStyle = TextStyle(
@@ -104,7 +104,7 @@ fun EditNameTextField(
     trailingActions: @Composable (RowScope.() -> Unit) = {}
 ) {
     EditNameTextField(
-        text = TextFieldValue(text),
+        text = TextFieldValue(name),
         heading = heading,
         textStyle = textStyle,
         modifier = modifier,
@@ -449,7 +449,7 @@ private fun TextFieldPreview() {
     CashbacksTheme(isDarkTheme = false, dynamicColor = false) {
         Column(modifier = Modifier.background(MaterialTheme.colorScheme.surface)) {
             EditNameTextField(
-                text = "Wrecked",
+                name = "Wrecked",
                 heading = "Imagine Dragons"
             )
 
