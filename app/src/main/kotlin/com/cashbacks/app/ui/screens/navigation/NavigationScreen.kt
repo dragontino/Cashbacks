@@ -271,7 +271,7 @@ fun NavigationScreen(
                     viewModel = viewModel(factory = vmFactory),
                     popBackStack = navController::popBackStack,
                     navigateTo = { route ->
-                        navController.navigateTo(route = route, parentScreen = AppScreens.Category)
+                        navController.navigateTo(route = route, parentScreen = AppScreens.Shop)
                     }
                 )
             }
