@@ -1,11 +1,12 @@
 package com.cashbacks.app.ui.screens.navigation
 
-import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -19,6 +20,7 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -39,12 +41,15 @@ import com.cashbacks.app.ui.screens.CategoryInfoScreen
 import com.cashbacks.app.ui.screens.SettingsScreen
 import com.cashbacks.app.ui.screens.ShopScreen
 import com.cashbacks.app.ui.screens.SingleCashbackScreen
+import com.cashbacks.app.util.AnimationDefaults
+import com.cashbacks.app.viewmodel.CashbackViewModel
 import com.cashbacks.app.viewmodel.CategoriesViewModel
 import com.cashbacks.app.viewmodel.CategoryInfoViewModel
 import com.cashbacks.app.viewmodel.MainViewModel
 import com.cashbacks.app.viewmodel.ShopViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 
 @Composable
 fun NavigationScreen(
@@ -72,10 +77,10 @@ fun NavigationScreen(
     fun onDrawerItemClick(route: String) {
         scope.launch {
             drawerState.animateTo(
-                DrawerValue.Closed,
-                tween(durationMillis = 200, easing = LinearOutSlowInEasing)
+                targetValue = DrawerValue.Closed,
+                anim = tween(durationMillis = 200, easing = LinearOutSlowInEasing)
             )
-            navController.navigate(route)
+            navController.navigateTo(route)
         }
     }
 
@@ -112,22 +117,6 @@ fun NavigationScreen(
         NavHost(
             navController = navController,
             startDestination = AppScreens.Categories.destinationRoute,
-            enterTransition = {
-                slideIntoContainer(
-                    towards = AnimatedContentTransitionScope.SlideDirection.Start,
-                    animationSpec = tween(
-                        durationMillis = 300,
-                        delayMillis = 100,
-                        easing = FastOutSlowInEasing
-                    )
-                )
-            },
-            exitTransition = {
-                slideOutOfContainer(
-                    towards = AnimatedContentTransitionScope.SlideDirection.End,
-                    animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)
-                )
-            },
             modifier = Modifier
                 .background(MaterialTheme.colorScheme.background)
                 .fillMaxSize()
@@ -135,17 +124,31 @@ fun NavigationScreen(
             composable(
                 route = AppScreens.Categories.destinationRoute,
                 enterTransition = {
-                    fadeIn(
-                        animationSpec = tween(
-                            durationMillis = 400,
-                            delayMillis = 200,
-                            easing = FastOutSlowInEasing,
-                        ),
+                    val expandFrom = when (initialState.destination.route) {
+                        AppScreens.Settings.destinationRoute,
+                        AppScreens.BankCards.destinationRoute,
+                        AppScreens.BankCard.destinationRoute -> {
+                            Alignment.End
+                        }
+                        else -> Alignment.Start
+                    }
+                    enterScreenTransition(
+                        expandFrom = expandFrom,
+                        animationTime = AnimationDefaults.ScreenDelayMillis - 100
                     )
                 },
                 exitTransition = {
-                    fadeOut(animationSpec = tween(durationMillis = 400, easing = FastOutSlowInEasing))
-                }
+                    val shrinkTowards = when (targetState.destination.route) {
+                        AppScreens.Settings.destinationRoute, AppScreens.BankCards.destinationRoute -> {
+                            Alignment.End
+                        }
+                        else -> Alignment.Start
+                    }
+                    exitScreenTransition(
+                        shrinkTowards = shrinkTowards,
+                        animationTime = AnimationDefaults.ScreenDelayMillis + 100
+                    )
+                },
             ) {
                 val vmFactory = CategoriesViewModel.Factory(
                     addCategoryUseCase = application.dependencyFactory.provideAddCategoryUseCase(),
@@ -161,22 +164,8 @@ fun NavigationScreen(
             
             composable(
                 route = AppScreens.Settings.destinationRoute,
-                enterTransition = {
-                    slideIntoContainer(
-                        towards = AnimatedContentTransitionScope.SlideDirection.End,
-                        animationSpec = tween(
-                            durationMillis = 300,
-                            delayMillis = 100,
-                            easing = FastOutSlowInEasing
-                        )
-                    )
-                },
-                exitTransition = {
-                    slideOutOfContainer(
-                        towards = AnimatedContentTransitionScope.SlideDirection.Start,
-                        animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)
-                    )
-                }
+                enterTransition = { enterScreenTransition(expandFrom = Alignment.Start) },
+                exitTransition = { exitScreenTransition(shrinkTowards = Alignment.Start) }
             ) {
                 SettingsScreen(
                     viewModel = viewModel(factory = application.viewModelFactory),
@@ -185,7 +174,11 @@ fun NavigationScreen(
                 )
             }
 
-            composable(route = AppScreens.BankCards.destinationRoute) {
+            composable(
+                route = AppScreens.BankCards.destinationRoute,
+                enterTransition = { enterScreenTransition(expandFrom = Alignment.Start) },
+                exitTransition = { exitScreenTransition(shrinkTowards = Alignment.Start) }
+            ) {
                 CardsScreen(openDrawer = { openDrawer() })
             }
 
@@ -197,6 +190,8 @@ fun NavigationScreen(
 
             composable(
                 route = AppScreens.Category.destinationRoute,
+                enterTransition = { enterScreenTransition(expandFrom = Alignment.End) },
+                exitTransition = { exitScreenTransition(shrinkTowards = Alignment.End) },
                 arguments = listOf(
                     navArgument(AppScreens.Category.Args.Id.name) {
                         type = NavType.LongType
@@ -230,21 +225,47 @@ fun NavigationScreen(
 
             composable(
                 route = AppScreens.Cashback.destinationRoute,
+                enterTransition = { enterScreenTransition(expandFrom = Alignment.End) },
+                exitTransition = { exitScreenTransition(shrinkTowards = Alignment.End) },
                 arguments = listOf(
                     navArgument(AppScreens.Cashback.Args.Id.name) {
                         type = NavType.StringType
                         nullable = true
+                    },
+                    navArgument(AppScreens.Cashback.Args.ParentId.name) {
+                        type = NavType.LongType
+                    },
+                    navArgument(AppScreens.Cashback.Args.ParentName.name) {
+                        type = NavType.StringType
                     },
                     navArgument(AppScreens.Cashback.Args.IsEdit.name) {
                         type = NavType.BoolType
                     }
                 )
             ) {
-                SingleCashbackScreen()
+                val vmFactory = CashbackViewModel.Factory(
+                    cashbackCategoryUseCase = application.dependencyFactory.provideCashbackCategoryUseCase(),
+                    cashbackShopUseCase = application.dependencyFactory.provideCashbackShopUseCase(),
+                    editCashbackUseCase = application.dependencyFactory.provideEditCashbackUseCase(),
+                    id = it.arguments?.getString(AppScreens.Cashback.Args.Id.name)?.toLong(),
+                    parentId = it.arguments!!.getLong(AppScreens.Cashback.Args.ParentId.name),
+                    parentName = it.arguments?.getString(AppScreens.Cashback.Args.ParentName.name) ?: "",
+                    isEdit = it.arguments?.getBoolean(AppScreens.Cashback.Args.IsEdit.name) ?: false
+                )
+
+                SingleCashbackScreen(
+                    viewModel = viewModel(factory = vmFactory),
+                    navigateTo = { route ->
+                        navController.navigateTo(route, parentScreen = AppScreens.Cashback)
+                    },
+                    popBackStack = navController::popBackStack
+                )
             }
 
             composable(
                 route = AppScreens.Shop.destinationRoute,
+                enterTransition = { enterScreenTransition(expandFrom = Alignment.End) },
+                exitTransition = { exitScreenTransition(shrinkTowards = Alignment.End) },
                 arguments = listOf(
                     navArgument(AppScreens.Shop.Args.CategoryId.name) {
                         type = NavType.LongType
@@ -280,7 +301,7 @@ fun NavigationScreen(
 }
 
 
-fun NavHostController.navigateTo(
+private fun NavHostController.navigateTo(
     route: String,
     parentScreen: AppScreens? = AppScreens.Categories
 ) {
@@ -292,5 +313,41 @@ fun NavHostController.navigateTo(
             else -> popUpTo(parentScreen.destinationRoute)
         }
         launchSingleTop = true
+    }
+}
+
+
+private fun enterScreenTransition(
+    expandFrom: Alignment.Horizontal,
+    animationTime: Int = AnimationDefaults.ScreenDelayMillis,
+    delayTimePercent: Float = .05f,
+): EnterTransition {
+    val delayMillis = (animationTime * delayTimePercent).roundToInt()
+    val durationMillis = animationTime - delayMillis
+    return slideInHorizontally(
+        animationSpec = tween(durationMillis, delayMillis, easing = FastOutSlowInEasing)
+    ) { fullWidth ->
+        when (expandFrom) {
+            Alignment.Start -> -fullWidth
+            else -> fullWidth
+        }
+    }
+}
+
+
+private fun exitScreenTransition(
+    shrinkTowards: Alignment.Horizontal,
+    animationTime: Int = AnimationDefaults.ScreenDelayMillis,
+    delayTimePercent: Float = .2f
+): ExitTransition {
+    val delayMillis = (animationTime * delayTimePercent).roundToInt()
+    val durationMillis = animationTime - delayMillis
+    return slideOutHorizontally(
+        animationSpec = tween(durationMillis, delayMillis, easing = FastOutSlowInEasing),
+    ) { fullWidth ->
+        when (shrinkTowards) {
+            Alignment.Start -> -fullWidth
+            else -> fullWidth
+        }
     }
 }

@@ -2,6 +2,7 @@ package com.cashbacks.app.util
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.animateScrollBy
@@ -21,8 +22,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlin.math.roundToInt
+
+object AnimationDefaults {
+    const val ScreenDelayMillis: Int = 650
+}
 
 @Composable
 fun Color.animate(durationMillis: Int = 400): Color =
@@ -30,6 +36,16 @@ fun Color.animate(durationMillis: Int = 400): Color =
         targetValue = this,
         animationSpec = tween(durationMillis, easing = FastOutSlowInEasing),
         label = "colorAnimation"
+    ).value
+
+
+
+@Composable
+fun Dp.animate(durationMillis: Int = 400): Dp =
+    animateDpAsState(
+        targetValue = this,
+        animationSpec = tween(durationMillis, easing = FastOutSlowInEasing),
+        label = "dpAnimation"
     ).value
 
 
