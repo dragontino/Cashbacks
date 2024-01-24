@@ -34,7 +34,7 @@ fun BasicInfoCashback(cashback: Cashback) {
             Row {
                 Text(text = cashback.bankCard.name, color = textColor)
                 Spacer(Modifier.width(10.dp))
-                BankCardPaymentSystem(paymentSystem = cashback.bankCard.paymentSystem)
+                cashback.bankCard.paymentSystem?.let { BankCardPaymentSystem(paymentSystem = it) }
                 Spacer(Modifier.width(5.dp))
                 Text(text = "···· ${cashback.bankCard.hiddenNumber}", color = textColor)
             }

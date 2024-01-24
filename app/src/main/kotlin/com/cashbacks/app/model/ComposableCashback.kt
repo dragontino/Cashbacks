@@ -4,12 +4,13 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import com.cashbacks.domain.model.BasicBankCard
 import com.cashbacks.domain.model.BasicInfoBankCard
 import com.cashbacks.domain.model.Cashback
 
 class ComposableCashback(
-    val id: Long,
-    bankCard: BasicInfoBankCard,
+    val id: Long = 0,
+    bankCard: BasicInfoBankCard = BasicBankCard(),
     amount: String = "",
     expirationDate: String? = "",
     comment: String = ""

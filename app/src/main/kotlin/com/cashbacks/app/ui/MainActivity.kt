@@ -28,7 +28,7 @@ class MainActivity : ComponentActivity() {
                 }
                 val navigationBarStyle = when {
                     isDarkTheme -> SystemBarStyle.dark(scrim = Color.TRANSPARENT)
-                    else -> SystemBarStyle.light(scrim = Color.TRANSPARENT, darkScrim = Color.RED)
+                    else -> SystemBarStyle.light(scrim = Color.TRANSPARENT, darkScrim = Color.TRANSPARENT)
                 }
                 enableEdgeToEdge(
                     statusBarStyle = statusBarStyle,

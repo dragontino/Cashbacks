@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
 import com.cashbacks.app.model.ComposableShop
+import com.cashbacks.app.ui.managment.ViewModelState
 import com.cashbacks.domain.model.Cashback
 import com.cashbacks.domain.usecase.cashback.CashbackShopUseCase
 import com.cashbacks.domain.usecase.cashback.FetchCashbacksUseCase
@@ -21,25 +22,25 @@ class ShopViewModel(
     private val deleteShopUseCase: DeleteShopUseCase,
     private val deleteCashbackUseCase: CashbackShopUseCase,
     private val categoryId: Long,
-    private val shopId: Long,
+    val shopId: Long,
     isEditing: Boolean
 ) : ViewModel() {
-
-    enum class ViewModelState {
-        Loading,
-        Ready
-    }
 
     private val _state = mutableStateOf(ViewModelState.Loading)
     val state = derivedStateOf { _state.value }
 
-    val isEditing = mutableStateOf(isEditing)
-
     private val _shop = mutableStateOf(ComposableShop())
     val shop = derivedStateOf { _shop.value }
 
-    val showFab = derivedStateOf {
-        this.isEditing.value && state.value != ViewModelState.Loading
+    val showFab = derivedStateOf { state.value == ViewModelState.Editing }
+
+    private val shopJob = viewModelScope.launch {
+        delay(250)
+        editShopUseCase
+            .getShopById(shopId)
+            .getOrNull()
+            ?.let { _shop.value = ComposableShop(it) }
+        _state.value = if (isEditing) ViewModelState.Editing else ViewModelState.Viewing
     }
 
     val cashbacksLiveData = fetchCashbacksUseCase
@@ -47,50 +48,58 @@ class ShopViewModel(
         .asLiveData()
 
 
-    init {
+    override fun onCleared() {
+        shopJob.cancel()
+        super.onCleared()
+    }
+
+
+    fun edit() {
         viewModelScope.launch {
-            delay(250)
-            editShopUseCase
-                .getShopById(shopId)
-                .getOrNull()
-                ?.let { _shop.value = ComposableShop(it) }
-            _state.value = ViewModelState.Ready
+            _state.value = ViewModelState.Loading
+            delay(300)
+            _state.value = ViewModelState.Editing
+        }
+    }
+
+    fun save() {
+        viewModelScope.launch {
+            _state.value = ViewModelState.Loading
+            delay(300)
+            saveShop()
+            _state.value = ViewModelState.Viewing
         }
     }
 
 
-    fun saveShop() {
-        viewModelScope.launch {
-            val shop = shop.value
-            if (shop.isChanged) {
-                _state.value = ViewModelState.Loading
-                delay(100)
-                editShopUseCase.updateShopInCategory(categoryId, shop.mapToShop())
-                delay(100)
-                _state.value = ViewModelState.Ready
-            }
+    private suspend fun saveShop() {
+        val shop = shop.value
+        if (shop.isChanged) {
+            editShopUseCase.updateShopInCategory(categoryId, shop.mapToShop())
         }
     }
 
 
     fun deleteShop() {
         viewModelScope.launch {
+            val currentState = _state.value
             _state.value = ViewModelState.Loading
             delay(100)
             deleteShopUseCase.deleteShopFromCategory(categoryId, shop.value.mapToShop())
             delay(100)
-            _state.value = ViewModelState.Ready
+            _state.value = currentState
         }
     }
 
 
-    fun deleteCashback(cashback: Cashback) {
+    fun deleteCashback(cashback: Cashback, errorMessage: (String) -> Unit) {
         viewModelScope.launch {
+            val currentState = _state.value
             _state.value = ViewModelState.Loading
             delay(100)
-            deleteCashbackUseCase.deleteCashbackFromShop(shopId, cashback)
+            deleteCashbackUseCase.deleteCashbackFromShop(shopId, cashback, errorMessage)
             delay(100)
-            _state.value = ViewModelState.Ready
+            _state.value = currentState
         }
     }
 

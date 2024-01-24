@@ -76,6 +76,7 @@ import com.cashbacks.app.util.animate
 import com.cashbacks.app.viewmodel.SettingsViewModel
 import com.cashbacks.domain.model.ColorDesign
 import com.cashbacks.domain.model.Settings
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -279,8 +280,9 @@ private fun SettingsContent(
                         error = { exception -> exception.message?.let(showSnackbar) }
                     )
                     scope.launch {
-                        isSheetOpen = false
                         bottomSheetState.hide()
+                        delay(50)
+                        isSheetOpen = false
                     }
                 }
             )

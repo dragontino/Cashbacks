@@ -4,7 +4,7 @@ sealed interface BasicInfoBankCard {
     val id: Long
     val name: String
     val number: String
-    val paymentSystem: PaymentSystem
+    val paymentSystem: PaymentSystem?
 
     val hiddenNumber get() = with(number) {
         slice(length - 4 ..< length)
@@ -13,10 +13,10 @@ sealed interface BasicInfoBankCard {
 
 
 data class BasicBankCard(
-    override val id: Long,
-    override val name: String,
-    override val number: String,
-    override val paymentSystem: PaymentSystem
+    override val id: Long = 0,
+    override val name: String = "",
+    override val number: String = "",
+    override val paymentSystem: PaymentSystem? = null
 ) : BasicInfoBankCard
 
 

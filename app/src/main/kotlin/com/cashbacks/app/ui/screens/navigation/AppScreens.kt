@@ -4,7 +4,9 @@ import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Category
 import androidx.compose.material.icons.rounded.CreditCard
+import androidx.compose.material.icons.rounded.Percent
 import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material.icons.rounded.Store
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.cashbacks.app.R
 
@@ -87,13 +89,15 @@ sealed class AppScreens(
     sealed class TabPages(
         root: String,
         @StringRes titleRes: Int,
-        @StringRes val tabTitleRes: Int
+        @StringRes val tabTitleRes: Int,
+        val icon: ImageVector,
     ) : AppScreens(root, titleRes)
 
     data object Shop : TabPages(
         root = "shop",
         titleRes = R.string.shop,
-        tabTitleRes = R.string.tab_shops
+        tabTitleRes = R.string.tab_shops,
+        icon = Icons.Rounded.Store
     ) {
         enum class Args {
             CategoryId,
@@ -110,15 +114,46 @@ sealed class AppScreens(
     data object Cashback : TabPages(
         root = "cashback",
         titleRes = R.string.cashback,
-        tabTitleRes = R.string.tab_cashbacks
+        tabTitleRes = R.string.tab_cashbacks,
+        icon = Icons.Rounded.Percent
     ) {
         enum class Args {
+            ParentName,
+            ParentId,
             Id,
             IsEdit
         }
 
         override val args: Array<String> = Args.entries.toStringArray()
 
-        fun createUrl(id: Long?, isEdit: Boolean = false) = "$root/$id/$isEdit"
+
+        fun createUrlFromCategory(
+            id: Long?,
+            categoryId: Long,
+            isEdit: Boolean = false
+        ) = createUrl(
+            id = id,
+            parentId = categoryId,
+            parentName = com.cashbacks.domain.model.Category::class.simpleName!!,
+            isEdit = isEdit
+        )
+
+        fun createUrlFromShop(
+            id: Long?,
+            shopId: Long,
+            isEdit: Boolean = false
+        ) = createUrl(
+            id = id,
+            parentId = shopId,
+            parentName = com.cashbacks.domain.model.Shop::class.simpleName!!,
+            isEdit = isEdit
+        )
+
+        private fun createUrl(
+            id: Long?,
+            parentId: Long,
+            parentName: String,
+            isEdit: Boolean = false
+        ) = "$root/$parentName/$parentId/$id/$isEdit"
     }
 }
