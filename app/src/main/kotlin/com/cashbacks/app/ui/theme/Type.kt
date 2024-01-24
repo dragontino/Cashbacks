@@ -9,7 +9,7 @@ import androidx.compose.ui.unit.sp
 // Set of Material typography styles to start with
 val Typography = Typography(
     bodyLarge = TextStyle(
-        fontSize = 19.sp,
+        fontSize = 22.sp,
         fontFamily = FontFamily.Default,
         lineHeight = 27.sp,
     ),
@@ -26,15 +26,15 @@ val Typography = Typography(
 
     labelLarge = TextStyle(
         fontFamily = FontFamily(VerdanaFont),
-        fontSize = 24.sp
+        fontSize = 26.sp
     ),
     labelMedium = TextStyle(
         fontFamily = FontFamily(VerdanaFont),
-        fontSize = 20.sp
+        fontSize = 22.sp
     ),
     labelSmall = TextStyle(
         fontFamily = FontFamily(VerdanaFont),
-        fontSize = 16.sp
+        fontSize = 18.sp
     ),
 
     titleLarge = TextStyle(

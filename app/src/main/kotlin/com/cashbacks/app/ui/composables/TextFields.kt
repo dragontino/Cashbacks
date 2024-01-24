@@ -31,11 +31,12 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -46,126 +47,72 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.cashbacks.app.ui.theme.CashbacksTheme
 import com.cashbacks.app.util.animate
+import kotlinx.coroutines.delay
 
 @Composable
-fun EditNameTextField(
-    name: String,
-    heading: String,
+fun NewNameTextField(
     modifier: Modifier = Modifier,
-    textStyle: TextStyle = MaterialTheme.typography.bodyMedium,
-    keyboardType: KeyboardType = KeyboardType.Text,
-    visualTransformation: VisualTransformation = VisualTransformation.None,
-    trailingActions: @Composable (RowScope.() -> Unit) = {}
+    placeholder: String = "",
+    onSave: (name: String) -> Unit
 ) {
-    EditNameTextField(
-        text = TextFieldValue(name),
-        heading = heading,
-        textStyle = textStyle,
-        modifier = modifier,
-        keyboardType = keyboardType,
-        visualTransformation = visualTransformation,
-        trailingActions = trailingActions
+    var name by rememberSaveable { mutableStateOf("") }
+    val focusRequester = remember(::FocusRequester)
+
+    LaunchedEffect(Unit) {
+        delay(50)
+        focusRequester.requestFocus()
+    }
+
+    val keyboard = Keyboard(
+        imeAction = ImeAction.Done,
+        capitalization = KeyboardCapitalization.Sentences,
+        onImeActionClick = { onSave(name) }
     )
-}
 
-
-
-@Composable
-fun EditNameTextField(
-    name: AnnotatedString,
-    heading: String,
-    modifier: Modifier = Modifier,
-    textStyle: TextStyle = TextStyle(
-        fontSize = 28.sp,
-        fontFamily = FontFamily.Monospace
-    ),
-    keyboardType: KeyboardType = KeyboardType.Text,
-    visualTransformation: VisualTransformation = VisualTransformation.None,
-    trailingActions: @Composable (RowScope.() -> Unit) = {}
-) {
-    EditNameTextField(
-        text = TextFieldValue(name),
-        heading = heading,
-        textStyle = textStyle,
-        modifier = modifier,
-        keyboardType = keyboardType,
-        visualTransformation = visualTransformation,
-        trailingActions = trailingActions
-    )
-}
-
-
-
-
-
-@Composable
-private fun EditNameTextField(
-    text: TextFieldValue,
-    heading: String,
-    textStyle: TextStyle,
-    modifier: Modifier = Modifier,
-    keyboardType: KeyboardType = KeyboardType.Text,
-    visualTransformation: VisualTransformation = VisualTransformation.None,
-    trailingActions: @Composable (RowScope.() -> Unit) = {}
-) {
-    TextField(
-        value = text,
-        onValueChange = {},
-        textStyle = textStyle,
-        label = {
-            Text(
-                text = heading,
-                style = MaterialTheme.typography.bodySmall.copy(
-                    fontSize = 12.5.sp,
-                ),
-            )
+    OutlinedTextField(
+        value = name,
+        onValueChange = { name = it },
+        placeholder = {
+            Text(text = placeholder, style = MaterialTheme.typography.bodyMedium)
         },
-        visualTransformation = visualTransformation,
-        trailingIcon = {
-            Row(
-                verticalAlignment = Alignment.Bottom,
-                horizontalArrangement = Arrangement.Center
-            ) {
-                trailingActions()
-            }
-        },
-        readOnly = true,
-        enabled = false,
-        keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
-        colors = TextFieldDefaults.colors(
+        keyboardOptions = keyboard.options,
+        keyboardActions = keyboard.actions,
+        shape = MaterialTheme.shapes.medium,
+        singleLine = true,
+        colors = OutlinedTextFieldDefaults.colors(
             focusedTextColor = MaterialTheme.colorScheme.onBackground.animate(),
-            disabledTextColor = MaterialTheme.colorScheme.onBackground.animate(),
-            focusedContainerColor = Color.Transparent,
-            unfocusedContainerColor = Color.Transparent,
-            disabledContainerColor = Color.Transparent,
-            focusedIndicatorColor = Color.Transparent,
-            unfocusedIndicatorColor = Color.Transparent,
-            disabledIndicatorColor = Color.Transparent,
-            focusedLabelColor = MaterialTheme.colorScheme.onBackground.animate(),
-            unfocusedLabelColor = MaterialTheme.colorScheme.onBackground.animate(),
-            disabledLabelColor = MaterialTheme.colorScheme.onBackground.animate(),
+            unfocusedTextColor = MaterialTheme.colorScheme.onBackground.animate(),
+            focusedContainerColor = MaterialTheme.colorScheme.surface.animate(),
+            unfocusedContainerColor = MaterialTheme.colorScheme.background.animate(),
+            focusedBorderColor = MaterialTheme.colorScheme.onBackground.animate(),
+            unfocusedBorderColor = Color.Transparent
         ),
-        modifier = modifier.fillMaxWidth()
+        modifier = Modifier
+            .focusRequester(focusRequester)
+            .padding(16.dp)
+            .then(modifier)
+            .fillMaxWidth()
     )
 }
 
@@ -184,6 +131,14 @@ fun EditableTextField(
     singleLine: Boolean = true,
     error: Boolean = false,
     errorMessage: String = "",
+    textStyle: TextStyle = when {
+        enabled -> MaterialTheme.typography.bodyMedium
+        else -> MaterialTheme.typography.bodyLarge.copy(
+            textAlign = TextAlign.Center,
+            letterSpacing = 3.sp,
+            fontWeight = FontWeight.Bold
+        )
+    },
     keyboardType: KeyboardType = KeyboardType.Text,
     imeAction: ImeAction = ImeAction.Next,
     onImeActionClick: KeyboardActionScope.(text: String) -> Unit = {},
@@ -191,7 +146,7 @@ fun EditableTextField(
     leadingIcon: @Composable (() -> Unit)? = null,
     trailingActions: @Composable (RowScope.() -> Unit) = {},
     shape: Shape = MaterialTheme.shapes.medium,
-    borderColors: Collection<Color> = EditNameTextFieldDefaults.borderColors()
+    borderColors: Collection<Color> = EditableTextFieldDefaults.borderColors()
 ) {
     val focusManager = LocalFocusManager.current
     var showSupportingText by rememberSaveable { mutableStateOf(true) }
@@ -210,21 +165,24 @@ fun EditableTextField(
 
 
     val borderBrush = when {
-        error -> SolidColor(MaterialTheme.colorScheme.error/*.animate()*/)
-        readOnly || !enabled -> SolidColor(MaterialTheme.colorScheme.onBackground/*.animate()*/)
+        error -> SolidColor(MaterialTheme.colorScheme.error.animate())
+        readOnly -> SolidColor(MaterialTheme.colorScheme.onBackground.animate())
+        !enabled -> null
         else -> Brush.horizontalGradient(
-            colors = borderColors.toList() /*.map { it.animate() }*/
+            colors = borderColors.toList().map { it.animate() }
         )
     }
     val cursorBrush = when {
         error || readOnly || !enabled -> borderBrush
         else -> Brush.verticalGradient(
-            colors = borderColors.toList() /*.map { it.animate() }*/,
+            colors = borderColors.toList().map { it.animate() },
             tileMode = TileMode.Mirror
         )
     }
 
     val interactionSource = remember { MutableInteractionSource() }
+
+
 
     val textColor = MaterialTheme.colorScheme.onBackground
     val unfocusedTextColor = textColor.copy(alpha = 0.7f)
@@ -240,10 +198,8 @@ fun EditableTextField(
         readOnly = readOnly,
         singleLine = singleLine,
         enabled = enabled,
-        cursorBrush = cursorBrush,
-        textStyle = MaterialTheme.typography.bodyMedium.copy(
-            color = textColor.animate()
-        ),
+        cursorBrush = cursorBrush ?: SolidColor(Color.Black),
+        textStyle = textStyle.copy(color = textColor.animate()),
         interactionSource = interactionSource,
         keyboardOptions = keyboard.options,
         keyboardActions = keyboard.actions,
@@ -258,24 +214,26 @@ fun EditableTextField(
                 interactionSource = interactionSource,
                 isError = error,
                 label = {
-                    Text(
-                        text = label,
-                        style = when {
-                            text.isEmpty() && !isFocused -> MaterialTheme.typography.bodyMedium
-                            else -> MaterialTheme.typography.bodySmall
-                        },
-                        maxLines = 1,
-                        color = when {
-                            error -> MaterialTheme.colorScheme.error
-                            readOnly -> textColor
-                            text.isEmpty() && !isFocused -> unfocusedTextColor
-                            else -> MaterialTheme.colorScheme.primary
-                        }/*.animate()*/
-                    )
+                    if (enabled) {
+                        Text(
+                            text = label,
+                            style = when {
+                                text.isEmpty() && !isFocused -> MaterialTheme.typography.bodyMedium
+                                else -> MaterialTheme.typography.bodySmall
+                            },
+                            maxLines = 1,
+                            color = when {
+                                error -> MaterialTheme.colorScheme.error
+                                readOnly -> textColor
+                                text.isEmpty() && !isFocused -> unfocusedTextColor
+                                else -> MaterialTheme.colorScheme.primary
+                            }.animate()
+                        )
+                    }
                 },
                 supportingText = {
                     AnimatedVisibility(
-                        visible = error && errorMessage.isNotEmpty() && showSupportingText,
+                        visible = enabled && error && errorMessage.isNotEmpty() && showSupportingText,
                         enter = expandVertically(
                             animationSpec = tween(
                                 durationMillis = 250,
@@ -297,7 +255,7 @@ fun EditableTextField(
                 },
                 leadingIcon = leadingIcon,
                 trailingIcon = {
-                    if (error) {
+                    if (error && enabled) {
                         IconButton(
                             onClick = { showSupportingText = !showSupportingText },
                             colors = IconButtonDefaults.iconButtonColors(
@@ -323,37 +281,42 @@ fun EditableTextField(
                     bottom = 16.dp
                 ),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = textColor/*.animate()*/,
-                    unfocusedTextColor = unfocusedTextColor/*.animate()*/,
-                    disabledTextColor = textColor/*.animate()*/,
+                    focusedTextColor = textColor.animate(),
+                    unfocusedTextColor = unfocusedTextColor.animate(),
+                    disabledTextColor = textColor.animate(),
                     focusedContainerColor = containerColor,
                     unfocusedContainerColor = containerColor,
                     disabledContainerColor = containerColor,
                     errorContainerColor = containerColor,
-                    focusedLeadingIconColor = textColor/*.animate()*/,
-                    unfocusedLeadingIconColor = textColor/*.animate()*/,
-                    disabledLeadingIconColor = unfocusedTextColor/*.animate()*/,
-                    errorLeadingIconColor = MaterialTheme.colorScheme.error/*.animate()*/,
-                    focusedSupportingTextColor = MaterialTheme.colorScheme.error/*.animate()*/,
-                    unfocusedSupportingTextColor = MaterialTheme.colorScheme.error/*.animate()*/,
-                    disabledSupportingTextColor = MaterialTheme.colorScheme.error/*.animate()*/,
+                    disabledBorderColor = Color.Transparent,
+                    focusedLeadingIconColor = textColor.animate(),
+                    unfocusedLeadingIconColor = textColor.animate(),
+                    disabledLeadingIconColor = unfocusedTextColor.animate(),
+                    errorLeadingIconColor = MaterialTheme.colorScheme.error.animate(),
+                    focusedSupportingTextColor = MaterialTheme.colorScheme.error.animate(),
+                    unfocusedSupportingTextColor = MaterialTheme.colorScheme.error.animate(),
+                    disabledSupportingTextColor = Color.Transparent,
+                    disabledLabelColor = Color.Transparent,
                 ),
                 container = {
-                    val borderStroke by animateBorderStrokeAsState(
-                        borderBrush = borderBrush,
-                        enabled = !readOnly,
-                        interactionSource = interactionSource,
-                        focusedBorderThickness = 2.dp,
-                        unfocusedBorderThickness = 1.dp
-                    )
+                    val borderModifier = when (borderBrush) {
+                        null -> Modifier
+                        else -> Modifier.border(
+                            border = animateBorderStrokeAsState(
+                                borderBrush = borderBrush,
+                                enabled = !readOnly,
+                                interactionSource = interactionSource,
+                                focusedBorderThickness = 2.dp,
+                                unfocusedBorderThickness = 1.dp
+                            ).value,
+                            shape = shape
+                        )
+                    }
 
                     Box(
                         modifier = Modifier
-                            .border(borderStroke, shape)
-                            .background(
-                                color = containerColor,
-                                shape = shape
-                            )
+                            .then(borderModifier)
+                            .background(color = containerColor, shape = shape)
                     )
                 }
             )
@@ -406,7 +369,7 @@ internal class Keyboard private constructor(
 
 
 
-object EditNameTextFieldDefaults {
+object EditableTextFieldDefaults {
     @Composable
     fun borderColors(): Collection<Color> = listOf(
         MaterialTheme.colorScheme.primary,
@@ -430,7 +393,7 @@ private fun animateBorderStrokeAsState(
     val targetThickness = if (focused) focusedBorderThickness else unfocusedBorderThickness
 
     val animatedThickness = when {
-        enabled -> targetThickness/*.animate(durationMillis = 150)*/
+        enabled -> targetThickness.animate(durationMillis = 150)
         else -> rememberUpdatedState(unfocusedBorderThickness).value
     }
 
@@ -440,17 +403,31 @@ private fun animateBorderStrokeAsState(
 }
 
 
+@Preview
+@Composable
+private fun NewNameTextFieldPreview() {
+    CashbacksTheme(isDarkTheme = false) {
+        NewNameTextField(
+            placeholder = "Imagine Dragons",
+            onSave = {}
+        )
+    }
+}
+
+
 
 
 
 @Preview(showBackground = true)
 @Composable
-private fun TextFieldPreview() {
+private fun EditableTextFieldPreview() {
     CashbacksTheme(isDarkTheme = false, dynamicColor = false) {
         Column(modifier = Modifier.background(MaterialTheme.colorScheme.surface)) {
-            EditNameTextField(
-                name = "Wrecked",
-                heading = "Imagine Dragons"
+            EditableTextField(
+                enabled = false,
+                text = "Wrecked",
+                onTextChange = {},
+                label = "Imagine Dragons"
             )
 
             EditableTextField(
