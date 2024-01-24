@@ -6,6 +6,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.cashbacks.app.ui.managment.ListState
 import com.cashbacks.domain.model.Category
 import com.cashbacks.domain.usecase.categories.AddCategoryUseCase
 import com.cashbacks.domain.usecase.categories.DeleteCategoryUseCase
@@ -25,19 +26,15 @@ class CategoriesViewModel(
     private val deleteCategoryUseCase: DeleteCategoryUseCase
 ) : ViewModel() {
 
-    enum class ViewModelState {
-        Loading,
-        EmptyList,
-        Ready
-    }
-
-    private val _state = mutableStateOf(ViewModelState.Loading)
+    private val _state = mutableStateOf(ListState.Loading)
     val state = derivedStateOf { _state.value }
 
     private val _categories = mutableStateOf(listOf<Category>())
     val categories = derivedStateOf { _categories.value }
 
     val swipedItemIndex = mutableIntStateOf(-1)
+
+    val isEditing = mutableStateOf(false)
 
     val addingCategoriesState = mutableStateOf(false)
 
@@ -47,7 +44,7 @@ class CategoriesViewModel(
         fetchCategoriesUseCase.fetchCategories()
             .onEach {
                 _categories.value = it
-                _state.value = if (it.isEmpty()) ViewModelState.EmptyList else ViewModelState.Ready
+                _state.value = if (it.isEmpty()) ListState.Empty else ListState.Stable
             }
             .launchIn(viewModelScope)
 
@@ -63,23 +60,23 @@ class CategoriesViewModel(
 
     fun addCategory(name: String) {
         viewModelScope.launch {
-            _state.value = ViewModelState.Loading
+            _state.value = ListState.Loading
             delay(100)
             addCategoryUseCase.addCategory(
                 Category(id = 0, name = name, maxCashback = null),
             )
-            _state.value = ViewModelState.Ready
+            _state.value = ListState.Stable
         }
     }
 
 
     fun deleteCategory(category: Category, error: (message: String) -> Unit) {
         viewModelScope.launch {
-            _state.value = ViewModelState.Loading
+            _state.value = ListState.Loading
             delay(100)
             deleteCategoryUseCase.deleteCategory(category, error)
             delay(100)
-            _state.value = ViewModelState.Ready
+            _state.value = ListState.Stable
         }
     }
 

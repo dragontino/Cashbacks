@@ -158,7 +158,8 @@ fun NavigationScreen(
                 CategoriesScreen(
                     viewModel = viewModel(factory = vmFactory),
                     openDrawer = { openDrawer() },
-                    navigateTo = navController::navigateTo
+                    navigateTo = navController::navigateTo,
+                    popBackStack = navController::popBackStack
                 )
             }
             

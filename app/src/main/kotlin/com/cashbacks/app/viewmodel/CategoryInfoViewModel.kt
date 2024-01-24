@@ -8,6 +8,9 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
 import com.cashbacks.app.model.ComposableCategory
+import com.cashbacks.app.ui.managment.ListState
+import com.cashbacks.app.ui.managment.ViewModelState
+import com.cashbacks.app.util.AnimationDefaults
 import com.cashbacks.domain.model.Cashback
 import com.cashbacks.domain.model.Shop
 import com.cashbacks.domain.usecase.cashback.CashbackCategoryUseCase
@@ -32,18 +35,14 @@ class CategoryInfoViewModel(
     val categoryId: Long,
     isEditing: Boolean
     ) : ViewModel() {
-    enum class ViewModelState {
-        Loading,
-        Ready
-    }
 
-    private val _categoryState = mutableStateOf(ViewModelState.Loading)
-    val categoryState: State<ViewModelState> = derivedStateOf { _categoryState.value }
+    private val _vmState = mutableStateOf(ViewModelState.Loading)
+    val vmState: State<ViewModelState> = derivedStateOf { _vmState.value }
 
-    private val _shopsState = mutableStateOf(ViewModelState.Loading)
+    private val _shopsState = mutableStateOf(ListState.Loading)
     val shopsState = derivedStateOf { _shopsState.value }
 
-    private val _cashbacksState = mutableStateOf(ViewModelState.Loading)
+    private val _cashbacksState = mutableStateOf(ListState.Loading)
     val cashbacksState = derivedStateOf { _cashbacksState.value }
 
     private val _category = mutableStateOf(ComposableCategory())
@@ -51,74 +50,97 @@ class CategoryInfoViewModel(
 
     val shopsLiveData = fetchShopsUseCase
         .fetchShopsFromCategory(categoryId)
-        .onEach { _shopsState.value = ViewModelState.Ready }
+        .onEach {
+            _shopsState.value = if (it.isEmpty()) ListState.Empty else ListState.Stable
+        }
         .asLiveData()
 
     val cashbacksLiveData = fetchCashbacksUseCase
         .fetchCashbacksFromCategory(categoryId)
-        .onEach { _cashbacksState.value = ViewModelState.Ready }
+        .onEach {
+            _cashbacksState.value = if (it.isEmpty()) ListState.Empty else ListState.Stable
+        }
         .asLiveData()
 
-    val isEditing = mutableStateOf(isEditing)
+    private val categoryJob = viewModelScope.launch {
+        delay(AnimationDefaults.ScreenDelayMillis + 40L)
+        editCategoryUseCase
+            .getCategoryById(categoryId)
+            .getOrNull()
+            ?.let { _category.value = ComposableCategory(it) }
+        _vmState.value = if (isEditing) ViewModelState.Editing else ViewModelState.Viewing
+    }
 
     val addingShopState = mutableStateOf(false)
 
     val showFab = derivedStateOf {
-        this.isEditing.value && categoryState.value != ViewModelState.Loading && !addingShopState.value
+        vmState.value == ViewModelState.Editing && !addingShopState.value
     }
 
-    init {
+    val isEditing get() = vmState.value == ViewModelState.Editing
+
+
+    override fun onCleared() {
+        categoryJob.cancel()
+        super.onCleared()
+    }
+
+
+    fun edit() {
         viewModelScope.launch {
-            delay(250)
-            editCategoryUseCase
-                .getCategoryById(categoryId)
-                .getOrNull()
-                ?.let { _category.value = ComposableCategory(it) }
-            _categoryState.value = ViewModelState.Ready
+            _vmState.value = ViewModelState.Loading
+            delay(300)
+            _vmState.value = ViewModelState.Editing
+        }
+    }
+
+    fun save() {
+        viewModelScope.launch {
+            _vmState.value = ViewModelState.Loading
+            delay(500)
+            saveCategory()
+            _vmState.value = ViewModelState.Viewing
         }
     }
 
 
-    fun saveCategory() {
-        viewModelScope.launch {
-            val category = _category.value
-            if (category.isChanged) {
-                _categoryState.value = ViewModelState.Loading
-                delay(100)
-                editCategoryUseCase.updateCategory(category.mapToCategory())
-                delay(100)
-                _categoryState.value = ViewModelState.Ready
-            }
+    private suspend fun saveCategory() {
+        val category = _category.value
+        if (category.isChanged) {
+            editCategoryUseCase.updateCategory(category.mapToCategory())
         }
     }
 
 
     fun deleteCategory() {
         viewModelScope.launch {
-            _categoryState.value = ViewModelState.Loading
+            val currentState = _vmState.value
+            _vmState.value = ViewModelState.Loading
             delay(100)
             deleteCategoryUseCase.deleteCategory(category.value.mapToCategory())
             delay(100)
-            _categoryState.value = ViewModelState.Ready
+            _vmState.value = currentState
         }
     }
 
 
     fun addShop(name: String) {
         viewModelScope.launch {
-            _categoryState.value = ViewModelState.Loading
+            val currentState = _vmState.value
+            _vmState.value = ViewModelState.Loading
             delay(100)
             val shop = Shop(id = 0, name = name, maxCashback = null)
             addShopUseCase.addShopToCategory(categoryId, shop)
             delay(100)
-            _categoryState.value = ViewModelState.Ready
+            _vmState.value = currentState
         }
     }
 
 
     fun deleteShop(shop: Shop, error: (message: String) -> Unit) {
         viewModelScope.launch {
-            _categoryState.value = ViewModelState.Loading
+            val currentState = _vmState.value
+            _vmState.value = ViewModelState.Loading
             delay(100)
             deleteShopUseCase.deleteShopFromCategory(
                 categoryId = categoryId,
@@ -126,18 +148,19 @@ class CategoryInfoViewModel(
                 errorMessage = error
             )
             delay(100)
-            _categoryState.value = ViewModelState.Ready
+            _vmState.value = currentState
         }
     }
 
 
     fun deleteCashback(cashback: Cashback, error: (message: String) -> Unit) {
         viewModelScope.launch {
-            _categoryState.value = ViewModelState.Loading
+            val currentState = _vmState.value
+            _vmState.value = ViewModelState.Loading
             delay(100)
             deleteCashbackUseCase.deleteCashbackFromCategory(categoryId, cashback, error)
             delay(100)
-            _categoryState.value = ViewModelState.Ready
+            _vmState.value = currentState
         }
     }
 

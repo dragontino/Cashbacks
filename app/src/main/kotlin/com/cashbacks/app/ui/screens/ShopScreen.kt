@@ -8,16 +8,16 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.DataArray
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FabPosition
@@ -31,6 +31,7 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
@@ -39,16 +40,58 @@ import com.cashbacks.app.ui.composables.CashbackComposable
 import com.cashbacks.app.ui.composables.CollapsingToolbarScaffold
 import com.cashbacks.app.ui.composables.DisposableEffectWithLifecycle
 import com.cashbacks.app.ui.composables.EditableTextField
+import com.cashbacks.app.ui.composables.EmptyList
 import com.cashbacks.app.ui.composables.InfoScreenTopAppBar
+import com.cashbacks.app.ui.managment.ViewModelState
 import com.cashbacks.app.ui.screens.navigation.AppScreens
 import com.cashbacks.app.util.LoadingInBox
-import com.cashbacks.app.util.animate
 import com.cashbacks.app.viewmodel.ShopViewModel
-import com.cashbacks.app.viewmodel.ShopViewModel.ViewModelState
+
+@Composable
+fun ShopScreen(
+    viewModel: ShopViewModel,
+    popBackStack: () -> Unit,
+    navigateTo: (route: String) -> Unit
+) {
+    DisposableEffectWithLifecycle(
+        onDestroy = {
+            if (viewModel.state.value == ViewModelState.Editing) {
+                viewModel.save()
+            }
+        }
+    )
+
+    BackHandler {
+        when (viewModel.state.value) {
+            ViewModelState.Editing -> viewModel.save()
+            else -> popBackStack()
+        }
+    }
+
+    Crossfade(
+        targetState = viewModel.state.value,
+        label = "content loading animation",
+        animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing),
+        modifier = Modifier
+            .imePadding()
+            .fillMaxSize()
+    ) { state ->
+        when (state) {
+            ViewModelState.Loading -> LoadingInBox()
+            ViewModelState.Editing, ViewModelState.Viewing -> ShopScreenContent(
+                viewModel = viewModel,
+                popBackStack = popBackStack,
+                navigateTo = navigateTo
+            )
+        }
+    }
+}
+
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ShopScreen(
+private fun ShopScreenContent(
     viewModel: ShopViewModel,
     popBackStack: () -> Unit,
     navigateTo: (route: String) -> Unit
@@ -58,32 +101,19 @@ fun ShopScreen(
         derivedStateOf { listState.layoutInfo.totalItemsCount }
     }
 
-    DisposableEffectWithLifecycle(
-        onDestroy = viewModel::saveShop
-    )
-
-    BackHandler {
-        if (viewModel.isEditing.value) {
-            viewModel.saveShop()
-            viewModel.isEditing.value = false
-        } else {
-            popBackStack()
-        }
-    }
 
     CollapsingToolbarScaffold(
         topBar = {
             InfoScreenTopAppBar(
                 title = stringResource(AppScreens.Shop.titleRes),
-                isInEdit = viewModel.isEditing,
+                isInEdit = remember {
+                    derivedStateOf { viewModel.state.value == ViewModelState.Editing }
+                },
                 isLoading = remember {
                     derivedStateOf { viewModel.state.value == ViewModelState.Loading }
                 },
-                onEdit = { viewModel.isEditing.value = true },
-                onSave = {
-                    viewModel.saveShop()
-                    viewModel.isEditing.value = false
-                },
+                onEdit = viewModel::edit,
+                onSave = viewModel::save,
                 onDelete = viewModel::deleteShop,
                 onBack = popBackStack
             )
@@ -115,7 +145,12 @@ fun ShopScreen(
                         )
                     },
                     onClick = {
-                        navigateTo(AppScreens.Cashback.createUrl(id = null))
+                        navigateTo(
+                            AppScreens.Cashback.createUrlFromShop(
+                                id = null,
+                                shopId = viewModel.shopId
+                            )
+                        )
                     },
                     expanded = !listState.canScrollForward && listItemsCount.value > 0
                 )
@@ -123,72 +158,39 @@ fun ShopScreen(
         },
         fabPosition = FabPosition.EndOverlay
     ) { contentPadding ->
-
-        Crossfade(
-            targetState = viewModel.state.value,
-            label = "content loading animation",
-            animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing),
+        Column(
+            verticalArrangement = Arrangement.spacedBy(16.dp),
             modifier = Modifier
+                .padding(vertical = 16.dp)
                 .padding(contentPadding)
                 .fillMaxSize()
-        ) { state ->
-            when (state) {
-                ViewModelState.Loading -> LoadingInBox()
-                ViewModelState.Ready -> ShopScreenContent(
-                    listState = listState,
-                    viewModel = viewModel
-                )
-            }
-        }
-    }
-}
+        ) {
+            EditableTextField(
+                text = viewModel.shop.value.name,
+                onTextChange = { viewModel.shop.value.name = it },
+                label = stringResource(R.string.shop_placeholder),
+                imeAction = ImeAction.Done,
+                enabled = viewModel.state.value == ViewModelState.Editing,
+                modifier = Modifier.padding(horizontal = 16.dp)
+            )
 
+            HorizontalDivider(Modifier.padding(horizontal = 8.dp))
 
+            val cashbacksState = viewModel.cashbacksLiveData.observeAsState()
 
-@Composable
-private fun ShopScreenContent(
-    listState: LazyListState,
-    viewModel: ShopViewModel
-) {
-    Column(
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-        modifier = Modifier
-            .padding(vertical = 16.dp)
-            .fillMaxSize()
-    ) {
-        EditableTextField(
-            text = viewModel.shop.value.name,
-            onTextChange = { viewModel.shop.value.name = it },
-            label = stringResource(R.string.shop_placeholder),
-            imeAction = ImeAction.Done,
-            enabled = viewModel.isEditing.value,
-            modifier = Modifier.padding(horizontal = 16.dp)
-        )
-
-        HorizontalDivider(Modifier.padding(horizontal = 8.dp))
-
-        val cashbacksState = viewModel.cashbacksLiveData.observeAsState()
-
-        Crossfade(
-            targetState = cashbacksState.value,
-            label = "cashback cross-fade",
-            animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing)
-        ) { cashbacks ->
-            when (cashbacks) {
-                null -> LoadingInBox()
-                else -> {
-                    if (cashbacks.isEmpty()) {
-                        Box(
-                            contentAlignment = Alignment.Center,
-                            modifier = Modifier.fillMaxSize()
-                        ) {
-                            Text(
-                                text = stringResource(R.string.empty_cashbacks_list),
-                                color = MaterialTheme.colorScheme.onBackground.animate(),
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                        }
-                    } else {
+            Crossfade(
+                targetState = cashbacksState.value,
+                label = "cashbacks animation",
+                animationSpec = tween(durationMillis = 100, easing = FastOutSlowInEasing)
+            ) { cashbacks ->
+                when {
+                    cashbacks == null -> LoadingInBox()
+                    cashbacks.isEmpty() -> EmptyList(
+                        text = stringResource(R.string.empty_cashbacks_list),
+                        icon = Icons.Rounded.DataArray,
+                        iconModifier = Modifier.scale(2.5f)
+                    )
+                    else -> {
                         LazyColumn(
                             state = listState,
                             verticalArrangement = Arrangement.spacedBy(16.dp),
