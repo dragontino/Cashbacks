@@ -11,7 +11,7 @@ import com.cashbacks.data.model.CategoryWithCashbackDB
 import kotlinx.coroutines.flow.Flow
 
 @Dao
-interface CategoriesDao : CardsDao {
+interface CategoriesDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun addCategory(category: CategoryDB): Long
 
@@ -44,7 +44,29 @@ interface CategoriesDao : CardsDao {
         ORDER BY cat.name ASC
         """,
     )
-    fun fetchCategories(): Flow<List<CategoryWithCashbackDB>>
+    fun fetchAllCategories(): Flow<List<CategoryWithCashbackDB>>
+
+
+    @Query(
+        """
+        SELECT cat.id, cat.name, 
+               cash.id AS cashback_id, cash.amount AS cashback_amount, 
+               cash.expirationDate AS cashback_expirationDate, cash.comment AS cashback_comment,
+               card.id AS cashback_card_id, card.name AS cashback_card_name,
+               card.number AS cashback_card_number, card.paymentSystem AS cashback_card_paymentSystem
+        FROM Categories AS cat
+        LEFT JOIN (
+            SELECT id, categoryId, amount, expirationDate, comment, bankCardId 
+            FROM Cashbacks
+            ORDER BY amount DESC
+            LIMIT 1
+        ) AS cash ON cat.id = cash.categoryId
+        LEFT JOIN Cards AS card ON cash.bankCardId = card.id
+        WHERE cashback_id IS NOT NULL
+        ORDER BY cat.name ASC
+        """
+    )
+    fun fetchCategoriesWithCashback(): Flow<List<CategoryWithCashbackDB>>
 
 
     @Query("SELECT * FROM Categories WHERE id = :id")

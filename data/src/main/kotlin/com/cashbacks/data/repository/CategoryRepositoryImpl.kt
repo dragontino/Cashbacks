@@ -37,8 +37,12 @@ class CategoryRepositoryImpl(private val dao: CategoriesDao) : CategoryRepositor
         Result.failure(e)
     }
 
-    override fun fetchCategories(): Flow<List<Category>> {
-        return dao.fetchCategories().map { list -> list.map { it.mapToCategory() } }
+    override fun fetchAllCategories(): Flow<List<Category>> {
+        return dao.fetchAllCategories().map { list -> list.map { it.mapToCategory() } }
+    }
+
+    override fun fetchCategoriesWithCashback(): Flow<List<Category>> {
+        return dao.fetchCategoriesWithCashback().map { list -> list.map { it.mapToCategory() } }
     }
 
     override suspend fun getCategoryById(id: Long): Result<Category> {

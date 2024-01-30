@@ -5,9 +5,11 @@ import com.cashbacks.data.room.dao.ShopsDao
 import com.cashbacks.domain.model.InsertionException
 import com.cashbacks.domain.model.Shop
 import com.cashbacks.domain.repository.ShopRepository
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapLatest
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class ShopRepositoryImpl(private val dao: ShopsDao) : ShopRepository {
     override suspend fun addShopToCategory(categoryId: Long, shop: Shop): Result<Unit> {
         val shopDB = ShopDB(id = shop.id, categoryId = categoryId, name = shop.name)
@@ -59,8 +61,14 @@ class ShopRepositoryImpl(private val dao: ShopsDao) : ShopRepository {
             ?: Result.failure(Exception())
     }
 
-    override fun fetchShopsFromCategory(categoryId: Long): Flow<List<Shop>> {
-        return dao.fetchShops(categoryId).map { list ->
+    override fun fetchAllShopsFromCategory(categoryId: Long): Flow<List<Shop>> {
+        return dao.fetchAllShops(categoryId).mapLatest { list ->
+            list.map { it.mapToShop() }
+        }
+    }
+
+    override fun fetchShopsWithCashbackFromCategory(categoryId: Long): Flow<List<Shop>> {
+        return dao.fetchShopsWithCashback(categoryId).mapLatest { list ->
             list.map { it.mapToShop() }
         }
     }

@@ -6,7 +6,11 @@ import kotlinx.coroutines.flow.Flow
 
 class FetchShopsUseCase(private val repository: ShopRepository) {
 
-    fun fetchShopsFromCategory(categoryId: Long): Flow<List<Shop>> {
-        return repository.fetchShopsFromCategory(categoryId)
+    fun fetchAllShopsFromCategory(categoryId: Long): Flow<List<Shop>> {
+        return repository.fetchAllShopsFromCategory(categoryId)
+    }
+
+    fun fetchShopsWithCashbacksFromCategory(categoryId: Long): Flow<List<Shop>> {
+        return repository.fetchShopsWithCashbackFromCategory(categoryId)
     }
 }

@@ -12,5 +12,7 @@ interface ShopRepository {
 
     suspend fun getShopById(id: Long): Result<Shop>
 
-    fun fetchShopsFromCategory(categoryId: Long): Flow<List<Shop>>
+    fun fetchAllShopsFromCategory(categoryId: Long): Flow<List<Shop>>
+
+    fun fetchShopsWithCashbackFromCategory(categoryId: Long): Flow<List<Shop>>
 }

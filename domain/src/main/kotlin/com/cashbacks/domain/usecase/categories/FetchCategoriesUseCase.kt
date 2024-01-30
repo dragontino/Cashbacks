@@ -5,7 +5,11 @@ import com.cashbacks.domain.repository.CategoryRepository
 import kotlinx.coroutines.flow.Flow
 
 class FetchCategoriesUseCase(private val repository: CategoryRepository) {
-    fun fetchCategories(): Flow<List<Category>> {
-        return repository.fetchCategories()
+    fun fetchAllCategories(): Flow<List<Category>> {
+        return repository.fetchAllCategories()
+    }
+
+    fun fetchCategoriesWithCashback(): Flow<List<Category>> {
+        return repository.fetchCategoriesWithCashback()
     }
 }

@@ -8,7 +8,9 @@ interface CategoryRepository {
 
     suspend fun updateCategory(category: Category): Result<Unit>
 
-    fun fetchCategories(): Flow<List<Category>>
+    fun fetchAllCategories(): Flow<List<Category>>
+
+    fun fetchCategoriesWithCashback(): Flow<List<Category>>
 
     suspend fun getCategoryById(id: Long): Result<Category>
 
