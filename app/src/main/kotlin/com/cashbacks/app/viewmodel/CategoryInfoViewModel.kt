@@ -3,6 +3,7 @@ package com.cashbacks.app.viewmodel
 import androidx.compose.runtime.State
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.snapshotFlow
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.asLiveData
@@ -21,6 +22,7 @@ import com.cashbacks.domain.usecase.shops.AddShopUseCase
 import com.cashbacks.domain.usecase.shops.DeleteShopUseCase
 import com.cashbacks.domain.usecase.shops.FetchShopsUseCase
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 
@@ -48,12 +50,11 @@ class CategoryInfoViewModel(
     private val _category = mutableStateOf(ComposableCategory())
     val category = derivedStateOf { _category.value }
 
-    val shopsLiveData = fetchShopsUseCase
-        .fetchShopsFromCategory(categoryId)
-        .onEach {
-            _shopsState.value = if (it.isEmpty()) ListState.Empty else ListState.Stable
-        }
-        .asLiveData()
+    private val _shops = mutableStateOf(listOf<Shop>())
+    val shops = derivedStateOf { _shops.value }
+
+    private val allShops = mutableStateOf(listOf<Shop>())
+    private val shopsWithCashback = mutableStateOf(listOf<Shop>())
 
     val cashbacksLiveData = fetchCashbacksUseCase
         .fetchCashbacksFromCategory(categoryId)
@@ -78,6 +79,33 @@ class CategoryInfoViewModel(
     }
 
     val isEditing get() = vmState.value == ViewModelState.Editing
+
+
+    init {
+        fetchShopsUseCase
+            .fetchAllShopsFromCategory(categoryId)
+            .onEach { allShops.value = it }
+            .launchIn(viewModelScope)
+
+        fetchShopsUseCase
+            .fetchShopsWithCashbacksFromCategory(categoryId)
+            .onEach { shopsWithCashback.value = it }
+            .launchIn(viewModelScope)
+
+        snapshotFlow { vmState.value }
+            .onEach {
+                _shops.value = when (it) {
+                    ViewModelState.Loading -> listOf()
+                    ViewModelState.Editing -> allShops.value
+                    ViewModelState.Viewing -> shopsWithCashback.value
+                }
+                _shopsState.value = when {
+                    _shops.value.isEmpty() -> ListState.Empty
+                    else -> ListState.Stable
+                }
+            }
+            .launchIn(viewModelScope)
+    }
 
 
     override fun onCleared() {

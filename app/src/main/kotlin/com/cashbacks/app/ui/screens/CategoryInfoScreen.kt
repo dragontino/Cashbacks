@@ -208,7 +208,7 @@ private fun CategoryInfoScreenContent(
                 onBack = popBackStack
             )
         },
-        floatingActionButton = {
+        floatingActionButtons = {
             AnimatedVisibility(
                 visible = viewModel.showFab.value,
                 enter = expandVertically(
@@ -293,7 +293,7 @@ private fun CategoryInfoScreenContent(
 
                 TabPage(
                     items = when (page) {
-                        AppScreens.Shop -> viewModel.shopsLiveData.observeAsState(listOf())
+                        AppScreens.Shop -> viewModel.shops
                         AppScreens.Cashback -> viewModel.cashbacksLiveData.observeAsState(listOf())
                     },
                     listState = when (page) {
