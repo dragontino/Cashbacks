@@ -20,7 +20,6 @@ import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.DataArray
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
-import androidx.compose.material3.FabPosition
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -118,7 +117,7 @@ private fun ShopScreenContent(
                 onBack = popBackStack
             )
         },
-        floatingActionButton = {
+        floatingActionButtons = {
             AnimatedVisibility(
                 visible = viewModel.showFab.value,
                 enter = expandVertically(
@@ -156,7 +155,6 @@ private fun ShopScreenContent(
                 )
             }
         },
-        fabPosition = FabPosition.EndOverlay
     ) { contentPadding ->
         Column(
             verticalArrangement = Arrangement.spacedBy(16.dp),

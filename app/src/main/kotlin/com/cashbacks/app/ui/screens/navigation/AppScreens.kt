@@ -64,7 +64,7 @@ sealed class AppScreens(
 
     data object Category : AppScreens(
         root = "category",
-        titleRes = R.string.category_title
+        titleRes = R.string.category_title_edit
     ) {
         enum class Args {
             Id,
@@ -82,7 +82,7 @@ sealed class AppScreens(
 
         override val args: Array<String> = Args.entries.toStringArray()
 
-        fun createUrl(id: Long) = "$root/$id"
+        fun createUrl(id: Long?) = "$root/$id"
     }
 
 
@@ -113,7 +113,7 @@ sealed class AppScreens(
 
     data object Cashback : TabPages(
         root = "cashback",
-        titleRes = R.string.cashback,
+        titleRes = R.string.cashback_title,
         tabTitleRes = R.string.tab_cashbacks,
         icon = Icons.Rounded.Percent
     ) {
