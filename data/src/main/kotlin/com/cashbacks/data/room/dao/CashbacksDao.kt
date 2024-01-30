@@ -13,7 +13,7 @@ import com.cashbacks.data.room.PaymentSystemConverter
 import kotlinx.coroutines.flow.Flow
 
 @Dao
-interface CashbacksDao : CardsDao {
+interface CashbacksDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun addCashback(cashback: CashbackDB): Long
 

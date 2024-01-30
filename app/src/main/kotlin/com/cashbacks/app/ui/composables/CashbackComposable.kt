@@ -37,7 +37,7 @@ fun CashbackComposable(
             Text(
                 text = """
                 Кэшбек: значение = ${cashback.amount}%
-                Карта: ${cashback.bankCard.hiddenNumber} 
+                Карта: ${cashback.bankCard.lastFourDigitsOfNumber} 
                 Комментарий: ${cashback.comment}
                 """.trimIndent(),
                 style = MaterialTheme.typography.bodyLarge

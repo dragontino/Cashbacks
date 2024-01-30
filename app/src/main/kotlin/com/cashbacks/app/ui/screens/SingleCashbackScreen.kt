@@ -11,8 +11,11 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -40,7 +43,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.dp
+import com.cashbacks.app.R
+import com.cashbacks.app.ui.composables.EditableTextField
 import com.cashbacks.app.ui.managment.ViewModelState
 import com.cashbacks.app.ui.screens.navigation.AppScreens
 import com.cashbacks.app.util.LoadingInBox
@@ -180,11 +188,36 @@ fun SingleCashbackScreen(
 @Composable
 private fun CashbackContent(viewModel: CashbackViewModel) {
     Column(
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
+            .padding(horizontal = 16.dp)
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
     ) {
-        Text(text = "Информация о кэшбеке...")
-        Text(text = "Скидка = ${viewModel.cashback.value.amount}")
+        Spacer(Modifier.height(16.dp))
+        EditableTextField(
+            text = viewModel.cashback.value.amount,
+            label = stringResource(R.string.amount),
+            onTextChange = viewModel.cashback.value::amount::set,
+            enabled = viewModel.state.value == ViewModelState.Editing
+        )
+
+        EditableTextField(
+            text = viewModel.cashback.value.expirationDate,
+            label = stringResource(R.string.expiration_date),
+            onTextChange = viewModel.cashback.value::expirationDate::set,
+            keyboardType = KeyboardType.Number,
+            enabled = viewModel.state.value == ViewModelState.Editing
+        )
+
+        EditableTextField(
+            text = viewModel.cashback.value.comment,
+            label = stringResource(R.string.comment),
+            onTextChange = viewModel.cashback.value::comment::set,
+            singleLine = false,
+            imeAction = ImeAction.Done,
+            enabled = viewModel.state.value == ViewModelState.Editing
+        )
     }
 }

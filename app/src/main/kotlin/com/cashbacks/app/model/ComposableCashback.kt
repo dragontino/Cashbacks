@@ -25,7 +25,7 @@ class ComposableCashback(
 
     val bankCard by derivedStateOf { bankCard }
     var amount by mutableStateOf(amount)
-    var expirationDate by mutableStateOf(expirationDate)
+    var expirationDate by mutableStateOf(expirationDate ?: "")
     var comment by mutableStateOf(comment)
 
     fun mapToCashback() = Cashback(
