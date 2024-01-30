@@ -20,9 +20,6 @@ class ViewModelFactory(
                     useCase = application.dependencyFactory.provideSettingsUseCase()
                 ) as T
 
-            modelClass.isAssignableFrom(BankCardViewModel::class.java) ->
-                BankCardViewModel() as T
-
             else -> throw IllegalArgumentException("Unknown ViewModel class")
         }
     }

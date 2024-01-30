@@ -28,6 +28,7 @@ import androidx.compose.runtime.State
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import com.cashbacks.app.util.animate
@@ -41,7 +42,8 @@ internal fun InfoScreenTopAppBar(
     onEdit: () -> Unit,
     onSave: () -> Unit,
     onDelete: () -> Unit,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    iconSave: ImageVector = Icons.Outlined.EditOff
 ) {
     CenterAlignedTopAppBar(
         title = {
@@ -104,7 +106,7 @@ internal fun InfoScreenTopAppBar(
                 ) {
                     Icon(
                         imageVector = when {
-                            isEditing -> Icons.Outlined.EditOff
+                            isEditing -> iconSave
                             else -> Icons.Outlined.Edit
                         },
                         contentDescription = null,

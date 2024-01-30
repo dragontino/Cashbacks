@@ -1,15 +1,19 @@
 package com.cashbacks.app.di
 
 import android.app.Application
+import com.cashbacks.data.repository.BankCardRepositoryImpl
 import com.cashbacks.data.repository.CashbackRepositoryImpl
 import com.cashbacks.data.repository.CategoryRepositoryImpl
 import com.cashbacks.data.repository.SettingsRepositoryImpl
 import com.cashbacks.data.repository.ShopRepositoryImpl
 import com.cashbacks.data.room.AppDatabase
+import com.cashbacks.domain.repository.BankCardRepository
 import com.cashbacks.domain.repository.CashbackRepository
 import com.cashbacks.domain.repository.CategoryRepository
 import com.cashbacks.domain.repository.SettingsRepository
 import com.cashbacks.domain.repository.ShopRepository
+import com.cashbacks.domain.usecase.EditBankCardUseCase
+import com.cashbacks.domain.usecase.FetchBankCardsUseCase
 import com.cashbacks.domain.usecase.cashback.CashbackCategoryUseCase
 import com.cashbacks.domain.usecase.cashback.CashbackShopUseCase
 import com.cashbacks.domain.usecase.cashback.EditCashbackUseCase
@@ -88,6 +92,15 @@ class DependencyFactory(private val application: Application) {
         repository = provideCashbackRepository()
     )
 
+    fun provideFetchBankCardsUseCase() = FetchBankCardsUseCase(
+        repository = provideBankCardRepository()
+    )
+
+    fun provideEditBankCardUseCase() = EditBankCardUseCase(
+        repository = provideBankCardRepository(),
+        dispatcher = Dispatchers.IO
+    )
+
 
     private fun provideSettingsRepository(): SettingsRepository {
         val database = provideDatabase()
@@ -107,6 +120,11 @@ class DependencyFactory(private val application: Application) {
     private fun provideCashbackRepository(): CashbackRepository {
         val database = provideDatabase()
         return CashbackRepositoryImpl(database.cashbacksDao())
+    }
+
+    private fun provideBankCardRepository(): BankCardRepository {
+        val database = provideDatabase()
+        return BankCardRepositoryImpl(database.cardsDao())
     }
 
     private fun provideDatabase() = AppDatabase.getDatabase(application)

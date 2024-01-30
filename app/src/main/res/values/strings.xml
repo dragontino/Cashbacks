@@ -5,12 +5,12 @@
     <string name="bank_card">Банковская карта</string>
     <string name="bank_cards">Мои Карты</string>
     <string name="shop">Магазин</string>
-    <string name="cashback">Кешбэк</string>
+    <string name="cashback_title">Кешбэк</string>
     <string name="category_title">Категория</string>
     <string name="category_title_edit">Редактирование категории</string>
 
 
-    <string name="app_version">Версия 1.5.2 от 24 января 2024</string>
+    <string name="app_version">Версия 1.6.10 от 30 января 2024</string>
     <string name="dynamic_color">Использовать в оформлении динамические цвета</string>
     <string name="dynamic_color_desc">Цветовая палитра приложения автоматически адаптируется и интегрируется с пользовательскими настройками</string>
 
@@ -41,4 +41,23 @@
     </string>
     <string name="empty_shops_list_editing">Нажмите + для добавления магазинов</string>
     <string name="empty_cashbacks_list">Нажмите на + для добавления кешбэков</string>
+    <string name="empty_bank_cards_list">Нажмите + для добавления банковской карты</string>
+
+    <!-- Экран кешбэка -->
+    <string name="amount">Значение</string>
+    <string name="expiration_date">Срок действия кешбэка</string>
+    <string name="comment">Комментарий</string>
+
+    <!-- Экран редактирования банковской карты -->
+    <string name="card_name">Название</string>
+    <string name="main_info">Основные данные</string>
+    <string name="card_number">Номер карты</string>
+    <string name="payment_system">Платежная система</string>
+    <string name="card_holder">Владелец карты</string>
+    <string name="validity_period">Срок действия</string>
+    <string name="cvv">CVC2/CVV2</string>
+    <string name="pin">PIN</string>
+    <string name="additional_info">Дополнительно</string>
+    <string name="value_not_selected">Не выбрано</string>
+    <string name="text_is_copied">Текст скопирован!</string>
 </resources>

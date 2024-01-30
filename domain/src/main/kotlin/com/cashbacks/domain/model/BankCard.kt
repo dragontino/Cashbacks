@@ -1,13 +1,27 @@
 package com.cashbacks.domain.model
 
-sealed interface BasicInfoBankCard {
+interface BasicInfoBankCard {
     val id: Long
     val name: String
     val number: String
     val paymentSystem: PaymentSystem?
 
-    val hiddenNumber get() = with(number) {
+    val lastFourDigitsOfNumber get() = with(number) {
         slice(length - 4 ..< length)
+    }
+
+    val hiddenNumber get() = with(number) {
+        return@with when {
+            length < 12 -> this
+            else -> replaceRange(4 ..< 12, "********")
+        }
+    }
+
+    fun addSpacesToNumber(number: String) = buildString {
+        for (i in number.indices) {
+            if (i > 0 && i % 4 == 0) append(" ")
+            append(number[i])
+        }
     }
 }
 
@@ -24,7 +38,7 @@ data class BankCard(
     override val id: Long,
     override val name: String = "",
     override val number: String = "",
-    override val paymentSystem: PaymentSystem = PaymentSystem.MasterCard,
+    override val paymentSystem: PaymentSystem? = null,
     val holder: String = "",
     val validityPeriod: String = "",
     val cvv: String = "",

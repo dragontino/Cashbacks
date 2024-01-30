@@ -35,6 +35,7 @@ import androidx.navigation.navArgument
 import com.cashbacks.app.app.App
 import com.cashbacks.app.ui.composables.ModalNavigationDrawerContent
 import com.cashbacks.app.ui.composables.ModalSheetItems.ScreenTypeItem
+import com.cashbacks.app.ui.screens.BankCardScreen
 import com.cashbacks.app.ui.screens.CardsScreen
 import com.cashbacks.app.ui.screens.CategoriesScreen
 import com.cashbacks.app.ui.screens.CategoryInfoScreen
@@ -42,6 +43,8 @@ import com.cashbacks.app.ui.screens.SettingsScreen
 import com.cashbacks.app.ui.screens.ShopScreen
 import com.cashbacks.app.ui.screens.SingleCashbackScreen
 import com.cashbacks.app.util.AnimationDefaults
+import com.cashbacks.app.viewmodel.BankCardViewModel
+import com.cashbacks.app.viewmodel.CardsViewModel
 import com.cashbacks.app.viewmodel.CashbackViewModel
 import com.cashbacks.app.viewmodel.CategoriesViewModel
 import com.cashbacks.app.viewmodel.CategoryInfoViewModel
@@ -67,10 +70,15 @@ fun NavigationScreen(
         }
     }
 
-    val openDrawer = {
-        scope.launch {
-            delay(50)
-            drawerState.animateTo(DrawerValue.Open, tween(durationMillis = 500, easing = FastOutSlowInEasing))
+    val openDrawer = remember {
+        fun() {
+            scope.launch {
+                delay(50)
+                drawerState.animateTo(
+                    DrawerValue.Open,
+                    tween(durationMillis = 500, easing = FastOutSlowInEasing)
+                )
+            }
         }
     }
 
@@ -180,14 +188,42 @@ fun NavigationScreen(
                 enterTransition = { enterScreenTransition(expandFrom = Alignment.Start) },
                 exitTransition = { exitScreenTransition(shrinkTowards = Alignment.Start) }
             ) {
-                CardsScreen(openDrawer = { openDrawer() })
+                val vmFactory = CardsViewModel.Factory(
+                    useCase = application.dependencyFactory.provideFetchBankCardsUseCase()
+                )
+
+                CardsScreen(
+                    openDrawer = openDrawer,
+                    viewModel = viewModel(factory = vmFactory),
+                    navigateTo = remember {
+                        fun (route: String) {
+                            navController.navigateTo(route, parentScreen = AppScreens.BankCards)
+                        }
+                    }
+                )
             }
 
-            /*composable(route = AppScreens.BankCard.destinationRoute) {
-                BankCardEditorScreen(
-                    viewModel = viewModel(factory = application.viewModelFactory)
+            composable(
+                route = AppScreens.BankCard.destinationRoute,
+                enterTransition = { enterScreenTransition(expandFrom = Alignment.Start) },
+                exitTransition = { exitScreenTransition(shrinkTowards = Alignment.Start) },
+                arguments = listOf(
+                    navArgument(AppScreens.BankCard.Args.Id.name) {
+                        type = NavType.StringType
+                        nullable = true
+                    }
                 )
-            }*/
+            ) {
+                val vmFactory = BankCardViewModel.Factory(
+                    bankCardUseCase = application.dependencyFactory.provideEditBankCardUseCase(),
+                    id = it.arguments?.getString(AppScreens.BankCard.Args.Id.name)?.toLongOrNull()
+                )
+
+                BankCardScreen(
+                    viewModel = viewModel(factory = vmFactory),
+                    popBackStack = navController::popBackStack
+                )
+            }
 
             composable(
                 route = AppScreens.Category.destinationRoute,

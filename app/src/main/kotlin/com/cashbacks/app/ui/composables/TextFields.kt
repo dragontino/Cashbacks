@@ -60,6 +60,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -84,7 +85,7 @@ fun NewNameTextField(
         focusRequester.requestFocus()
     }
 
-    val keyboard = Keyboard(
+    val keyboardParams = KeyboardParams(
         imeAction = ImeAction.Done,
         capitalization = KeyboardCapitalization.Sentences,
         onImeActionClick = { onSave(name) }
@@ -96,8 +97,9 @@ fun NewNameTextField(
         placeholder = {
             Text(text = placeholder, style = MaterialTheme.typography.bodyMedium)
         },
-        keyboardOptions = keyboard.options,
-        keyboardActions = keyboard.actions,
+        textStyle = MaterialTheme.typography.bodyMedium,
+        keyboardOptions = keyboardParams.options,
+        keyboardActions = keyboardParams.actions,
         shape = MaterialTheme.shapes.medium,
         singleLine = true,
         colors = OutlinedTextFieldDefaults.colors(
@@ -141,6 +143,8 @@ fun EditableTextField(
     },
     keyboardType: KeyboardType = KeyboardType.Text,
     imeAction: ImeAction = ImeAction.Next,
+    maxLines: Int = 1,
+    keyboardCapitalization: KeyboardCapitalization = KeyboardCapitalization.Sentences,
     onImeActionClick: KeyboardActionScope.(text: String) -> Unit = {},
     visualTransformation: VisualTransformation = VisualTransformation.None,
     leadingIcon: @Composable (() -> Unit)? = null,
@@ -151,9 +155,10 @@ fun EditableTextField(
     val focusManager = LocalFocusManager.current
     var showSupportingText by rememberSaveable { mutableStateOf(true) }
 
-    val keyboard = Keyboard(
+    val keyboardParams = KeyboardParams(
         type = keyboardType,
         imeAction = imeAction,
+        capitalization = keyboardCapitalization,
         autoCorrect = false
     ) {
         onImeActionClick(text)
@@ -190,26 +195,25 @@ fun EditableTextField(
 
     val isFocused by interactionSource.collectIsFocusedAsState()
 
-
-
     BasicTextField(
         value = text,
         onValueChange = onTextChange,
         readOnly = readOnly,
         singleLine = singleLine,
+        maxLines = maxLines,
         enabled = enabled,
         cursorBrush = cursorBrush ?: SolidColor(Color.Black),
         textStyle = textStyle.copy(color = textColor.animate()),
         interactionSource = interactionSource,
-        keyboardOptions = keyboard.options,
-        keyboardActions = keyboard.actions,
+        keyboardOptions = keyboardParams.options,
+        keyboardActions = keyboardParams.actions,
         visualTransformation = visualTransformation,
         decorationBox = { innerTextField ->
             OutlinedTextFieldDefaults.DecorationBox(
                 value = text,
                 innerTextField = innerTextField,
                 enabled = enabled,
-                singleLine = true,
+                singleLine = singleLine,
                 visualTransformation = visualTransformation,
                 interactionSource = interactionSource,
                 isError = error,
@@ -329,7 +333,7 @@ fun EditableTextField(
 }
 
 
-internal class Keyboard private constructor(
+internal class KeyboardParams private constructor(
     val options: KeyboardOptions = KeyboardOptions(),
     private val onImeActionClick: (KeyboardActionScope.() -> Unit)? = null
 ) {
@@ -377,6 +381,11 @@ object EditableTextFieldDefaults {
         MaterialTheme.colorScheme.secondary,
         MaterialTheme.colorScheme.onBackground
     )
+
+    fun passwordVisualTransformation(isVisible: Boolean) = when {
+        isVisible -> VisualTransformation.None
+        else -> PasswordVisualTransformation()
+    }
 }
 
 
