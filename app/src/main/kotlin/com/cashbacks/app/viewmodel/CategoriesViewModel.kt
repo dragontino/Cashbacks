@@ -3,6 +3,7 @@ package com.cashbacks.app.viewmodel
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.snapshotFlow
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -13,7 +14,7 @@ import com.cashbacks.domain.usecase.categories.DeleteCategoryUseCase
 import com.cashbacks.domain.usecase.categories.FetchCategoriesUseCase
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -29,33 +30,58 @@ class CategoriesViewModel(
     private val _state = mutableStateOf(ListState.Loading)
     val state = derivedStateOf { _state.value }
 
-    private val _categories = mutableStateOf(listOf<Category>())
-    val categories = derivedStateOf { _categories.value }
+    val isEditing = mutableStateOf(false)
 
     val swipedItemIndex = mutableIntStateOf(-1)
 
-    val isEditing = mutableStateOf(false)
+    private val allCategories = mutableStateOf(listOf<Category>())
+    private val categoriesWithCashback = mutableStateOf(listOf<Category>())
+    val categories = derivedStateOf {
+        when {
+            isEditing.value -> allCategories.value
+            else -> categoriesWithCashback.value
+        }
+    }
 
     val addingCategoriesState = mutableStateOf(false)
 
-    private val debounceOnClick: MutableStateFlow<(() -> Unit)?> = MutableStateFlow(null)
+    private val debounceOnClick: MutableSharedFlow<(() -> Unit)> = MutableSharedFlow()
 
     init {
-        fetchCategoriesUseCase.fetchCategories()
+        /*when {
+            isEditing.value -> fetchCategoriesUseCase.fetchAllCategories()
+            else -> fetchCategoriesUseCase.fetchCategoriesWithCashback()
+        }.onEach {
+            _state.value = if (it.isEmpty()) ListState.Empty else ListState.Stable
+            _categories.value = it
+        }.launchIn(viewModelScope)*/
+
+        fetchCategoriesUseCase.fetchAllCategories()
+            .onEach { allCategories.value = it }
+            .launchIn(viewModelScope)
+
+        fetchCategoriesUseCase.fetchCategoriesWithCashback()
+            .onEach { categoriesWithCashback.value = it }
+            .launchIn(viewModelScope)
+
+        snapshotFlow { isEditing.value }
             .onEach {
-                _categories.value = it
-                _state.value = if (it.isEmpty()) ListState.Empty else ListState.Stable
+                _state.value = ListState.Loading
+                delay(300)
+                _state.value = if (categories.value.isEmpty()) ListState.Empty else ListState.Stable
             }
             .launchIn(viewModelScope)
 
-        debounceOnClick
-            .debounce(50)
-            .onEach { it?.invoke() }
-            .launchIn(viewModelScope)
+            debounceOnClick
+                .debounce(50)
+                .onEach { it.invoke() }
+                .launchIn(viewModelScope)
     }
 
     fun onItemClick(onClick: () -> Unit) {
-        debounceOnClick.value = onClick
+        viewModelScope.launch {
+            debounceOnClick.emit(onClick)
+        }
     }
 
     fun addCategory(name: String) {

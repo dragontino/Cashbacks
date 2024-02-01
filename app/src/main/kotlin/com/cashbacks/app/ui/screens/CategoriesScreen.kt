@@ -4,15 +4,16 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.border
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -25,19 +26,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.DataArray
 import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.EditOff
 import androidx.compose.material.icons.rounded.Menu
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExtendedFloatingActionButton
-import androidx.compose.material3.FabPosition
-import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
@@ -52,6 +49,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
@@ -60,6 +58,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.cashbacks.app.R
+import com.cashbacks.app.ui.composables.BasicFloatingActionButton
 import com.cashbacks.app.ui.composables.BasicInfoCashback
 import com.cashbacks.app.ui.composables.CollapsingToolbarScaffold
 import com.cashbacks.app.ui.composables.EditDeleteContent
@@ -91,70 +90,23 @@ fun CategoriesScreen(
         }
     }
 
-
-    Crossfade(
-        targetState = viewModel.state.value,
-        animationSpec = spring(stiffness = Spring.StiffnessLow),
-        label = "categories_list_animation",
+    CategoriesScreen(
+        viewModel = viewModel,
+        openDrawer = openDrawer,
+        navigateTo = navigateTo,
         modifier = Modifier
             .imePadding()
             .fillMaxSize()
-    ) { state ->
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.TopCenter
-        ) {
-            when (state) {
-                ListState.Loading -> LoadingInBox(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .verticalScroll(rememberScrollState())
-                )
-
-                ListState.Empty -> EmptyList(
-                    text = when {
-                        viewModel.isEditing.value -> stringResource(R.string.empty_categories_list_editing)
-                        else -> stringResource(R.string.empty_categories_list_viewing)
-                    },
-                    icon = Icons.Rounded.DataArray,
-                    iconModifier = Modifier.scale(2.5f),
-                    modifier = Modifier
-                        .align(Alignment.Center)
-                        .fillMaxSize()
-                )
-
-                ListState.Stable -> CategoriesScreen(
-                    viewModel = viewModel,
-                    openDrawer = openDrawer,
-                    navigateTo = navigateTo,
-                    modifier = Modifier.fillMaxSize()
-                )
-            }
-
-            AnimatedVisibility(
-                visible = state != ListState.Loading && viewModel.addingCategoriesState.value,
-                enter = expandVertically(
-                    animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing)
-                ),
-                exit = shrinkVertically(
-                    animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing)
-                ),
-                modifier = Modifier.align(Alignment.BottomCenter)
-            ) {
-                NewNameTextField(
-                    placeholder = stringResource(R.string.category_placeholder)
-                ) { name ->
-                    viewModel.addCategory(name)
-                    viewModel.addingCategoriesState.value = false
-                }
-            }
-        }
-    }
+    )
 }
 
 
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@OptIn(
+    ExperimentalMaterial3Api::class,
+    ExperimentalLayoutApi::class,
+    ExperimentalFoundationApi::class,
+)
 @Composable
 private fun CategoriesScreen(
     viewModel: CategoriesViewModel,
@@ -172,10 +124,12 @@ private fun CategoriesScreen(
         }
     }
 
-    val keyboardIsOpen = keyboardAsState()
-    LaunchedEffect(keyboardIsOpen.value) {
-        if (!keyboardIsOpen.value) {
-            viewModel.addingCategoriesState.value = false
+    val keyboardState = keyboardAsState()
+    LaunchedEffect(Unit) {
+        snapshotFlow { keyboardState.value }.collect { isKeyboardOpen ->
+            if (!isKeyboardOpen) {
+                viewModel.addingCategoriesState.value = false
+            }
         }
     }
 
@@ -193,8 +147,10 @@ private fun CategoriesScreen(
                 },
                 navigationIcon = {
                     OutlinedIconButton(
-                        onClick = {
-                            viewModel.onItemClick(openDrawer)
+                        onClick = remember {
+                            fun() {
+                                viewModel.onItemClick(openDrawer)
+                            }
                         },
                         shape = CircleShape,
                         border = BorderStroke(
@@ -218,56 +174,50 @@ private fun CategoriesScreen(
                 )
             )
         },
-        floatingActionButton = {
+        floatingActionButtons = {
+            // TODO: 26.01.2024 переделать анимацию
+            AnimatedVisibility(
+                visible = viewModel.isEditing.value && !viewModel.addingCategoriesState.value,
+                enter = slideInVertically(
+                    animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing),
+                    initialOffsetY = { it }
+                ) + fadeIn(tween(durationMillis = 500, easing = FastOutSlowInEasing)),
+                exit = slideOutVertically(
+                    animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing),
+                    targetOffsetY = { it }
+                ) + fadeOut(
+                    tween(durationMillis = 500, easing = FastOutSlowInEasing)
+                )
+            ) {
+                BasicFloatingActionButton(icon = Icons.Rounded.Add) {
+                    viewModel.onItemClick {
+                        viewModel.addingCategoriesState.value = true
+                        scope.launch {
+                            delay(700)
+                            lazyListState.smoothScrollToItem(viewModel.categories.value.lastIndex)
+                        }
+                    }
+                }
+            }
+
             AnimatedVisibility(
                 visible = !viewModel.addingCategoriesState.value,
-                enter = fadeIn(),
-                exit = fadeOut()
             ) {
-                ExtendedFloatingActionButton(
-                    text = {
-                        if (viewModel.isEditing.value) {
-                            Text(
-                                text = stringResource(R.string.add_category),
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                        }
+                BasicFloatingActionButton(
+                    icon = when {
+                        viewModel.isEditing.value -> Icons.Rounded.EditOff
+                        else -> Icons.Rounded.Edit
                     },
-                    icon = {
-                        Icon(
-                            imageVector = when {
-                                viewModel.isEditing.value -> Icons.Rounded.Add
-                                else -> Icons.Rounded.Edit
-                            },
-                            contentDescription = "add category"
-                        )
-                    },
-                    containerColor = MaterialTheme.colorScheme.primaryContainer.animate(),
-                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer.animate(),
-                    onClick = {
-                        viewModel.onItemClick {
-                            if (viewModel.isEditing.value) {
-                                viewModel.addingCategoriesState.value = true
-                                scope.launch {
-                                    delay(700)
-                                    lazyListState.smoothScrollToItem(viewModel.categories.value.lastIndex)
-                                }
-                            } else {
-                                viewModel.isEditing.value = true
+                    onClick = remember {
+                        fun() {
+                            viewModel.onItemClick {
+                                viewModel.isEditing.value = !viewModel.isEditing.value
                             }
                         }
-                    },
-                    expanded = viewModel.isEditing.value,
-                    elevation = FloatingActionButtonDefaults.loweredElevation(),
-                    modifier = Modifier.border(
-                        width = 2.dp,
-                        color = MaterialTheme.colorScheme.onPrimary.animate(),
-                        shape = FloatingActionButtonDefaults.extendedFabShape
-                    )
+                    }
                 )
             }
         },
-        fabPosition = if (viewModel.isEditing.value) FabPosition.Center else FabPosition.End,
         snackbarHost = {
             SnackbarHost(hostState = snackbarHostState) {
                 Snackbar(
@@ -279,35 +229,88 @@ private fun CategoriesScreen(
             }
         }
     ) { contentPadding ->
-        LazyColumn(
-            state = lazyListState,
-            modifier = Modifier.padding(contentPadding),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            itemsIndexed(viewModel.categories.value) { index, category ->
-                CategoryComposable(
-                    category = category,
-                    isEditing = viewModel.isEditing.value,
-                    isSwiped = viewModel.swipedItemIndex.intValue == index,
-                    onClick = {
-                        viewModel.onItemClick {
-                            viewModel.swipedItemIndex.intValue = -1
-                            navigateTo(AppScreens.Category.createUrl(category.id))
+        Crossfade(
+            targetState = viewModel.state.value,
+            animationSpec = tween(durationMillis = 100, easing = LinearEasing),
+            label = "loading animation"
+        ) { state ->
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.TopCenter
+            ) {
+                when (state) {
+                    ListState.Loading -> LoadingInBox()
+                    ListState.Empty -> EmptyList(
+                        text = when {
+                            viewModel.isEditing.value -> stringResource(R.string.empty_categories_list_editing)
+                            else -> stringResource(R.string.empty_categories_list_viewing)
+                        },
+                        icon = Icons.Rounded.DataArray,
+                        iconModifier = Modifier.scale(2.5f),
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .fillMaxSize()
+                    )
+
+                    else -> LazyColumn(
+                        state = lazyListState,
+                        modifier = Modifier.padding(contentPadding),
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        itemsIndexed(viewModel.categories.value) { index, category ->
+                            CategoryComposable(
+                                category = category,
+                                isEditing = viewModel.isEditing.value,
+                                isSwiped = viewModel.swipedItemIndex.intValue == index,
+                                onClick = {
+                                    viewModel.onItemClick {
+                                        viewModel.swipedItemIndex.intValue = -1
+                                        navigateTo(AppScreens.Category.createUrl(category.id))
+                                    }
+                                },
+                                onEdit = {
+                                    viewModel.onItemClick {
+                                        viewModel.swipedItemIndex.intValue = -1
+                                        navigateTo(
+                                            AppScreens.Category.createUrl(
+                                                category.id,
+                                                isEdit = true
+                                            )
+                                        )
+                                    }
+                                },
+                                onDelete = remember {
+                                    fun() {
+                                        viewModel.deleteCategory(category, ::showSnackbar)
+                                    }
+                                }
+                            )
                         }
-                    },
-                    onEdit = {
-                        viewModel.onItemClick {
-                            viewModel.swipedItemIndex.intValue = -1
-                            navigateTo(AppScreens.Category.createUrl(category.id, isEdit = true))
+                        item {
+                            Spacer(modifier = Modifier.height(70.dp))
                         }
-                    },
-                    onDelete = { viewModel.deleteCategory(category, ::showSnackbar) }
-                )
-            }
-            item {
-                Spacer(modifier = Modifier.height(70.dp))
+                    }
+                }
+
+                AnimatedVisibility(
+                    visible = viewModel.addingCategoriesState.value,
+                    enter = expandVertically(
+                        animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing)
+                    ),
+                    exit = shrinkVertically(
+                        animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing)
+                    ),
+                    modifier = Modifier.align(Alignment.BottomCenter)
+                ) {
+                    NewNameTextField(
+                        placeholder = stringResource(R.string.category_placeholder)
+                    ) { name ->
+                        viewModel.addCategory(name)
+                        viewModel.addingCategoriesState.value = false
+                    }
+                }
             }
         }
     }
@@ -322,9 +325,11 @@ private fun CategoryComposable(
     isSwiped: Boolean,
     onClick: () -> Unit,
     onEdit: () -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     ScrollableListItem(
+        modifier = modifier,
         onClick = if (isEditing) null else onClick,
         hiddenContent = {
             EditDeleteContent(
