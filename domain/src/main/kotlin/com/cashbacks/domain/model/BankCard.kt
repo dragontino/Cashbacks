@@ -16,13 +16,6 @@ interface BasicInfoBankCard {
             else -> replaceRange(4 ..< 12, "********")
         }
     }
-
-    fun addSpacesToNumber(number: String) = buildString {
-        for (i in number.indices) {
-            if (i > 0 && i % 4 == 0) append(" ")
-            append(number[i])
-        }
-    }
 }
 
 
@@ -35,7 +28,7 @@ data class BasicBankCard(
 
 
 data class BankCard(
-    override val id: Long,
+    override val id: Long = 0,
     override val name: String = "",
     override val number: String = "",
     override val paymentSystem: PaymentSystem? = null,

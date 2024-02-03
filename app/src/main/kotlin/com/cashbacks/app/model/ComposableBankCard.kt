@@ -1,11 +1,14 @@
 package com.cashbacks.app.model
 
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.SnapshotStateMap
 import com.cashbacks.domain.model.BankCard
 import com.cashbacks.domain.model.BasicInfoBankCard
 import com.cashbacks.domain.model.PaymentSystem
+import kotlin.reflect.KMutableProperty0
 
 class ComposableBankCard(
     override val id: Long = 0,
@@ -32,10 +35,7 @@ class ComposableBankCard(
 
     override var name by mutableStateOf(name)
 
-    private var cardNumberWithoutSpaces = number
-
-    override var number by mutableStateOf(addSpacesToNumber(number))
-        private set
+    override var number by mutableStateOf(BankCardMapper.addSpacesToCardNumber(number))
 
     override var paymentSystem by mutableStateOf(paymentSystem)
     var holder by mutableStateOf(holder)
@@ -46,37 +46,50 @@ class ComposableBankCard(
     var pin by mutableStateOf(pin)
     var comment by mutableStateOf(comment)
 
-    fun updateNumber(newNumber: String) {
-        val oldNumber = this.number
-        if (oldNumber.length < newNumber.length) {
-            if (cardNumberWithoutSpaces.length < 16) {
-                val newChar = newNumber.last()
-                if (newChar.isDigit()) cardNumberWithoutSpaces += newChar
-                if (newChar.isDigit() || newChar == ' ') this.number = newNumber
+    private val updatedProperties: SnapshotStateMap<String, Pair<String, String>> = mutableStateMapOf()
+
+    val haveChanges: Boolean get() = updatedProperties.isNotEmpty()
+
+    fun <T> updateValue(property: KMutableProperty0<T>, newValue: T) {
+        val previousValue = property.get()
+        property.set(newValue)
+
+        with(updatedProperties) {
+            val changeHistory = this[property.name]
+
+            when {
+                changeHistory == null -> this[property.name] =
+                    previousValue.toString() to newValue.toString()
+
+                changeHistory.first == newValue.toString() -> remove(property.name)
+
+                else -> this[property.name] = changeHistory.copy(second = newValue.toString())
             }
-        }
-        else {
-            val removedChar = oldNumber.last()
-            if (removedChar.isDigit()) {
-                cardNumberWithoutSpaces = cardNumberWithoutSpaces.removeSuffix(removedChar.toString())
-            }
-            this.number = newNumber
         }
     }
 
+    fun updateNumber(newNumber: String) {
+        BankCardMapper
+            .addSpacesToCardNumber(newNumber)
+            .takeIf { it.length <= 19 }
+            ?.let { updateValue(::number, it) }
+    }
+
     fun updateValidityPeriod(newPeriod: String) {
-        this.validityPeriod = when {
-            newPeriod.length <= 2 -> "$newPeriod / "
+        val newValue = when {
+            newPeriod.length < 2 -> newPeriod
+            newPeriod.length == 2 -> "$newPeriod / "
             newPeriod.length == 4 -> newPeriod.substring(0 .. 1)
             newPeriod.length <= 7 -> newPeriod
             else -> this.validityPeriod
         }
+        updateValue(::validityPeriod, newValue)
     }
 
     fun mapToBankCard() = BankCard(
         id = this.id,
         name = this.name,
-        number = this.cardNumberWithoutSpaces,
+        number = BankCardMapper.removeSpacesFromNumber(number),
         paymentSystem = this.paymentSystem,
         holder = this.holder,
         validityPeriod = this.validityPeriod,

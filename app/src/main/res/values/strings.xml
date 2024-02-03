@@ -7,7 +7,6 @@
     <string name="shop">Магазин</string>
     <string name="cashback_title">Кешбэк</string>
     <string name="category_title">Категория</string>
-    <string name="category_title_edit">Редактирование категории</string>
 
 
     <string name="app_version">Версия 1.6.10 от 30 января 2024</string>
@@ -28,6 +27,7 @@
     <string name="add_category">Добавить категорию</string>
     <string name="no_cashbacks_for_category">Нет кешбэков для этой категории</string>
     <string name="max_cashback_title">Макс. </string>
+    <string name="confirm_category_deletion">Удалить категорию «%s»?</string>
 
     <string name="category_placeholder">Название категории</string>
     <string name="shop_placeholder">Название магазина</string>
@@ -60,4 +60,16 @@
     <string name="additional_info">Дополнительно</string>
     <string name="value_not_selected">Не выбрано</string>
     <string name="text_is_copied">Текст скопирован!</string>
+    <string name="confirm_card_deletion">Удалить банковскую карту «%s»?</string>
+
+    <!-- Экран просмотра карт -->
+    <string name="open">Открыть</string>
+
+    <!-- Диалоговые окна -->
+    <string name="save">Сохранить</string>
+    <string name="delete">Удалить</string>
+    <string name="cancel">Отменить</string>
+    <string name="confirm_delete">Подтверждение удаления</string>
+    <string name="do_not_save">Не сохранять</string>
+    <string name="unsaved_data">У вас есть несохранённые данные. Сохранить?</string>
 </resources>

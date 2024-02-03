@@ -4,19 +4,21 @@ import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Menu
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -40,6 +42,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.cashbacks.app.R
 import com.cashbacks.app.ui.composables.BankCardCompose
+import com.cashbacks.app.ui.composables.BasicFloatingActionButton
 import com.cashbacks.app.ui.composables.CollapsingToolbarScaffold
 import com.cashbacks.app.ui.composables.EmptyList
 import com.cashbacks.app.ui.managment.ListState
@@ -66,7 +69,7 @@ fun CardsScreen(
             CenterAlignedTopAppBar(
                 title = {
                     Text(
-                        text = stringResource(AppScreens.BankCards.titleRes),
+                        text = AppScreens.BankCards.title(),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
@@ -88,22 +91,20 @@ fun CardsScreen(
             )
         },
         floatingActionButtons = {
-            FloatingActionButton(
+            BasicFloatingActionButton(
+                icon = Icons.Rounded.Add,
                 onClick = {
-                    navigateTo(AppScreens.BankCard.createUrl(null))
+                    navigateTo(AppScreens.BankCardEditor.createUrl(null))
                 },
-                containerColor = MaterialTheme.colorScheme.primaryContainer.animate(),
-                contentColor = MaterialTheme.colorScheme.onPrimaryContainer.animate()
-            ) {
-                Icon(imageVector = Icons.Rounded.Add, contentDescription = null)
-            }
+            )
         },
         snackbarHost = {
             SnackbarHost(snackbarHostState) {
                 Snackbar(
                     snackbarData = it,
                     containerColor = MaterialTheme.colorScheme.onBackground.animate(),
-                    contentColor = MaterialTheme.colorScheme.background.animate()
+                    contentColor = MaterialTheme.colorScheme.background.animate(),
+                    shape = MaterialTheme.shapes.medium
                 )
             }
         }
@@ -151,7 +152,16 @@ private fun CardsContentScreen(
         modifier = Modifier.fillMaxSize()
     ) {
         items(cards) {
-            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            ElevatedCard(
+                colors = CardDefaults.elevatedCardColors(
+                    containerColor = MaterialTheme.colorScheme.surface.animate(),
+                    contentColor = MaterialTheme.colorScheme.onBackground.animate()
+                ),
+                elevation = CardDefaults.elevatedCardElevation(defaultElevation = 3.dp),
+                shape = MaterialTheme.shapes.small,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Spacer(modifier = Modifier.height(16.dp))
                 BankCardCompose(
                     bankCard = it,
                     onCopy = remember {
@@ -162,14 +172,17 @@ private fun CardsContentScreen(
                     },
                     modifier = Modifier
                         .padding(horizontal = 16.dp)
-                        .fillMaxWidth()
+                        .align(Alignment.CenterHorizontally)
                 )
 
+                Spacer(modifier = Modifier.height(16.dp))
+
                 TextButton(
-                    onClick = { navigateTo(AppScreens.BankCard.createUrl(it.id)) },
-                    modifier = Modifier.fillMaxWidth()
+                    onClick = { navigateTo(AppScreens.BankCardViewer.createUrl(it.id)) },
+                    shape = MaterialTheme.shapes.medium,
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
                 ) {
-                    Text("Открыть", style = MaterialTheme.typography.bodyMedium)
+                    Text(stringResource(R.string.open), style = MaterialTheme.typography.bodyMedium)
                 }
             }
         }

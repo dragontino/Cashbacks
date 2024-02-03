@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.Visibility
@@ -38,6 +40,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.cashbacks.app.R
+import com.cashbacks.app.model.BankCardMapper
 import com.cashbacks.app.model.PaymentSystemMapper
 import com.cashbacks.app.ui.theme.BackgroundDark
 import com.cashbacks.app.util.animate
@@ -52,16 +55,17 @@ fun BankCardCompose(
 ) {
     var isVisible by rememberSaveable { mutableStateOf(false) }
 
-    Box(modifier) {
+    Box(modifier = modifier.wrapContentSize()) {
         CardFrontSide(
-            bankCard,
-            isVisible,
+            bankCard = bankCard,
+            isVisible = isVisible,
             onCopy = onCopy,
             onChangeVisibility = remember { { isVisible = !isVisible } },
             modifier = Modifier
+                .padding(end = 60.dp)
                 .zIndex(2f)
                 .align(Alignment.TopStart)
-                .fillMaxWidth(.75f)
+                .width(300.dp)
         )
 
         CardBackSide(
@@ -69,10 +73,10 @@ fun BankCardCompose(
             isVisible = isVisible,
             onCopy = onCopy,
             modifier = Modifier
-                .padding(top = 40.dp)
+                .padding(top = 40.dp, start = 60.dp)
                 .zIndex(1f)
                 .align(Alignment.BottomEnd)
-                .fillMaxWidth(.75f)
+                .width(300.dp)
         )
     }
 }
@@ -116,21 +120,23 @@ private fun CardFrontSide(
             }
         }
 
-        Row(
+        Box(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically
+            contentAlignment = Alignment.CenterStart
         ) {
             Text(
                 text = when {
                     isVisible -> bankCard.number
                     else -> bankCard.hiddenNumber
-                }.let { bankCard.addSpacesToNumber(it) },
+                }.let { BankCardMapper.addSpacesToCardNumber(it) },
                 style = MaterialTheme.typography.bodyMedium,
                 fontFamily = FontFamily.Monospace
             )
 
-            IconButton(onClick = { onCopy(bankCard.number) }) {
+            IconButton(
+                onClick = { onCopy(bankCard.number) },
+                modifier = Modifier.align(Alignment.CenterEnd)
+            ) {
                 Icon(
                     imageVector = Icons.Outlined.ContentCopy,
                     contentDescription = "copy card number",
@@ -247,6 +253,7 @@ private fun ShadowElevatedCard(
     ) {
         Column(
             verticalArrangement = verticalArrangement,
+            horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier.padding(contentPadding),
             content = content
         )

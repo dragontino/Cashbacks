@@ -1,5 +1,6 @@
 package com.cashbacks.app.ui.screens
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
@@ -15,6 +16,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Save
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material.icons.outlined.VisibilityOff
+import androidx.compose.material.icons.rounded.ArrowBackIosNew
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -23,8 +27,8 @@ import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -32,6 +36,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -41,29 +46,48 @@ import androidx.compose.ui.unit.dp
 import com.cashbacks.app.R
 import com.cashbacks.app.model.PaymentSystemMapper
 import com.cashbacks.app.ui.composables.CollapsingToolbarScaffold
+import com.cashbacks.app.ui.composables.ConfirmExitDialog
 import com.cashbacks.app.ui.composables.EditableTextField
 import com.cashbacks.app.ui.composables.EditableTextFieldDefaults
-import com.cashbacks.app.ui.composables.InfoScreenTopAppBar
 import com.cashbacks.app.ui.managment.ViewModelState
 import com.cashbacks.app.ui.screens.navigation.AppScreens
 import com.cashbacks.app.ui.theme.DarkerGray
 import com.cashbacks.app.util.LoadingInBox
 import com.cashbacks.app.util.animate
-import com.cashbacks.app.viewmodel.BankCardViewModel
+import com.cashbacks.app.viewmodel.BankCardEditorViewModel
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BankCardScreen(
-    viewModel: BankCardViewModel,
+fun BankCardEditorScreen(
+    viewModel: BankCardEditorViewModel,
     popBackStack: () -> Unit
 ) {
     val snackbarState = remember(::SnackbarHostState)
     val scope = rememberCoroutineScope()
+    var showDialog by rememberSaveable { mutableStateOf(false) }
 
-    val showSnackbar = { message: String ->
-        scope.launch { snackbarState.showSnackbar(message) }
-        Unit
+    val showSnackbar = remember {
+        fun(message: String) {
+            scope.launch { snackbarState.showSnackbar(message) }
+        }
+    }
+
+    val onBackPress = remember {
+        fun () = when {
+            viewModel.bankCard.value.haveChanges -> showDialog = true
+            else -> popBackStack()
+        }
+    }
+
+    BackHandler(onBack = onBackPress)
+
+    if (showDialog) {
+        ConfirmExitDialog(
+            onConfirm = viewModel::saveCard,
+            onDismiss = popBackStack,
+            onClose = { showDialog = false }
+        )
     }
 
     Crossfade(
@@ -76,19 +100,46 @@ fun BankCardScreen(
             else -> {
                 CollapsingToolbarScaffold(
                     topBar = {
-                        InfoScreenTopAppBar(
-                            title = stringResource(AppScreens.BankCard.titleRes),
-                            isInEdit = remember {
-                                derivedStateOf { viewModel.state.value == ViewModelState.Editing }
+                        CenterAlignedTopAppBar(
+                            title = {
+                                Text(
+                                    text = AppScreens.BankCardEditor.title(),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
                             },
-                            isLoading = remember {
-                                derivedStateOf { viewModel.state.value == ViewModelState.Loading }
+                            navigationIcon = {
+                                IconButton(onClick = onBackPress) {
+                                    Icon(
+                                        imageVector = when {
+                                            viewModel.bankCard.value.haveChanges -> Icons.Rounded.Close
+                                            else -> Icons.Rounded.ArrowBackIosNew
+                                        },
+                                        contentDescription = null,
+                                        modifier = Modifier.scale(1.2f)
+                                    )
+                                }
                             },
-                            onEdit = viewModel::edit,
-                            onSave = viewModel::save,
-                            onDelete = viewModel::deleteCard,
-                            onBack = popBackStack,
-                            iconSave = Icons.Outlined.Save
+                            actions = {
+                                IconButton(
+                                    onClick = {
+                                        viewModel.saveCard()
+                                        popBackStack()
+                                    },
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Save,
+                                        contentDescription = "save card",
+                                        modifier = Modifier.scale(1.2f)
+                                    )
+                                }
+                            },
+                            colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                                containerColor = MaterialTheme.colorScheme.primary.animate(),
+                                navigationIconContentColor = MaterialTheme.colorScheme.onPrimary.animate(),
+                                titleContentColor = MaterialTheme.colorScheme.onPrimary.animate(),
+                                actionIconContentColor = MaterialTheme.colorScheme.onPrimary.animate()
+                            )
                         )
                     },
                     snackbarHost = {
@@ -101,25 +152,21 @@ fun BankCardScreen(
                         }
                     }
                 ) { contentPadding ->
-                    when (state) {
-                        ViewModelState.Editing -> BankCardEditingContent(
-                            viewModel = viewModel,
-                            modifier = Modifier.padding(contentPadding),
-                            showSnackbar = showSnackbar
-                        )
-                        else -> BankCardViewingContent(viewModel = viewModel)
-                    }
+                    BankCardEditingContent(
+                        viewModel = viewModel,
+                        modifier = Modifier.padding(contentPadding),
+                        showSnackbar = showSnackbar
+                    )
                 }
             }
         }
     }
-
 }
 
 
 @Composable
 private fun BankCardEditingContent(
-    viewModel: BankCardViewModel,
+    viewModel: BankCardEditorViewModel,
     modifier: Modifier = Modifier,
     showSnackbar: (String) -> Unit
 ) {
@@ -136,7 +183,7 @@ private fun BankCardEditingContent(
     {
         EditableTextField(
             text = bankCard.name,
-            onTextChange = bankCard::name::set,
+            onTextChange = { bankCard.updateValue(bankCard::name, it) },
             label = stringResource(R.string.card_name)
         )
 
@@ -152,10 +199,13 @@ private fun BankCardEditingContent(
             text = bankCard.number,
             onTextChange = {
                 bankCard.updateNumber(it)
-                bankCard.paymentSystem = viewModel.getPaymentSystemByNumber(it)
+                bankCard.updateValue(
+                    property = bankCard::paymentSystem,
+                    newValue = viewModel.getPaymentSystemByNumber(it)
+                )
             },
             label = stringResource(R.string.card_number),
-            keyboardType = KeyboardType.Number
+            keyboardType = KeyboardType.Decimal
         )
 
         EditableTextField(
@@ -178,7 +228,9 @@ private fun BankCardEditingContent(
 
         EditableTextField(
             text = bankCard.holder,
-            onTextChange = bankCard::holder::set,
+            onTextChange = {
+                bankCard.updateValue(bankCard::holder, it.uppercase())
+            },
             label = stringResource(R.string.card_holder),
             keyboardCapitalization = KeyboardCapitalization.Characters
         )
@@ -194,7 +246,9 @@ private fun BankCardEditingContent(
         EditableTextField(
             text = bankCard.cvv,
             onTextChange = {
-                if (it.length <= 3) bankCard.cvv = it
+                if (it.length <= 3) {
+                    bankCard.updateValue(bankCard::cvv, it)
+                }
             },
             label = stringResource(R.string.cvv),
             keyboardType = KeyboardType.Number,
@@ -217,7 +271,9 @@ private fun BankCardEditingContent(
         EditableTextField(
             text = bankCard.pin,
             onTextChange = {
-                if (it.length <= 4) bankCard.pin = it
+                if (it.length <= 4) {
+                    bankCard.updateValue(bankCard::pin, it)
+                }
             },
             label = stringResource(R.string.pin),
             keyboardType = KeyboardType.Number,
@@ -246,17 +302,11 @@ private fun BankCardEditingContent(
 
         EditableTextField(
             text = bankCard.comment,
-            onTextChange = bankCard::comment::set,
+            onTextChange = { bankCard.updateValue(bankCard::comment, it) },
             label = stringResource(R.string.comment),
             singleLine = false,
             maxLines = 10,
             imeAction = ImeAction.Default
         )
     }
-}
-
-
-@Composable
-private fun BankCardViewingContent(viewModel: BankCardViewModel) {
-
 }

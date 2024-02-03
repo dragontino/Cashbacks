@@ -7,13 +7,16 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.cashbacks.app.model.ComposableBankCard
 import com.cashbacks.app.ui.managment.ViewModelState
+import com.cashbacks.app.util.AnimationDefaults
 import com.cashbacks.domain.model.PaymentSystem
-import com.cashbacks.domain.usecase.EditBankCardUseCase
+import com.cashbacks.domain.usecase.card.EditBankCardUseCase
+import com.cashbacks.domain.usecase.card.GetBankCardUseCase
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-class BankCardViewModel(
-    private val useCase: EditBankCardUseCase,
+class BankCardEditorViewModel(
+    private val getBankCardUseCase: GetBankCardUseCase,
+    private val editBankCardUseCase: EditBankCardUseCase,
     private val bankCardId: Long?
 ) : ViewModel() {
 
@@ -25,37 +28,24 @@ class BankCardViewModel(
 
     init {
         viewModelScope.launch {
-            delay(100)
+            delay(AnimationDefaults.ScreenDelayMillis + 40L)
             if (bankCardId != null) {
-                useCase.getBankCardById(bankCardId)
+                getBankCardUseCase.getBankCardById(bankCardId)
                     ?.let { _bankCard.value = ComposableBankCard(it) }
             }
-            _state.value = when (bankCardId) {
-                null -> ViewModelState.Editing
-                else -> ViewModelState.Viewing
-            }
+            _state.value = ViewModelState.Editing
         }
     }
 
-    fun edit() {
-        _state.value = ViewModelState.Editing
-    }
-
-    fun save() {
-        _state.value = ViewModelState.Viewing
-        viewModelScope.launch {
-            when (bankCardId) {
-                null -> useCase.addBankCard(bankCard.value.mapToBankCard())
-                else -> useCase.updateBankCard(bankCard.value.mapToBankCard())
-            }
-        }
-    }
-
-    fun deleteCard() {
+    fun saveCard() {
         viewModelScope.launch {
             _state.value = ViewModelState.Loading
             delay(100)
-            useCase.deleteBankCard(bankCard.value.mapToBankCard())
+            when (bankCardId) {
+                null -> editBankCardUseCase.addBankCard(bankCard.value.mapToBankCard())
+                else -> editBankCardUseCase.updateBankCard(bankCard.value.mapToBankCard())
+            }
+            _state.value = ViewModelState.Editing
         }
     }
 
@@ -66,11 +56,12 @@ class BankCardViewModel(
 
     @Suppress("UNCHECKED_CAST")
     class Factory(
-        private val bankCardUseCase: EditBankCardUseCase,
+        private val getBankCardUseCase: GetBankCardUseCase,
+        private val editBankCardUseCase: EditBankCardUseCase,
         private val id: Long?
     ) : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            return BankCardViewModel(bankCardUseCase, id) as T
+            return BankCardEditorViewModel(getBankCardUseCase, editBankCardUseCase, id) as T
         }
     }
 }

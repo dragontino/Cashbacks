@@ -21,9 +21,8 @@ interface CardsDao {
     @Query("SELECT * FROM Cards ORDER BY id ASC")
     fun fetchBankCards(): Flow<List<BankCardDB>>
 
-
     @Query("SELECT * FROM Cards WHERE id = :id")
-    suspend fun getBankCardById(id: Long) : BankCardDB?
+    suspend fun getBankCardById(id: Long): BankCardDB?
 
     @Delete
     suspend fun deleteBankCard(bankCardDB: BankCardDB): Int

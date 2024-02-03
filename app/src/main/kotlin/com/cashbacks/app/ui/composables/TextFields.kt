@@ -34,6 +34,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -70,6 +71,60 @@ import androidx.compose.ui.unit.sp
 import com.cashbacks.app.ui.theme.CashbacksTheme
 import com.cashbacks.app.util.animate
 import kotlinx.coroutines.delay
+
+
+@Composable
+fun DataTextField(
+    text: String,
+    heading: String,
+    modifier: Modifier = Modifier,
+    textStyle: TextStyle = MaterialTheme.typography.bodyMedium,
+    visualTransformation: VisualTransformation = VisualTransformation.None,
+    trailingActions: @Composable (RowScope.() -> Unit) = {}
+) {
+    TextField(
+        value = text,
+        onValueChange = {},
+        textStyle = textStyle,
+        label = {
+            Text(
+                text = heading,
+                style = MaterialTheme.typography.bodySmall.copy(
+                    fontSize = 12.5.sp,
+                ),
+            )
+        },
+        visualTransformation = visualTransformation,
+        trailingIcon = {
+            Row(
+                verticalAlignment = Alignment.Bottom,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                trailingActions()
+            }
+        },
+        readOnly = true,
+        enabled = false,
+        keyboardOptions = KeyboardOptions(),
+        colors = TextFieldDefaults.colors(
+            focusedTextColor = MaterialTheme.colorScheme.onBackground.animate(),
+            disabledTextColor = MaterialTheme.colorScheme.onBackground.animate(),
+            focusedContainerColor = Color.Transparent,
+            unfocusedContainerColor = Color.Transparent,
+            disabledContainerColor = Color.Transparent,
+            focusedIndicatorColor = Color.Transparent,
+            unfocusedIndicatorColor = Color.Transparent,
+            disabledIndicatorColor = Color.Transparent,
+            focusedLabelColor = MaterialTheme.colorScheme.onBackground.animate(),
+            unfocusedLabelColor = MaterialTheme.colorScheme.onBackground.animate(),
+            disabledLabelColor = MaterialTheme.colorScheme.onBackground.animate(),
+            focusedTrailingIconColor = MaterialTheme.colorScheme.onBackground.animate(),
+            unfocusedTrailingIconColor = MaterialTheme.colorScheme.onBackground.animate(),
+            disabledTrailingIconColor = MaterialTheme.colorScheme.onBackground.animate()
+        ),
+        modifier = modifier.fillMaxWidth()
+    )
+}
 
 @Composable
 fun NewNameTextField(

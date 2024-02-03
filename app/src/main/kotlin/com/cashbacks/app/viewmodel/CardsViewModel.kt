@@ -7,7 +7,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.cashbacks.app.ui.managment.ListState
 import com.cashbacks.domain.model.BankCard
-import com.cashbacks.domain.usecase.FetchBankCardsUseCase
+import com.cashbacks.domain.usecase.card.FetchBankCardsUseCase
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 
