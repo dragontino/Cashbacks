@@ -180,7 +180,9 @@ private fun CardsContentScreen(
                 TextButton(
                     onClick = { navigateTo(AppScreens.BankCardViewer.createUrl(it.id)) },
                     shape = MaterialTheme.shapes.medium,
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
+                        .fillMaxWidth()
                 ) {
                     Text(stringResource(R.string.open), style = MaterialTheme.typography.bodyMedium)
                 }

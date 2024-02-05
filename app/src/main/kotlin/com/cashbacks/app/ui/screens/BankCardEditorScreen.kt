@@ -5,10 +5,10 @@ import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -17,12 +17,18 @@ import androidx.compose.material.icons.outlined.Save
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material.icons.rounded.ArrowBackIosNew
+import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuDefaults
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -35,6 +41,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.res.stringResource
@@ -45,8 +52,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.cashbacks.app.R
 import com.cashbacks.app.model.PaymentSystemMapper
+import com.cashbacks.app.model.PaymentSystemMapper.title
 import com.cashbacks.app.ui.composables.CollapsingToolbarScaffold
-import com.cashbacks.app.ui.composables.ConfirmExitDialog
+import com.cashbacks.app.ui.composables.ConfirmExitWithSaveDataDialog
 import com.cashbacks.app.ui.composables.EditableTextField
 import com.cashbacks.app.ui.composables.EditableTextFieldDefaults
 import com.cashbacks.app.ui.managment.ViewModelState
@@ -55,6 +63,7 @@ import com.cashbacks.app.ui.theme.DarkerGray
 import com.cashbacks.app.util.LoadingInBox
 import com.cashbacks.app.util.animate
 import com.cashbacks.app.viewmodel.BankCardEditorViewModel
+import com.cashbacks.domain.model.PaymentSystem
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -83,7 +92,7 @@ fun BankCardEditorScreen(
     BackHandler(onBack = onBackPress)
 
     if (showDialog) {
-        ConfirmExitDialog(
+        ConfirmExitWithSaveDataDialog(
             onConfirm = viewModel::saveCard,
             onDismiss = popBackStack,
             onClose = { showDialog = false }
@@ -164,6 +173,7 @@ fun BankCardEditorScreen(
 }
 
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun BankCardEditingContent(
     viewModel: BankCardEditorViewModel,
@@ -208,23 +218,84 @@ private fun BankCardEditingContent(
             keyboardType = KeyboardType.Decimal
         )
 
-        EditableTextField(
-            text = bankCard.paymentSystem?.name ?: stringResource(R.string.value_not_selected),
-            onTextChange = {},
-            readOnly = true,
-            label = stringResource(R.string.payment_system),
-            trailingActions = {
-                bankCard.paymentSystem?.let {
-                    PaymentSystemMapper.PaymentSystemImage(
-                        paymentSystem = it,
-                        modifier = Modifier.padding(horizontal = 12.dp)
+        ExposedDropdownMenuBox(
+                expanded = viewModel.showPaymentSystemSelection,
+                onExpandedChange = viewModel::showPaymentSystemSelection::set
+            ) {
+            OutlinedTextField(
+                value = bankCard.paymentSystem.title,
+                onValueChange = {},
+                readOnly = true,
+                textStyle = MaterialTheme.typography.bodyMedium,
+                label = { stringResource(R.string.payment_system) },
+                leadingIcon = {
+                    ExposedDropdownMenuDefaults.TrailingIcon(
+                        expanded = viewModel.showPaymentSystemSelection
+                    )
+                },
+                trailingIcon = {
+                    bankCard.paymentSystem?.let {
+                        PaymentSystemMapper.PaymentSystemImage(
+                            paymentSystem = it,
+                            modifier = Modifier.padding(horizontal = 12.dp)
+                        )
+                    }
+                },
+                colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
+                shape = MaterialTheme.shapes.medium,
+                modifier = Modifier
+                    .menuAnchor()
+                    .padding(bottom = 16.dp)
+                    .padding(horizontal = 16.dp)
+                    .fillMaxWidth()
+            )
+
+            ExposedDropdownMenu(
+                expanded = viewModel.showPaymentSystemSelection,
+                onDismissRequest = { viewModel.showPaymentSystemSelection = false },
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .padding(horizontal = 16.dp)
+                    .fillMaxWidth()
+            ) {
+                val options = listOf(null) + PaymentSystem.entries
+                options.forEach { paymentSystem ->
+                    DropdownMenuItem(
+                        text = {
+                            Text(
+                                text = paymentSystem.title,
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        },
+                        leadingIcon = {
+                            if (bankCard.paymentSystem == paymentSystem) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Check,
+                                    contentDescription = null
+                                )
+                            }
+                        },
+                        trailingIcon = {
+                            if (paymentSystem != null) {
+                                PaymentSystemMapper.PaymentSystemImage(
+                                    paymentSystem = paymentSystem,
+                                    drawBackground = false
+                                )
+                            }
+                        },
+                        onClick = {
+                            bankCard.paymentSystem = paymentSystem
+                            viewModel.showPaymentSystemSelection = false
+                        },
+                        contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding,
+                        colors = MenuDefaults.itemColors(
+                            textColor = MaterialTheme.colorScheme.onBackground,
+                            leadingIconColor = MaterialTheme.colorScheme.primary
+                        )
                     )
                 }
-            },
-            modifier = Modifier.clickable {
-                showSnackbar("Открыть экран с платежными системами")
             }
-        )
+        }
 
         EditableTextField(
             text = bankCard.holder,
@@ -305,7 +376,6 @@ private fun BankCardEditingContent(
             onTextChange = { bankCard.updateValue(bankCard::comment, it) },
             label = stringResource(R.string.comment),
             singleLine = false,
-            maxLines = 10,
             imeAction = ImeAction.Default
         )
     }

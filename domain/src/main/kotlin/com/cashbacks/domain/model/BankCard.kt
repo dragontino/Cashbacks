@@ -6,6 +6,8 @@ interface BasicInfoBankCard {
     val number: String
     val paymentSystem: PaymentSystem?
 
+    val hiddenLastDigitsOfNumber get() = "${replacement(4)} $lastFourDigitsOfNumber"
+
     val lastFourDigitsOfNumber get() = with(number) {
         slice(length - 4 ..< length)
     }
@@ -13,7 +15,13 @@ interface BasicInfoBankCard {
     val hiddenNumber get() = with(number) {
         return@with when {
             length < 12 -> this
-            else -> replaceRange(4 ..< 12, "********")
+            else -> replaceRange(4..<12, replacement = replacement(length = 8))
+        }
+    }
+
+    fun replacement(length: Int, mask: Char = '\u2022') = buildString {
+        repeat(length) {
+            append(mask)
         }
     }
 }
@@ -37,4 +45,8 @@ data class BankCard(
     val cvv: String = "",
     val pin: String = "",
     val comment: String = "",
-) : BasicInfoBankCard
+) : BasicInfoBankCard {
+    override fun toString(): String {
+        return "$name $hiddenLastDigitsOfNumber $validityPeriod"
+    }
+}

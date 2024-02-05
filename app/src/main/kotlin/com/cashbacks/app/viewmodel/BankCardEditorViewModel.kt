@@ -1,7 +1,9 @@
 package com.cashbacks.app.viewmodel
 
 import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -25,6 +27,8 @@ class BankCardEditorViewModel(
 
     private val _bankCard = mutableStateOf(ComposableBankCard())
     val bankCard = derivedStateOf { _bankCard.value }
+
+    var showPaymentSystemSelection by mutableStateOf(false)
 
     init {
         viewModelScope.launch {
