@@ -6,7 +6,7 @@ interface BasicInfoBankCard {
     val number: String
     val paymentSystem: PaymentSystem?
 
-    val hiddenLastDigitsOfNumber get() = "${replacement(4)} $lastFourDigitsOfNumber"
+    val hiddenLastDigitsOfNumber get() = "${getHidden(4)} $lastFourDigitsOfNumber"
 
     val lastFourDigitsOfNumber get() = with(number) {
         slice(length - 4 ..< length)
@@ -15,11 +15,11 @@ interface BasicInfoBankCard {
     val hiddenNumber get() = with(number) {
         return@with when {
             length < 12 -> this
-            else -> replaceRange(4..<12, replacement = replacement(length = 8))
+            else -> replaceRange(4..<12, replacement = getHidden(length = 8))
         }
     }
 
-    fun replacement(length: Int, mask: Char = '\u2022') = buildString {
+    fun getHidden(length: Int, mask: Char = '\u2022') = buildString {
         repeat(length) {
             append(mask)
         }

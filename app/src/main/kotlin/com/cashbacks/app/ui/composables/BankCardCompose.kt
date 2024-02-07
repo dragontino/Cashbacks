@@ -223,7 +223,7 @@ private fun CardBackSide(
             )
 
             Text(
-                text = if (isVisible) bankCard.cvv else "***",
+                text = if (isVisible) bankCard.cvv else bankCard.getHidden(length = 3),
                 style = MaterialTheme.typography.bodyMedium,
                 fontFamily = FontFamily.Monospace
             )
