@@ -70,6 +70,7 @@ import com.cashbacks.app.ui.composables.BottomSheetContent
 import com.cashbacks.app.ui.composables.Header
 import com.cashbacks.app.ui.composables.ModalSheetDefaults
 import com.cashbacks.app.ui.composables.ModalSheetItems.IconTextItem
+import com.cashbacks.app.ui.managment.ViewModelState
 import com.cashbacks.app.ui.screens.navigation.AppScreens
 import com.cashbacks.app.util.LoadingInBox
 import com.cashbacks.app.util.animate
@@ -100,7 +101,7 @@ fun SettingsScreen(
             CenterAlignedTopAppBar(
                 title = {
                     Text(
-                        text = stringResource(AppScreens.Settings.titleRes),
+                        text = AppScreens.Settings.title(),
                         fontWeight = FontWeight.Bold,
                         style = MaterialTheme.typography.titleMedium
                     )
@@ -141,7 +142,7 @@ fun SettingsScreen(
             )
 
             AnimatedVisibility(
-                visible = viewModel.state.value == SettingsViewModel.State.Loading,
+                visible = viewModel.state.value == ViewModelState.Loading,
                 enter = fadeIn(tween(durationMillis = 50)),
                 exit = fadeOut(tween(durationMillis = 50))
             ) {
@@ -179,7 +180,7 @@ private fun SettingsContent(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
-                    .clickable(enabled = viewModel.state.value != SettingsViewModel.State.Loading) {
+                    .clickable(enabled = viewModel.state.value != ViewModelState.Loading) {
                         isSheetOpen = true
                     }
                     .clip(MaterialTheme.shapes.small)
@@ -247,7 +248,7 @@ private fun SettingsContent(
                         title = stringResource(R.string.dynamic_color),
                         subtitle = stringResource(R.string.dynamic_color_desc)
                     ),
-                    enabled = viewModel.state.value != SettingsViewModel.State.Loading
+                    enabled = viewModel.state.value != ViewModelState.Loading
                 ) {
                     viewModel.updateSettingsProperty(
                         property = Settings::dynamicColor,

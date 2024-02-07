@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.cashbacks.app.R
 import com.cashbacks.app.model.ColorDesignMapper.title
+import com.cashbacks.app.ui.managment.ViewModelState
 import com.cashbacks.domain.model.ColorDesign
 import com.cashbacks.domain.model.Settings
 import com.cashbacks.domain.usecase.settings.SettingsUseCase
@@ -20,22 +21,17 @@ import kotlin.reflect.KProperty1
 class SettingsViewModel(
     private val useCase: SettingsUseCase
 ) : ViewModel() {
-    enum class State {
-        Loading,
-        Ready
-    }
-
     private val _settings = mutableStateOf(Settings())
     val settings = derivedStateOf { _settings.value }
 
-    private val _state = mutableStateOf(State.Ready)
+    private val _state = mutableStateOf(ViewModelState.Viewing)
     val state = derivedStateOf { _state.value }
 
     init {
         flow {
-            emit(State.Loading)
+            emit(ViewModelState.Loading)
             delay(150)
-            emit(State.Ready)
+            emit(ViewModelState.Viewing)
         }.onEach { _state.value = it }.launchIn(viewModelScope)
 
         useCase.fetchSettings()
@@ -62,10 +58,10 @@ class SettingsViewModel(
         error: (exception: Throwable) -> Unit = {}
     ) {
         viewModelScope.launch {
-            _state.value = State.Loading
+            _state.value = ViewModelState.Loading
             delay(200)
             val result = useCase.updateSettingsProperty(property.name, value)
-            _state.value = State.Ready
+            _state.value = ViewModelState.Viewing
             result.exceptionOrNull()?.let { error(it) }
         }
     }
