@@ -23,7 +23,7 @@ class CategoryRepositoryImpl(private val dao: CategoriesDao) : CategoryRepositor
     }
 
     private suspend fun checkCategoryNameForUniqueness(categoryName: String): Boolean {
-        return dao.getCategoriesByName(categoryName).isEmpty()
+        return dao.countCategoriesWithSameName(categoryName) == 0
     }
 
 

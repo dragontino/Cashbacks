@@ -24,7 +24,7 @@ data class CategoryWithCashbackDB(
     val id: Long,
     val name: String,
     @Embedded(prefix = "cashback_")
-    val maxCashbackDB: CashbackWithBankCardDB?
+    val maxCashbackDB: BasicCashbackDB?
 ) {
     fun mapToCategory() = Category(
         id = id,

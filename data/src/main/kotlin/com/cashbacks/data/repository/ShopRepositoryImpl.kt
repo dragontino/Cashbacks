@@ -2,6 +2,7 @@ package com.cashbacks.data.repository
 
 import com.cashbacks.data.model.ShopDB
 import com.cashbacks.data.room.dao.ShopsDao
+import com.cashbacks.domain.model.EntryAlreadyExistsException
 import com.cashbacks.domain.model.InsertionException
 import com.cashbacks.domain.model.Shop
 import com.cashbacks.domain.repository.ShopRepository
@@ -12,6 +13,10 @@ import kotlinx.coroutines.flow.mapLatest
 @OptIn(ExperimentalCoroutinesApi::class)
 class ShopRepositoryImpl(private val dao: ShopsDao) : ShopRepository {
     override suspend fun addShopToCategory(categoryId: Long, shop: Shop): Result<Unit> {
+        if (!checkShopNameForUniqueness(shop.name)) {
+            return Result.failure(EntryAlreadyExistsException)
+        }
+
         val shopDB = ShopDB(id = shop.id, categoryId = categoryId, name = shop.name)
         return dao.addShop(shopDB).let { id ->
             when {
@@ -21,6 +26,11 @@ class ShopRepositoryImpl(private val dao: ShopsDao) : ShopRepository {
                 else -> Result.success(Unit)
             }
         }
+    }
+
+
+    private suspend fun checkShopNameForUniqueness(shopName: String): Boolean {
+        return dao.countShopsWithSameName(shopName) == 0
     }
 
 
@@ -62,13 +72,25 @@ class ShopRepositoryImpl(private val dao: ShopsDao) : ShopRepository {
     }
 
     override fun fetchAllShopsFromCategory(categoryId: Long): Flow<List<Shop>> {
-        return dao.fetchAllShops(categoryId).mapLatest { list ->
+        return dao.fetchAllShopsFromCategory(categoryId).mapLatest { list ->
             list.map { it.mapToShop() }
         }
     }
 
     override fun fetchShopsWithCashbackFromCategory(categoryId: Long): Flow<List<Shop>> {
-        return dao.fetchShopsWithCashback(categoryId).mapLatest { list ->
+        return dao.fetchShopsWithCashbackFromCategory(categoryId).mapLatest { list ->
+            list.map { it.mapToShop() }
+        }
+    }
+
+    override fun fetchAllShops(): Flow<List<Shop>> {
+        return dao.fetchAllShops().mapLatest { list ->
+            list.map { it.mapToShop() }
+        }
+    }
+
+    override fun fetchShopsWithCashback(): Flow<List<Shop>> {
+        return dao.fetchShopsWithCashback().mapLatest { list ->
             list.map { it.mapToShop() }
         }
     }

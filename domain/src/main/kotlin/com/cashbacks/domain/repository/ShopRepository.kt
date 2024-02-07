@@ -15,4 +15,8 @@ interface ShopRepository {
     fun fetchAllShopsFromCategory(categoryId: Long): Flow<List<Shop>>
 
     fun fetchShopsWithCashbackFromCategory(categoryId: Long): Flow<List<Shop>>
+
+    fun fetchAllShops(): Flow<List<Shop>>
+
+    fun fetchShopsWithCashback(): Flow<List<Shop>>
 }

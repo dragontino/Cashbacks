@@ -22,8 +22,8 @@ interface CategoriesDao {
     suspend fun deleteCategory(category: CategoryDB): Int
 
 
-    @Query("SELECT name FROM Categories WHERE name = :name")
-    suspend fun getCategoriesByName(name: String): List<String>
+    @Query("SELECT COUNT(name) FROM Categories WHERE name = :name")
+    suspend fun countCategoriesWithSameName(name: String): Int
 
 
     @Query(
@@ -34,12 +34,10 @@ interface CategoriesDao {
                card.id AS cashback_card_id, card.name AS cashback_card_name,
                card.number AS cashback_card_number, card.paymentSystem AS cashback_card_paymentSystem
         FROM Categories AS cat
-        LEFT JOIN (
-            SELECT id, categoryId, amount, expirationDate, comment, bankCardId 
-            FROM Cashbacks
-            ORDER BY amount DESC
-            LIMIT 1
-        ) AS cash ON cat.id = cash.categoryId
+        LEFT JOIN (SELECT * FROM Cashbacks) AS cash 
+        ON cat.id = cash.categoryId AND cash.amount = (
+            SELECT MAX(amount) FROM Cashbacks WHERE categoryId = cat.id
+        )
         LEFT JOIN Cards AS card ON cash.bankCardId = card.id
         ORDER BY cat.name ASC
         """,
@@ -55,12 +53,10 @@ interface CategoriesDao {
                card.id AS cashback_card_id, card.name AS cashback_card_name,
                card.number AS cashback_card_number, card.paymentSystem AS cashback_card_paymentSystem
         FROM Categories AS cat
-        LEFT JOIN (
-            SELECT id, categoryId, amount, expirationDate, comment, bankCardId 
-            FROM Cashbacks
-            ORDER BY amount DESC
-            LIMIT 1
-        ) AS cash ON cat.id = cash.categoryId
+        LEFT JOIN (SELECT * FROM Cashbacks) AS cash 
+        ON cat.id = cash.categoryId AND cash.amount = (
+            SELECT MAX(amount) FROM Cashbacks WHERE categoryId = cat.id
+        )
         LEFT JOIN Cards AS card ON cash.bankCardId = card.id
         WHERE cashback_id IS NOT NULL
         ORDER BY cat.name ASC

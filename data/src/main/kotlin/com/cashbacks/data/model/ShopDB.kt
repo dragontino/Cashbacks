@@ -37,7 +37,7 @@ data class ShopWithMaxCashbackDB(
     val id: Long,
     val name: String,
     @Embedded(prefix = "cashback_")
-    val maxCashback: CashbackWithBankCardDB?
+    val maxCashback: BasicCashbackDB?
 ) {
     fun mapToShop() = Shop(
         id = id,
