@@ -196,9 +196,9 @@ fun EditableTextField(
             fontWeight = FontWeight.Bold
         )
     },
+    maxLines: Int = if (singleLine) 1 else Int.MAX_VALUE,
     keyboardType: KeyboardType = KeyboardType.Text,
     imeAction: ImeAction = ImeAction.Next,
-    maxLines: Int = 1,
     keyboardCapitalization: KeyboardCapitalization = KeyboardCapitalization.Sentences,
     onImeActionClick: KeyboardActionScope.(text: String) -> Unit = {},
     visualTransformation: VisualTransformation = VisualTransformation.None,

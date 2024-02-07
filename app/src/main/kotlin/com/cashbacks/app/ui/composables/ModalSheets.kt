@@ -369,14 +369,14 @@ object ModalSheetItems {
     ) {
         when (icon) {
             null -> TextItem(
-                text = stringResource(screen.titleRes),
+                text = screen.title(),
                 selected = selected,
                 modifier = modifier,
                 onClick = { onClick(screen) }
             )
 
             else -> IconTextItem(
-                text = stringResource(screen.titleRes),
+                text = screen.title(),
                 icon = icon,
                 iconTintColor = iconTintColor.animate(),
                 modifier = modifier,

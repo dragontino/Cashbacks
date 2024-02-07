@@ -10,11 +10,6 @@ class ViewModelFactory(
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         return when {
-            modelClass.isAssignableFrom(MainViewModel::class.java) ->
-                MainViewModel(
-                    settingsUseCase = application.dependencyFactory.provideSettingsUseCase()
-                ) as T
-
             modelClass.isAssignableFrom(SettingsViewModel::class.java) ->
                 SettingsViewModel(
                     useCase = application.dependencyFactory.provideSettingsUseCase()

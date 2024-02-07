@@ -26,14 +26,13 @@
     <string name="empty_categories_list_editing">Нажмите + для добавления категорий</string>
     <string name="add_category">Добавить категорию</string>
     <string name="no_cashbacks_for_category">Нет кешбэков для этой категории</string>
-    <string name="max_cashback_title">Макс. </string>
     <string name="confirm_category_deletion">Удалить категорию «%s»?</string>
 
     <string name="category_placeholder">Название категории</string>
     <string name="shop_placeholder">Название магазина</string>
     <string name="tab_shops">Магазины</string>
     <string name="tab_cashbacks">Кешбэки</string>
-    <string name="add_item">Добавить %s</string>
+    <string name="add_cashback">Добавить кешбэк</string>
     <string name="no_cashbacks_for_shop">Нет кешбэков для этого магазина</string>
 
     <string name="empty_shops_list_viewing">
@@ -42,11 +41,14 @@
     <string name="empty_shops_list_editing">Нажмите + для добавления магазинов</string>
     <string name="empty_cashbacks_list">Нажмите на + для добавления кешбэков</string>
     <string name="empty_bank_cards_list">Нажмите + для добавления банковской карты</string>
+    <string name="confirm_shop_deletion">Удалить магазин «%s»?</string>
 
     <!-- Экран кешбэка -->
     <string name="amount">Значение</string>
     <string name="expiration_date">Срок действия кешбэка</string>
     <string name="comment">Комментарий</string>
+    <string name="confrim_cashback_deletion">Удалить кешбэк?</string>
+    <string name="add_card">Добавить банковскую карту</string>
 
     <!-- Экран редактирования банковской карты -->
     <string name="card_name">Название</string>
@@ -72,4 +74,20 @@
     <string name="confirm_delete">Подтверждение удаления</string>
     <string name="do_not_save">Не сохранять</string>
     <string name="unsaved_data">У вас есть несохранённые данные. Сохранить?</string>
+    <string name="yes">Да</string>
+    <string name="no">Нет</string>
+
+    <!-- Платежные системы -->
+    <string-array name="payment_systems">
+        <item name="visa">Visa</item>
+        <item name="master_card">Mastercard</item>
+        <item name="mir">МИР</item>
+        <item name="jcb">JCB</item>
+        <item name="union_pay">China UnionPay</item>
+        <item name="american_express">American Express</item>
+    </string-array>
+
+    <!-- Обработка ошибок -->
+    <string name="entry_already_exists_exception">Такая запись уже существует!</string>
+    <string name="settings_not_found_exception">Не удалось найти сохраненных настроек в базе данных!</string>
 </resources>
