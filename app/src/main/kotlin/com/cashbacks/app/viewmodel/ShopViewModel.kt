@@ -1,13 +1,19 @@
 package com.cashbacks.app.viewmodel
 
+import android.app.Application
 import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
 import com.cashbacks.app.model.ComposableShop
+import com.cashbacks.app.ui.managment.DialogType
 import com.cashbacks.app.ui.managment.ViewModelState
+import com.cashbacks.app.ui.screens.navigation.AppScreens
 import com.cashbacks.domain.model.Cashback
 import com.cashbacks.domain.usecase.cashback.CashbackShopUseCase
 import com.cashbacks.domain.usecase.cashback.FetchCashbacksUseCase
@@ -23,8 +29,9 @@ class ShopViewModel(
     private val deleteCashbackUseCase: CashbackShopUseCase,
     private val categoryId: Long,
     val shopId: Long,
-    isEditing: Boolean
-) : ViewModel() {
+    isEditing: Boolean,
+    application: Application
+) : AndroidViewModel(application) {
 
     private val _state = mutableStateOf(ViewModelState.Loading)
     val state = derivedStateOf { _state.value }
@@ -32,7 +39,13 @@ class ShopViewModel(
     private val _shop = mutableStateOf(ComposableShop())
     val shop = derivedStateOf { _shop.value }
 
-    val showFab = derivedStateOf { state.value == ViewModelState.Editing }
+    var title by mutableStateOf(application.getString(AppScreens.Shop.titleRes!!))
+        private set
+
+    var showDialog by mutableStateOf(false)
+        private set
+    var dialogType: DialogType? by mutableStateOf(null)
+        private set
 
     private val shopJob = viewModelScope.launch {
         delay(250)
@@ -47,10 +60,23 @@ class ShopViewModel(
         .fetchCashbacksFromShop(shopId)
         .asLiveData()
 
+    val isLoading = derivedStateOf { state.value == ViewModelState.Loading }
+    val isEditing = derivedStateOf { state.value == ViewModelState.Editing }
+
 
     override fun onCleared() {
         shopJob.cancel()
         super.onCleared()
+    }
+
+    fun openDialog(type: DialogType) {
+        showDialog = true
+        dialogType = type
+    }
+
+    fun closeDialog() {
+        showDialog = false
+        dialogType = null
     }
 
 
@@ -59,6 +85,7 @@ class ShopViewModel(
             _state.value = ViewModelState.Loading
             delay(300)
             _state.value = ViewModelState.Editing
+            title = getApplication<Application>().getString(AppScreens.Shop.titleRes!!)
         }
     }
 
@@ -68,6 +95,7 @@ class ShopViewModel(
             delay(300)
             saveShop()
             _state.value = ViewModelState.Viewing
+            title = shop.value.name
         }
     }
 
@@ -113,7 +141,8 @@ class ShopViewModel(
         private val deleteCashbackUseCase: CashbackShopUseCase,
         private val categoryId: Long,
         private val shopId: Long,
-        private val isEditing: Boolean
+        private val isEditing: Boolean,
+        private val application: Application
     ) : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             return ShopViewModel(
@@ -123,7 +152,8 @@ class ShopViewModel(
                 deleteCashbackUseCase,
                 categoryId,
                 shopId,
-                isEditing
+                isEditing,
+                application
             ) as T
         }
     }
