@@ -1,10 +1,14 @@
 package com.cashbacks.app.ui.screens.navigation
 
+import androidx.compose.animation.AnimatedContentScope
+import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
@@ -17,14 +21,17 @@ import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NamedNavArgument
+import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -35,40 +42,40 @@ import androidx.navigation.navArgument
 import com.cashbacks.app.app.App
 import com.cashbacks.app.ui.composables.ModalNavigationDrawerContent
 import com.cashbacks.app.ui.composables.ModalSheetItems.ScreenTypeItem
-import com.cashbacks.app.ui.screens.BankCardScreen
+import com.cashbacks.app.ui.screens.BankCardEditorScreen
+import com.cashbacks.app.ui.screens.BankCardViewerScreen
 import com.cashbacks.app.ui.screens.CardsScreen
 import com.cashbacks.app.ui.screens.CategoriesScreen
-import com.cashbacks.app.ui.screens.CategoryInfoScreen
+import com.cashbacks.app.ui.screens.CategoryEditorScreen
+import com.cashbacks.app.ui.screens.CategoryViewerScreen
 import com.cashbacks.app.ui.screens.SettingsScreen
 import com.cashbacks.app.ui.screens.ShopScreen
 import com.cashbacks.app.ui.screens.SingleCashbackScreen
 import com.cashbacks.app.util.AnimationDefaults
-import com.cashbacks.app.viewmodel.BankCardViewModel
+import com.cashbacks.app.util.getActivity
+import com.cashbacks.app.util.mirror
+import com.cashbacks.app.viewmodel.BankCardEditorViewModel
+import com.cashbacks.app.viewmodel.BankCardViewerViewModel
 import com.cashbacks.app.viewmodel.CardsViewModel
 import com.cashbacks.app.viewmodel.CashbackViewModel
 import com.cashbacks.app.viewmodel.CategoriesViewModel
-import com.cashbacks.app.viewmodel.CategoryInfoViewModel
-import com.cashbacks.app.viewmodel.MainViewModel
+import com.cashbacks.app.viewmodel.CategoryEditorViewModel
+import com.cashbacks.app.viewmodel.CategoryViewerViewModel
 import com.cashbacks.app.viewmodel.ShopViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
 @Composable
-fun NavigationScreen(
-    application: App,
-    isDarkTheme: Boolean,
-    viewModel: MainViewModel
-) {
+fun NavigationScreen(application: App, isDarkTheme: Boolean) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     val navController = rememberNavController()
-    val currentBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentBackStackEntry = navController.currentBackStackEntryAsState()
     val currentRoute = remember {
-        derivedStateOf {
-            currentBackStackEntry?.destination?.route
-        }
+        derivedStateOf { currentBackStackEntry.value?.destination?.route }
     }
+    val context = LocalContext.current
 
     val openDrawer = remember {
         fun() {
@@ -129,29 +136,23 @@ fun NavigationScreen(
                 .background(MaterialTheme.colorScheme.background)
                 .fillMaxSize()
         ) {
-            composable(
-                route = AppScreens.Categories.destinationRoute,
+            animatedComposableScreen(
+                screen = AppScreens.Categories,
                 enterTransition = {
-                    val expandFrom = when (initialState.destination.route) {
-                        AppScreens.Settings.destinationRoute,
-                        AppScreens.BankCards.destinationRoute,
-                        AppScreens.BankCard.destinationRoute -> {
-                            Alignment.End
-                        }
-                        else -> Alignment.Start
-                    }
+                    val expandFrom = AppScreens.values
+                        .find { it.destinationRoute == initialState.destination.route }
+                        ?.animationAlignment?.mirror
+                        ?: Alignment.Start
                     enterScreenTransition(
                         expandFrom = expandFrom,
                         animationTime = AnimationDefaults.ScreenDelayMillis - 100
                     )
                 },
                 exitTransition = {
-                    val shrinkTowards = when (targetState.destination.route) {
-                        AppScreens.Settings.destinationRoute, AppScreens.BankCards.destinationRoute -> {
-                            Alignment.End
-                        }
-                        else -> Alignment.Start
-                    }
+                    val shrinkTowards = AppScreens.values
+                        .find { it.destinationRoute == targetState.destination.route }
+                        ?.animationAlignment?.mirror
+                        ?: Alignment.Start
                     exitScreenTransition(
                         shrinkTowards = shrinkTowards,
                         animationTime = AnimationDefaults.ScreenDelayMillis + 100
@@ -159,6 +160,7 @@ fun NavigationScreen(
                 },
             ) {
                 val vmFactory = CategoriesViewModel.Factory(
+                    application = application,
                     addCategoryUseCase = application.dependencyFactory.provideAddCategoryUseCase(),
                     fetchCategoriesUseCase = application.dependencyFactory.provideFetchCategoriesUseCase(),
                     deleteCategoryUseCase = application.dependencyFactory.provideDeleteCategoryUseCase()
@@ -167,26 +169,39 @@ fun NavigationScreen(
                     viewModel = viewModel(factory = vmFactory),
                     openDrawer = { openDrawer() },
                     navigateTo = navController::navigateTo,
-                    popBackStack = navController::popBackStack
+                    popBackStack = { context.getActivity()?.finish() }
                 )
             }
             
-            composable(
-                route = AppScreens.Settings.destinationRoute,
-                enterTransition = { enterScreenTransition(expandFrom = Alignment.Start) },
-                exitTransition = { exitScreenTransition(shrinkTowards = Alignment.Start) }
+            animatedComposableScreen(
+                screen = AppScreens.Settings,
+                enterTransition = { enterScreenTransition(expandFrom = it.animationAlignment) },
+                exitTransition = {
+                    val shrinkTowards = when (targetState.destination.route) {
+                        AppScreens.Categories.destinationRoute -> it.animationAlignment
+                        else -> it.animationAlignment.mirror
+                    }
+                    exitScreenTransition(shrinkTowards)
+                }
             ) {
                 SettingsScreen(
                     viewModel = viewModel(factory = application.viewModelFactory),
                     isDarkTheme = isDarkTheme,
-                    openDrawer = { openDrawer() }
+                    openDrawer = openDrawer
                 )
             }
 
-            composable(
-                route = AppScreens.BankCards.destinationRoute,
-                enterTransition = { enterScreenTransition(expandFrom = Alignment.Start) },
-                exitTransition = { exitScreenTransition(shrinkTowards = Alignment.Start) }
+            animatedComposableScreen(
+                screen = AppScreens.BankCards,
+                enterTransition = { enterScreenTransition(expandFrom = it.animationAlignment) },
+                exitTransition = {
+                    val shrinkTowards = when (targetState.destination.route) {
+                        AppScreens.Categories.destinationRoute -> it.animationAlignment
+                        else -> it.animationAlignment.mirror
+                    }
+                    exitScreenTransition(shrinkTowards)
+                },
+                popEnterTransition = { enterScreenTransition(expandFrom = it.animationAlignment.mirror) }
             ) {
                 val vmFactory = CardsViewModel.Factory(
                     useCase = application.dependencyFactory.provideFetchBankCardsUseCase()
@@ -203,67 +218,139 @@ fun NavigationScreen(
                 )
             }
 
-            composable(
-                route = AppScreens.BankCard.destinationRoute,
-                enterTransition = { enterScreenTransition(expandFrom = Alignment.Start) },
-                exitTransition = { exitScreenTransition(shrinkTowards = Alignment.Start) },
+            animatedComposableScreen(
+                screen = AppScreens.BankCardViewer,
+                enterTransition = { enterScreenTransition(expandFrom = it.animationAlignment) },
+                exitTransition = { exitScreenTransition(shrinkTowards = it.animationAlignment.mirror) },
+                popEnterTransition = { enterScreenTransition(expandFrom = it.animationAlignment.mirror) },
+                popExitTransition = { exitScreenTransition(shrinkTowards = it.animationAlignment) },
                 arguments = listOf(
-                    navArgument(AppScreens.BankCard.Args.Id.name) {
+                    navArgument(AppScreens.BankCardViewer.Args.Id.name) {
+                        type = NavType.LongType
+                    }
+                )
+            ) {
+                val vmFactory = BankCardViewerViewModel.Factory(
+                    getBankCardUseCase = application.dependencyFactory.provideGetBankCardUseCase(),
+                    deleteBankCardUseCase = application.dependencyFactory.provideDeleteBankCardUseCase(),
+                    cardId = it.arguments?.getLong(AppScreens.BankCardViewer.Args.Id.name) ?: 0
+                )
+
+                BankCardViewerScreen(
+                    viewModel = viewModel(
+                        viewModelStoreOwner = it,
+                        factory = vmFactory
+                    ),
+                    popBackStack = navController::popBackStack,
+                    navigateTo = { route ->
+                        navController.navigateTo(
+                            route = route,
+                            parentScreen = AppScreens.BankCardViewer,
+                            saveState = false,
+                            restoreState = false
+                        )
+                    }
+                )
+            }
+
+            animatedComposableScreen(
+                screen = AppScreens.BankCardEditor,
+                enterTransition = { enterScreenTransition(expandFrom = it.animationAlignment) },
+                exitTransition = { exitScreenTransition(shrinkTowards = it.animationAlignment) },
+                arguments = listOf(
+                    navArgument(AppScreens.BankCardEditor.Args.Id.name) {
                         type = NavType.StringType
                         nullable = true
                     }
                 )
             ) {
-                val vmFactory = BankCardViewModel.Factory(
-                    bankCardUseCase = application.dependencyFactory.provideEditBankCardUseCase(),
-                    id = it.arguments?.getString(AppScreens.BankCard.Args.Id.name)?.toLongOrNull()
+                val vmFactory = BankCardEditorViewModel.Factory(
+                    getBankCardUseCase = application.dependencyFactory.provideGetBankCardUseCase(),
+                    editBankCardUseCase = application.dependencyFactory.provideEditBankCardUseCase(),
+                    id = it.arguments?.getString(AppScreens.BankCardEditor.Args.Id.name)?.toLongOrNull()
                 )
 
-                BankCardScreen(
+                BankCardEditorScreen(
                     viewModel = viewModel(factory = vmFactory),
                     popBackStack = navController::popBackStack
                 )
             }
 
-            composable(
-                route = AppScreens.Category.destinationRoute,
-                enterTransition = { enterScreenTransition(expandFrom = Alignment.End) },
-                exitTransition = { exitScreenTransition(shrinkTowards = Alignment.End) },
+            animatedComposableScreen(
+                screen = AppScreens.CategoryViewer,
+                enterTransition = { enterScreenTransition(expandFrom = it.animationAlignment) },
+                exitTransition = { exitScreenTransition(shrinkTowards = it.animationAlignment.mirror) },
+                popEnterTransition = {
+                    when (initialState.destination.route) {
+                        AppScreens.CategoryEditor.destinationRoute -> fadeIn()
+                        else -> enterScreenTransition(expandFrom = it.animationAlignment.mirror)
+                    }
+                },
+                popExitTransition = { exitScreenTransition(shrinkTowards = it.animationAlignment) },
                 arguments = listOf(
-                    navArgument(AppScreens.Category.Args.Id.name) {
+                    navArgument(AppScreens.CategoryViewer.Args.Id.name) {
                         type = NavType.LongType
-                    },
-                    navArgument(AppScreens.Category.Args.IsEdit.name) {
-                        type = NavType.BoolType
                     }
                 )
             ) {
-                val vmFactory = CategoryInfoViewModel.Factory(
-                    editCategoryUseCase = application.dependencyFactory.provideEditCategoryUseCase(),
-                    addShopUseCase = application.dependencyFactory.provideAddShopUseCase(),
-                    deleteCategoryUseCase = application.dependencyFactory.provideDeleteCategoryUseCase(),
+                val vmFactory = CategoryViewerViewModel.Factory(
+                    getCategoryUseCase = application.dependencyFactory.provideGetCategoryUseCase(),
                     deleteShopUseCase = application.dependencyFactory.provideDeleteShopUseCase(),
                     deleteCashbackUseCase = application.dependencyFactory.provideCashbackCategoryUseCase(),
-                    fetchShopsUseCase = application.dependencyFactory.provideFetchShopsUseCase(),
+                    fetchShopsFromCategoryUseCase = application.dependencyFactory.provideFetchShopsUseCase(),
                     fetchCashbacksUseCase = application.dependencyFactory.provideFetchCashbacksUseCase(),
-                    categoryId = it.arguments?.getLong(AppScreens.Category.Args.Id.name) ?: 1,
-                    isEditing = it.arguments?.getBoolean(AppScreens.Category.Args.IsEdit.name) ?: false
+                    categoryId = it.arguments?.getLong(AppScreens.CategoryViewer.Args.Id.name) ?: 0
                 )
 
-                CategoryInfoScreen(
+                CategoryViewerScreen(
                     viewModel = viewModel(factory = vmFactory),
                     navigateTo = { route ->
-                        navController.navigateTo(route = route, parentScreen = AppScreens.Category)
+                        navController.navigateTo(route = route, parentScreen = AppScreens.CategoryViewer)
                     },
                     popBackStack = navController::popBackStack
                 )
             }
 
 
-            composable(
-                route = AppScreens.Cashback.destinationRoute,
-                enterTransition = { enterScreenTransition(expandFrom = Alignment.End) },
-                exitTransition = { exitScreenTransition(shrinkTowards = Alignment.End) },
+            animatedComposableScreen(
+                screen = AppScreens.CategoryEditor,
+                enterTransition = { fadeIn() },
+                exitTransition = { exitScreenTransition(shrinkTowards = it.animationAlignment) },
+                popEnterTransition = { enterScreenTransition(expandFrom = it.animationAlignment) },
+                popExitTransition = { fadeOut() },
+                arguments = listOf(
+                    navArgument(AppScreens.CategoryEditor.Args.Id.name) {
+                        type = NavType.LongType
+                    }
+                )
+            ) {
+                val vmFactory = CategoryEditorViewModel.Factory(
+                    application = application,
+                    getCategoryUseCase = application.dependencyFactory.provideGetCategoryUseCase(),
+                    addShopUseCase = application.dependencyFactory.provideAddShopUseCase(),
+                    updateCategoryUseCase = application.dependencyFactory.provideUpdateCategoryUseCase(),
+                    deleteCategoryUseCase = application.dependencyFactory.provideDeleteCategoryUseCase(),
+                    fetchShopsFromCategoryUseCase = application.dependencyFactory.provideFetchShopsUseCase(),
+                    fetchCashbacksUseCase = application.dependencyFactory.provideFetchCashbacksUseCase(),
+                    deleteShopUseCase = application.dependencyFactory.provideDeleteShopUseCase(),
+                    deleteCashbackUseCase = application.dependencyFactory.provideCashbackCategoryUseCase(),
+                    categoryId = it.arguments?.getLong(AppScreens.CategoryEditor.Args.Id.name) ?: 0
+                )
+
+                CategoryEditorScreen(
+                    viewModel = viewModel(factory = vmFactory),
+                    navigateTo = { route ->
+                        navController.navigateTo(route, parentScreen = AppScreens.CategoryEditor)
+                    },
+                    popBackStack = navController::popBackStack
+                )
+            }
+
+
+            animatedComposableScreen(
+                screen = AppScreens.Cashback,
+                enterTransition = { enterScreenTransition(expandFrom = it.animationAlignment) },
+                exitTransition = { exitScreenTransition(shrinkTowards = it.animationAlignment) },
                 arguments = listOf(
                     navArgument(AppScreens.Cashback.Args.Id.name) {
                         type = NavType.StringType
@@ -275,19 +362,16 @@ fun NavigationScreen(
                     navArgument(AppScreens.Cashback.Args.ParentName.name) {
                         type = NavType.StringType
                     },
-                    navArgument(AppScreens.Cashback.Args.IsEdit.name) {
-                        type = NavType.BoolType
-                    }
                 )
             ) {
                 val vmFactory = CashbackViewModel.Factory(
                     cashbackCategoryUseCase = application.dependencyFactory.provideCashbackCategoryUseCase(),
                     cashbackShopUseCase = application.dependencyFactory.provideCashbackShopUseCase(),
                     editCashbackUseCase = application.dependencyFactory.provideEditCashbackUseCase(),
+                    fetchBankCardsUseCase = application.dependencyFactory.provideFetchBankCardsUseCase(),
                     id = it.arguments?.getString(AppScreens.Cashback.Args.Id.name)?.toLong(),
                     parentId = it.arguments!!.getLong(AppScreens.Cashback.Args.ParentId.name),
-                    parentName = it.arguments?.getString(AppScreens.Cashback.Args.ParentName.name) ?: "",
-                    isEdit = it.arguments?.getBoolean(AppScreens.Cashback.Args.IsEdit.name) ?: false
+                    parentName = it.arguments?.getString(AppScreens.Cashback.Args.ParentName.name) ?: ""
                 )
 
                 SingleCashbackScreen(
@@ -299,10 +383,12 @@ fun NavigationScreen(
                 )
             }
 
-            composable(
-                route = AppScreens.Shop.destinationRoute,
-                enterTransition = { enterScreenTransition(expandFrom = Alignment.End) },
-                exitTransition = { exitScreenTransition(shrinkTowards = Alignment.End) },
+            animatedComposableScreen(
+                screen = AppScreens.Shop,
+                enterTransition = { enterScreenTransition(expandFrom = it.animationAlignment) },
+                exitTransition = { exitScreenTransition(shrinkTowards = it.animationAlignment.mirror) },
+                popEnterTransition = { enterScreenTransition(expandFrom = it.animationAlignment.mirror) },
+                popExitTransition = { exitScreenTransition(shrinkTowards = it.animationAlignment) },
                 arguments = listOf(
                     navArgument(AppScreens.Shop.Args.CategoryId.name) {
                         type = NavType.LongType
@@ -316,6 +402,7 @@ fun NavigationScreen(
                 )
             ) {
                 val vmFactory = ShopViewModel.Factory(
+                    application = application,
                     fetchCashbacksUseCase = application.dependencyFactory.provideFetchCashbacksUseCase(),
                     editShopUseCase = application.dependencyFactory.provideShopUseCase(),
                     deleteShopUseCase = application.dependencyFactory.provideDeleteShopUseCase(),
@@ -340,18 +427,53 @@ fun NavigationScreen(
 
 private fun NavHostController.navigateTo(
     route: String,
-    parentScreen: AppScreens? = AppScreens.Categories
+    parentScreen: AppScreens = AppScreens.Categories,
+    saveState: Boolean = false,
+    restoreState: Boolean = false
 ) {
     navigate(route) {
-        when (parentScreen) {
-            null -> popUpTo(graph.findStartDestination().id) {
-                inclusive = true
-            }
-            else -> popUpTo(parentScreen.destinationRoute)
-        }
+        val parent = graph.findNode(route = parentScreen.destinationRoute)
+            ?: graph.findStartDestination()
+        popUpTo(parent.id) { this.saveState = saveState }
         launchSingleTop = true
+        this.restoreState = restoreState
     }
 }
+
+
+
+private fun NavGraphBuilder.animatedComposableScreen(
+    screen: AppScreens,
+
+    enterTransition:
+    AnimatedContentTransitionScope<NavBackStackEntry>.(AppScreens) -> EnterTransition,
+
+    exitTransition:
+    AnimatedContentTransitionScope<NavBackStackEntry>.(AppScreens) -> ExitTransition,
+
+    popEnterTransition:
+    AnimatedContentTransitionScope<NavBackStackEntry>.(AppScreens) -> EnterTransition =
+        enterTransition,
+
+    popExitTransition:
+    AnimatedContentTransitionScope<NavBackStackEntry>.(AppScreens) -> ExitTransition =
+        exitTransition,
+
+    arguments: List<NamedNavArgument> = listOf(),
+
+    content: @Composable AnimatedContentScope.(NavBackStackEntry) -> Unit
+) {
+    composable(
+        route = screen.destinationRoute,
+        arguments = arguments,
+        enterTransition = { enterTransition(screen) },
+        exitTransition = { exitTransition(screen) },
+        popEnterTransition = { popEnterTransition(screen) },
+        popExitTransition = { popExitTransition(screen) },
+        content = content
+    )
+}
+
 
 
 private fun enterScreenTransition(
@@ -366,7 +488,8 @@ private fun enterScreenTransition(
     ) { fullWidth ->
         when (expandFrom) {
             Alignment.Start -> -fullWidth
-            else -> fullWidth
+            Alignment.End -> fullWidth
+            else -> 0
         }
     }
 }
