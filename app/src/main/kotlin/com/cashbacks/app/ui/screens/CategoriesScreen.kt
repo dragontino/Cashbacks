@@ -7,13 +7,7 @@ import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -24,9 +18,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.DataArray
@@ -36,10 +30,10 @@ import androidx.compose.material.icons.rounded.Menu
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedIconButton
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -47,13 +41,16 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -61,14 +58,20 @@ import com.cashbacks.app.R
 import com.cashbacks.app.ui.composables.BasicFloatingActionButton
 import com.cashbacks.app.ui.composables.BasicInfoCashback
 import com.cashbacks.app.ui.composables.CollapsingToolbarScaffold
+import com.cashbacks.app.ui.composables.ConfirmDeletionDialog
 import com.cashbacks.app.ui.composables.EditDeleteContent
 import com.cashbacks.app.ui.composables.EmptyList
 import com.cashbacks.app.ui.composables.NewNameTextField
 import com.cashbacks.app.ui.composables.ScrollableListItem
+import com.cashbacks.app.ui.managment.DialogType
 import com.cashbacks.app.ui.managment.ListState
+import com.cashbacks.app.ui.managment.ScreenEvents
+import com.cashbacks.app.ui.managment.rememberScrollableListItemState
 import com.cashbacks.app.ui.screens.navigation.AppScreens
 import com.cashbacks.app.util.LoadingInBox
 import com.cashbacks.app.util.animate
+import com.cashbacks.app.util.floatingActionButtonEnterAnimation
+import com.cashbacks.app.util.floatingActionButtonExitAnimation
 import com.cashbacks.app.util.keyboardAsState
 import com.cashbacks.app.util.smoothScrollToItem
 import com.cashbacks.app.viewmodel.CategoriesViewModel
@@ -76,6 +79,7 @@ import com.cashbacks.domain.model.Category
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun CategoriesScreen(
     viewModel: CategoriesViewModel,
@@ -90,41 +94,22 @@ fun CategoriesScreen(
         }
     }
 
-    CategoriesScreen(
-        viewModel = viewModel,
-        openDrawer = openDrawer,
-        navigateTo = navigateTo,
-        modifier = Modifier
-            .imePadding()
-            .fillMaxSize()
-    )
-}
-
-
-
-@OptIn(
-    ExperimentalMaterial3Api::class,
-    ExperimentalLayoutApi::class,
-    ExperimentalFoundationApi::class,
-)
-@Composable
-private fun CategoriesScreen(
-    viewModel: CategoriesViewModel,
-    openDrawer: () -> Unit,
-    navigateTo: (route: String) -> Unit,
-    modifier: Modifier = Modifier,
-) {
     val snackbarHostState = remember(::SnackbarHostState)
-    val lazyListState = rememberLazyListState()
     val scope = rememberCoroutineScope()
 
-    fun showSnackbar(message: String) {
-        scope.launch {
-            snackbarHostState.showSnackbar(message = message)
+    val lazyListState = rememberLazyListState()
+    val keyboardState = keyboardAsState()
+    var dialogType: DialogType? by rememberSaveable { mutableStateOf(null) }
+
+    val showSnackbar = remember {
+        fun(message: String) {
+            scope.launch {
+                if (message.isNotBlank()) snackbarHostState.showSnackbar(message)
+            }
         }
+
     }
 
-    val keyboardState = keyboardAsState()
     LaunchedEffect(Unit) {
         snapshotFlow { keyboardState.value }.collect { isKeyboardOpen ->
             if (!isKeyboardOpen) {
@@ -133,36 +118,49 @@ private fun CategoriesScreen(
         }
     }
 
+    LaunchedEffect(key1 = true) {
+        viewModel.eventsFlow.collect { event ->
+            when (event) {
+                is ScreenEvents.OpenDialog -> dialogType = event.type
+                ScreenEvents.CloseDialog -> dialogType = null
+                is ScreenEvents.Navigate -> event.route?.let(block = navigateTo)
+                is ScreenEvents.ShowSnackbar -> event.message.let(showSnackbar)
+            }
+        }
+    }
+    dialogType.takeIf { it is DialogType.ConfirmDeletion<*> }?.let { type ->
+        val category = (type as DialogType.ConfirmDeletion<*>).value as Category
+        ConfirmDeletionDialog(
+            text = stringResource(
+                R.string.confirm_category_deletion,
+                category.name
+            ),
+            onConfirm = {
+                viewModel.deleteCategory(category)
+                viewModel.closeDialog()
+            },
+            onDismiss = viewModel::closeDialog
+        )
+    }
 
     CollapsingToolbarScaffold(
-        modifier = modifier.fillMaxSize(),
+        modifier = Modifier.imePadding().fillMaxSize(),
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
                     Text(
-                        text = stringResource(AppScreens.Categories.titleRes),
+                        text = AppScreens.Categories.title(),
                         fontWeight = FontWeight.Bold,
                         style = MaterialTheme.typography.titleMedium
                     )
                 },
                 navigationIcon = {
-                    OutlinedIconButton(
+                    IconButton(
                         onClick = remember {
                             fun() {
-                                viewModel.onItemClick(openDrawer)
+                                viewModel.onItemClick(onClick = openDrawer)
                             }
-                        },
-                        shape = CircleShape,
-                        border = BorderStroke(
-                            width = 1.8.dp,
-                            brush = Brush.linearGradient(
-                                colors = listOf(
-                                    MaterialTheme.colorScheme.primaryContainer,
-                                    MaterialTheme.colorScheme.secondary,
-                                    MaterialTheme.colorScheme.tertiary
-                                )
-                            )
-                        )
+                        }
                     ) {
                         Icon(Icons.Rounded.Menu, contentDescription = "open menu")
                     }
@@ -175,19 +173,10 @@ private fun CategoriesScreen(
             )
         },
         floatingActionButtons = {
-            // TODO: 26.01.2024 переделать анимацию
             AnimatedVisibility(
                 visible = viewModel.isEditing.value && !viewModel.addingCategoriesState.value,
-                enter = slideInVertically(
-                    animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing),
-                    initialOffsetY = { it }
-                ) + fadeIn(tween(durationMillis = 500, easing = FastOutSlowInEasing)),
-                exit = slideOutVertically(
-                    animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing),
-                    targetOffsetY = { it }
-                ) + fadeOut(
-                    tween(durationMillis = 500, easing = FastOutSlowInEasing)
-                )
+                enter = floatingActionButtonEnterAnimation(),
+                exit = floatingActionButtonExitAnimation()
             ) {
                 BasicFloatingActionButton(icon = Icons.Rounded.Add) {
                     viewModel.onItemClick {
@@ -232,7 +221,10 @@ private fun CategoriesScreen(
         Crossfade(
             targetState = viewModel.state.value,
             animationSpec = tween(durationMillis = 100, easing = LinearEasing),
-            label = "loading animation"
+            label = "loading animation",
+            modifier = Modifier
+                .padding(contentPadding)
+                .fillMaxSize()
         ) { state ->
             Box(
                 modifier = Modifier.fillMaxSize(),
@@ -252,46 +244,10 @@ private fun CategoriesScreen(
                             .fillMaxSize()
                     )
 
-                    else -> LazyColumn(
-                        state = lazyListState,
-                        modifier = Modifier.padding(contentPadding),
-                        contentPadding = PaddingValues(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        itemsIndexed(viewModel.categories.value) { index, category ->
-                            CategoryComposable(
-                                category = category,
-                                isEditing = viewModel.isEditing.value,
-                                isSwiped = viewModel.swipedItemIndex.intValue == index,
-                                onClick = {
-                                    viewModel.onItemClick {
-                                        viewModel.swipedItemIndex.intValue = -1
-                                        navigateTo(AppScreens.Category.createUrl(category.id))
-                                    }
-                                },
-                                onEdit = {
-                                    viewModel.onItemClick {
-                                        viewModel.swipedItemIndex.intValue = -1
-                                        navigateTo(
-                                            AppScreens.Category.createUrl(
-                                                category.id,
-                                                isEdit = true
-                                            )
-                                        )
-                                    }
-                                },
-                                onDelete = remember {
-                                    fun() {
-                                        viewModel.deleteCategory(category, ::showSnackbar)
-                                    }
-                                }
-                            )
-                        }
-                        item {
-                            Spacer(modifier = Modifier.height(70.dp))
-                        }
-                    }
+                    else -> CategoriesList(
+                        lazyListState = lazyListState,
+                        viewModel = viewModel
+                    )
                 }
 
                 AnimatedVisibility(
@@ -319,27 +275,86 @@ private fun CategoriesScreen(
 
 
 @Composable
+private fun CategoriesList(
+    lazyListState: LazyListState,
+    viewModel: CategoriesViewModel
+) {
+    LazyColumn(
+        state = lazyListState,
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        itemsIndexed(viewModel.categories.value) { index, category ->
+            CategoryComposable(
+                category = category,
+                isSwiped = viewModel.selectedCategoryIndex == index,
+                onSwipe = { isSwiped ->
+                    viewModel.selectedCategoryIndex = when {
+                        isSwiped -> index
+                        else -> null
+                    }
+                },
+                onClick = when {
+                    viewModel.isEditing.value -> null
+                    else -> fun() {
+                        viewModel.onItemClick {
+                            viewModel.navigateTo(AppScreens.CategoryViewer.createUrl(category.id))
+                        }
+                    }
+                },
+                onEdit = {
+                    viewModel.selectedCategoryIndex = -1
+                    viewModel.navigateTo(AppScreens.CategoryEditor.createUrl(category.id))
+                },
+                onDelete = remember {
+                    fun() {
+                        viewModel.onItemClick {
+                            viewModel.selectedCategoryIndex = -1
+                            viewModel.openDialog(DialogType.ConfirmDeletion(category))
+                        }
+                    }
+                }
+            )
+        }
+        item {
+            Spacer(modifier = Modifier.height(70.dp))
+        }
+    }
+}
+
+
+@Composable
 private fun CategoryComposable(
     category: Category,
-    isEditing: Boolean,
     isSwiped: Boolean,
-    onClick: () -> Unit,
+    onSwipe: suspend (isSwiped: Boolean) -> Unit,
+    onClick: (() -> Unit)?,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val state = rememberScrollableListItemState(isSwiped)
+    LaunchedEffect(isSwiped) {
+        if (isSwiped != state.isSwiped.value) {
+            state.swipe()
+        }
+    }
+    LaunchedEffect(key1 = state.isSwiped.value) {
+        if (state.isSwiped.value != isSwiped) {
+            onSwipe(state.isSwiped.value)
+        }
+    }
+
     ScrollableListItem(
+        state = state,
         modifier = modifier,
-        onClick = if (isEditing) null else onClick,
+        onClick = onClick,
         hiddenContent = {
             EditDeleteContent(
                 onEditClick = onEdit,
                 onDeleteClick = onDelete
             )
-        },
-        initialAlignment = when {
-            isSwiped -> Alignment.Start
-            else -> Alignment.End
         }
     ) {
         ListItem(
