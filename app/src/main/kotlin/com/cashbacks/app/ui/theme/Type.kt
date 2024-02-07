@@ -19,7 +19,7 @@ val Typography = Typography(
         lineHeight = 22.sp,
     ),
     bodySmall = TextStyle(
-        fontSize = 13.sp,
+        fontSize = 14.sp,
         fontFamily = FontFamily.Default,
         lineHeight = 17.sp,
     ),

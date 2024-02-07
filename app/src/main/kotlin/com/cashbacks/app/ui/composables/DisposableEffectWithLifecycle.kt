@@ -8,14 +8,17 @@ import androidx.lifecycle.LifecycleEventObserver
 
 @Composable
 inline fun DisposableEffectWithLifecycle(
-    crossinline onDestroy: () -> Unit
+    crossinline onStart: () -> Unit = {},
+    crossinline onDestroy: () -> Unit = {}
 ) {
     val lifecycleOwner = LocalLifecycleOwner.current
     
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_DESTROY) {
-                onDestroy()
+            when (event) {
+                Lifecycle.Event.ON_DESTROY -> onDestroy()
+                Lifecycle.Event.ON_START -> onStart()
+                else -> {}
             }
         }
 

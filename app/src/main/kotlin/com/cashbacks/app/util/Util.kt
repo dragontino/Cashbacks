@@ -1,9 +1,16 @@
 package com.cashbacks.app.util
 
+import android.content.Context
+import android.content.ContextWrapper
+import androidx.activity.ComponentActivity
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.layout.Box
@@ -142,3 +149,36 @@ fun keyboardAsState(): State<Boolean> {
     val isImeVisible = WindowInsets.isImeVisible
     return rememberUpdatedState(newValue = isImeVisible)
 }
+
+
+val Alignment.Horizontal.mirror get() = when (this) {
+    Alignment.Start -> Alignment.End
+    Alignment.End -> Alignment.Start
+    else -> Alignment.CenterHorizontally
+}
+
+
+fun Context.getActivity(): ComponentActivity? = when (this) {
+    is ComponentActivity -> this
+    is ContextWrapper -> baseContext.getActivity()
+    else -> null
+}
+
+
+
+fun floatingActionButtonEnterAnimation(durationMillis: Int = 500) = slideInVertically(
+    animationSpec = tween(durationMillis, easing = FastOutSlowInEasing),
+    initialOffsetY = { it }
+) + fadeIn(
+    animationSpec = tween(durationMillis, easing = FastOutSlowInEasing)
+)
+
+fun floatingActionButtonExitAnimation(durationMillis: Int = 500) = slideOutVertically(
+    animationSpec = tween(durationMillis, easing = FastOutSlowInEasing),
+    targetOffsetY = { it }
+) + fadeOut(
+    animationSpec = tween(durationMillis, easing = FastOutSlowInEasing)
+)
+
+
+val Color.reversed get() = copy(red = 1 - red, green = 1 - green, blue = 1 - blue)
