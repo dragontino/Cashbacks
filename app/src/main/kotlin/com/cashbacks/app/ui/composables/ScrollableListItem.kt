@@ -53,7 +53,7 @@ fun ScrollableListItem(
     modifier: Modifier = Modifier,
     state: ScrollableListItemState = rememberScrollableListItemState(
         minOffset = ScrollableListItemDefaults.initialMinOffset,
-        isSwiped = false
+        initialIsSwiped = false
     ),
     onClick: (() -> Unit)? = null,
     hiddenContent: @Composable (RowScope.() -> Unit) = {},
@@ -79,16 +79,16 @@ fun ScrollableListItem(
                         y = 0
                     )
                 }
-                .background(MaterialTheme.colorScheme.surface.animate())
                 .clip(shape)
                 .border(border, shape)
+                .background(MaterialTheme.colorScheme.surface.animate())
                 .clickable(
                     indication = LocalIndication.current,
                     interactionSource = remember(::MutableInteractionSource),
                     role = Role.Button,
                     onClick = {
                         when {
-                            scrollableState.isScrollInProgress || state.isSwiped || onClick == null ->
+                            scrollableState.isScrollInProgress || state.isSwiped.value || onClick == null ->
                                 scope.launch { state.swipe() }
                             else -> onClick.invoke()
                         }

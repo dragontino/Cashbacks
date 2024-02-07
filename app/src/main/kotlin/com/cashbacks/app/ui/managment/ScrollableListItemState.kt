@@ -4,6 +4,7 @@ import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.Saver
@@ -20,7 +21,7 @@ class ScrollableListItemState(
 
     val contentOffset = mutableFloatStateOf(initialOffset)
 
-    val isSwiped: Boolean get() = contentOffset.floatValue != maxOffset
+    val isSwiped = derivedStateOf { contentOffset.floatValue != maxOffset }
 
     suspend fun onScroll(delta: Float) {
         contentOffset.floatValue = (contentOffset.floatValue + delta).coerceIn(
@@ -36,11 +37,18 @@ class ScrollableListItemState(
     }
 
     suspend fun swipe() {
-        val targetOffset = when (contentOffset.floatValue) {
-            minOffset.floatValue -> maxOffset
-            else -> minOffset.floatValue
+        when (contentOffset.floatValue) {
+            minOffset.floatValue -> swipeToRight()
+            else -> swipeToLeft()
         }
-        animateOffset(targetOffset)
+    }
+
+    suspend fun swipeToLeft() {
+        animateOffset(minOffset.floatValue)
+    }
+
+    suspend fun swipeToRight() {
+        animateOffset(maxOffset)
     }
 
     private suspend fun animateOffset() {
@@ -85,10 +93,10 @@ class ScrollableListItemState(
 
 @Composable
 fun rememberScrollableListItemState(
-    isSwiped: Boolean,
+    initialIsSwiped: Boolean = false,
     minOffset: Float = ScrollableListItemDefaults.initialMinOffset
 ): ScrollableListItemState {
-    val isSwipedState = rememberUpdatedState(isSwiped)
+    val isSwipedState = rememberUpdatedState(initialIsSwiped)
     return rememberSaveable(saver = ScrollableListItemState.Saver) {
         ScrollableListItemState(
             minOffset,
