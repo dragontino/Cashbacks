@@ -5,8 +5,8 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import com.cashbacks.domain.model.BankCard
 import com.cashbacks.domain.model.BasicBankCard
-import com.cashbacks.domain.model.BasicInfoBankCard
 import com.cashbacks.domain.model.Cashback
 
 @Entity(
@@ -39,7 +39,7 @@ data class CashbackDB(
     val shopId: Long?,
     val categoryId: Long?,
     val bankCardId: Long,
-    val amount: String = "",
+    val amount: Double = -1.0,
     val expirationDate: String? = "",
     val comment: String = ""
 ) {
@@ -52,14 +52,24 @@ data class CashbackDB(
         shopId = shopId,
         categoryId = categoryId,
         bankCardId = cashback.bankCard.id,
-        amount = cashback.amount,
+        amount = cashback.amount.toDoubleOrNull() ?: -1.0,
         expirationDate = cashback.expirationDate,
         comment = cashback.comment
     )
+}
 
-    fun mapToCashback(bankCard: BasicInfoBankCard) = Cashback(
+
+data class BasicCashbackDB(
+    val id: Long,
+    @Embedded(prefix = "card_")
+    val bankCard: BasicBankCard,
+    val amount: Double,
+    val expirationDate: String?,
+    val comment: String
+) {
+    fun mapToCashback() = Cashback(
         id = id,
-        amount = amount,
+        amount = if (amount < 0) "" else amount.toString(),
         expirationDate = expirationDate,
         comment = comment,
         bankCard = bankCard
@@ -70,14 +80,14 @@ data class CashbackDB(
 data class CashbackWithBankCardDB(
     val id: Long,
     @Embedded(prefix = "card_")
-    val bankCard: BasicBankCard,
-    val amount: String,
+    val bankCard: BankCard,
+    val amount: Double,
     val expirationDate: String?,
     val comment: String
 ) {
     fun mapToCashback() = Cashback(
         id = id,
-        amount = amount,
+        amount = if (amount < 0) "" else amount.toString(),
         expirationDate = expirationDate,
         comment = comment,
         bankCard = bankCard

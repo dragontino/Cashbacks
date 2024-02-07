@@ -1,15 +1,21 @@
 package com.cashbacks.app.viewmodel
 
 import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.lifecycle.LiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
 import com.cashbacks.app.model.ComposableCashback
 import com.cashbacks.app.ui.managment.ViewModelState
+import com.cashbacks.domain.model.BankCard
 import com.cashbacks.domain.model.Cashback
 import com.cashbacks.domain.model.Category
 import com.cashbacks.domain.model.Shop
+import com.cashbacks.domain.usecase.card.FetchBankCardsUseCase
 import com.cashbacks.domain.usecase.cashback.CashbackCategoryUseCase
 import com.cashbacks.domain.usecase.cashback.CashbackShopUseCase
 import com.cashbacks.domain.usecase.cashback.EditCashbackUseCase
@@ -20,10 +26,10 @@ class CashbackViewModel(
     private val cashbackCategoryUseCase: CashbackCategoryUseCase,
     private val cashbackShopUseCase: CashbackShopUseCase,
     private val editCashbackUseCase: EditCashbackUseCase,
+    private val fetchBankCardsUseCase: FetchBankCardsUseCase,
     internal val cashbackId: Long?,
     private val parentId: Long,
-    private val parentName: String,
-    isEditing: Boolean
+    private val parentName: String
 ) : ViewModel() {
 
     private val _state = mutableStateOf(ViewModelState.Loading)
@@ -31,6 +37,11 @@ class CashbackViewModel(
 
     private val _cashback = mutableStateOf(ComposableCashback())
     val cashback = derivedStateOf { _cashback.value }
+
+    var showConfirmDeletionDialog by mutableStateOf(false)
+        private set
+
+    var showBankCardsSelection by mutableStateOf(false)
 
 
     init {
@@ -42,37 +53,34 @@ class CashbackViewModel(
                     .getOrNull()
                     ?.let { _cashback.value = ComposableCashback(it) }
             }
-            _state.value = when {
-                isEditing || cashbackId == null -> ViewModelState.Editing
-                else -> ViewModelState.Viewing
-            }
-        }
-    }
-
-    fun edit() {
-        viewModelScope.launch {
-            _state.value = ViewModelState.Loading
-            delay(300)
-            _state.value = ViewModelState.Editing
-        }
-    }
-
-    fun save() {
-        viewModelScope.launch {
-            _state.value = ViewModelState.Loading
-            delay(300)
-            saveCashback()
             _state.value = ViewModelState.Viewing
         }
     }
 
+    fun getAllBankCards(): LiveData<List<BankCard>> {
+        return fetchBankCardsUseCase.fetchBankCards().asLiveData(timeoutInMs = 200)
+    }
 
-    private suspend fun saveCashback() {
-        if (cashback.value.bankCard.id == 0L) return
+    fun openConfirmDeletionDialog() {
+        showConfirmDeletionDialog = true
+    }
 
-        when (cashbackId) {
-            null -> addCashback(cashback.value.mapToCashback())
-            else -> updateCashback(cashback.value.mapToCashback())
+    fun closeConfirmDeletionDialog() {
+        showConfirmDeletionDialog = false
+    }
+
+
+    fun saveCashback() {
+        if (cashback.value.bankCard == null) return
+
+        viewModelScope.launch {
+            _state.value = ViewModelState.Loading
+            delay(300)
+            when (cashbackId) {
+                null -> addCashback(cashback.value.mapToCashback())
+                else -> updateCashback(cashback.value.mapToCashback())
+            }
+            _state.value = ViewModelState.Viewing
         }
     }
 
@@ -121,20 +129,20 @@ class CashbackViewModel(
         private val cashbackCategoryUseCase: CashbackCategoryUseCase,
         private val cashbackShopUseCase: CashbackShopUseCase,
         private val editCashbackUseCase: EditCashbackUseCase,
+        private val fetchBankCardsUseCase: FetchBankCardsUseCase,
         private val id: Long?,
         private val parentId: Long,
-        private val parentName: String,
-        private val isEdit: Boolean
+        private val parentName: String
     ) : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             return CashbackViewModel(
                 cashbackCategoryUseCase,
                 cashbackShopUseCase,
                 editCashbackUseCase,
+                fetchBankCardsUseCase,
                 id,
                 parentId,
-                parentName,
-                isEdit
+                parentName
             ) as T
         }
     }

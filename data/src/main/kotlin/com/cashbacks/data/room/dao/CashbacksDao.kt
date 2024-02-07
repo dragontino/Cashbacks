@@ -27,11 +27,14 @@ interface CashbacksDao {
                    card.id AS card_id,
                    card.name AS card_name,
                    card.number AS card_number,
-                   card.paymentSystem AS card_paymentSystem
+                   card.paymentSystem AS card_paymentSystem,
+                   card.holder AS card_holder,
+                   card.validityPeriod AS card_validityPeriod,
+                   card.cvv AS card_cvv,
+                   card.pin AS card_pin,
+                   card.comment AS card_comment
             FROM Cashbacks AS cash
-            INNER JOIN (
-                SELECT id, name, number, paymentSystem FROM Cards
-            ) AS card ON card.id = cash.bankCardId
+            INNER JOIN (SELECT * FROM Cards) AS card ON card.id = cash.bankCardId
             WHERE cash.id = :id
         """,
     )
@@ -44,11 +47,14 @@ interface CashbacksDao {
                    card.id AS card_id,
                    card.name AS card_name,
                    card.number AS card_number,
-                   card.paymentSystem AS card_paymentSystem
+                   card.paymentSystem AS card_paymentSystem,
+                   card.holder AS card_holder,
+                   card.validityPeriod AS card_validityPeriod,
+                   card.cvv AS card_cvv,
+                   card.pin AS card_pin,
+                   card.comment AS card_comment
             FROM Cashbacks AS cash
-            INNER JOIN (
-                SELECT id, name, number, paymentSystem FROM Cards
-            ) AS card ON card.id = cash.bankCardId
+            INNER JOIN (SELECT * FROM Cards) AS card ON card.id = cash.bankCardId
             WHERE cash.categoryId = :categoryId
         """,
     )
@@ -61,13 +67,16 @@ interface CashbacksDao {
                    card.id AS card_id,
                    card.name AS card_name,
                    card.number AS card_number,
-                   card.paymentSystem AS card_paymentSystem
+                   card.paymentSystem AS card_paymentSystem,
+                   card.holder AS card_holder,
+                   card.validityPeriod AS card_validityPeriod,
+                   card.cvv AS card_cvv,
+                   card.pin AS card_pin,
+                   card.comment AS card_comment
             FROM Cashbacks AS cash
-            INNER JOIN (
-                SELECT id, name, number, paymentSystem FROM Cards
-            ) AS card ON card.id = cash.bankCardId
+            INNER JOIN (SELECT * FROM Cards) AS card ON card.id = cash.bankCardId
             WHERE cash.shopId = :shopId
-        """,
+        """
     )
     fun fetchCashbacksFromShop(shopId: Long): Flow<List<CashbackWithBankCardDB>>
 
