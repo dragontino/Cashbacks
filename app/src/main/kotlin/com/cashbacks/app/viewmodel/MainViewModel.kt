@@ -1,5 +1,7 @@
 package com.cashbacks.app.viewmodel
 
+import android.graphics.Color
+import androidx.activity.SystemBarStyle
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
@@ -13,6 +15,17 @@ class MainViewModel(settingsUseCase: SettingsUseCase) : ViewModel() {
 
     private val _settings = mutableStateOf(Settings())
     val settings = derivedStateOf { _settings.value }
+
+    fun statusBarStyle(isDarkTheme: Boolean) = when {
+        isDarkTheme.xor(settings.value.dynamicColor) ->
+            SystemBarStyle.dark(scrim = Color.TRANSPARENT)
+        else -> SystemBarStyle.light(scrim = Color.TRANSPARENT, darkScrim = Color.TRANSPARENT)
+    }
+
+    fun navigationBarStyle(isDarkTheme: Boolean) = when {
+        isDarkTheme -> SystemBarStyle.dark(scrim = Color.RED)
+        else -> SystemBarStyle.light(scrim = Color.TRANSPARENT, darkScrim = Color.TRANSPARENT)
+    }
 
     init {
         settingsUseCase.fetchSettings()
