@@ -6,18 +6,18 @@ import com.cashbacks.domain.repository.CategoryRepository
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 
-class DeleteCategoryUseCase(
-    private val repository: CategoryRepository,
+class UpdateCategoryUseCase(
+    private val categoryRepository: CategoryRepository,
     private val dispatcher: CoroutineDispatcher
 ) {
     private companion object {
-        const val TAG = "DeleteCategoryUseCase"
+        const val TAG = "UpdateCategoriesUseCase"
     }
 
-    suspend fun deleteCategory(category: Category): Result<Unit> {
+    suspend fun updateCategory(category: Category): Result<Unit> {
         return withContext(dispatcher) {
-            return@withContext repository
-                .deleteCategory(category)
+            categoryRepository
+                .updateCategory(category)
                 .apply {
                     exceptionOrNull()?.let { Log.e(TAG, it.message, it) }
                 }

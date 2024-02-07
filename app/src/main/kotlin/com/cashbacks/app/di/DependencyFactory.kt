@@ -12,21 +12,24 @@ import com.cashbacks.domain.repository.CashbackRepository
 import com.cashbacks.domain.repository.CategoryRepository
 import com.cashbacks.domain.repository.SettingsRepository
 import com.cashbacks.domain.repository.ShopRepository
-import com.cashbacks.domain.usecase.EditBankCardUseCase
-import com.cashbacks.domain.usecase.FetchBankCardsUseCase
+import com.cashbacks.domain.usecase.card.DeleteBankCardUseCase
+import com.cashbacks.domain.usecase.card.EditBankCardUseCase
+import com.cashbacks.domain.usecase.card.FetchBankCardsUseCase
+import com.cashbacks.domain.usecase.card.GetBankCardUseCase
 import com.cashbacks.domain.usecase.cashback.CashbackCategoryUseCase
 import com.cashbacks.domain.usecase.cashback.CashbackShopUseCase
 import com.cashbacks.domain.usecase.cashback.EditCashbackUseCase
 import com.cashbacks.domain.usecase.cashback.FetchCashbacksUseCase
 import com.cashbacks.domain.usecase.categories.AddCategoryUseCase
 import com.cashbacks.domain.usecase.categories.DeleteCategoryUseCase
-import com.cashbacks.domain.usecase.categories.EditCategoryUseCase
 import com.cashbacks.domain.usecase.categories.FetchCategoriesUseCase
+import com.cashbacks.domain.usecase.categories.GetCategoryUseCase
+import com.cashbacks.domain.usecase.categories.UpdateCategoryUseCase
 import com.cashbacks.domain.usecase.settings.SettingsUseCase
 import com.cashbacks.domain.usecase.shops.AddShopUseCase
 import com.cashbacks.domain.usecase.shops.DeleteShopUseCase
 import com.cashbacks.domain.usecase.shops.EditShopUseCase
-import com.cashbacks.domain.usecase.shops.FetchShopsUseCase
+import com.cashbacks.domain.usecase.shops.FetchShopsFromCategoryUseCase
 import kotlinx.coroutines.Dispatchers
 
 class DependencyFactory(private val application: Application) {
@@ -49,8 +52,13 @@ class DependencyFactory(private val application: Application) {
         repository = provideCategoryRepository()
     )
 
-    fun provideEditCategoryUseCase() = EditCategoryUseCase(
+    fun provideUpdateCategoryUseCase() = UpdateCategoryUseCase(
         categoryRepository = provideCategoryRepository(),
+        dispatcher = Dispatchers.IO
+    )
+
+    fun provideGetCategoryUseCase() = GetCategoryUseCase(
+        repository = provideCategoryRepository(),
         dispatcher = Dispatchers.IO
     )
 
@@ -79,7 +87,7 @@ class DependencyFactory(private val application: Application) {
         dispatcher = Dispatchers.IO
     )
 
-    fun provideFetchShopsUseCase() = FetchShopsUseCase(
+    fun provideFetchShopsUseCase() = FetchShopsFromCategoryUseCase(
         repository = provideShopRepository()
     )
 
@@ -96,7 +104,17 @@ class DependencyFactory(private val application: Application) {
         repository = provideBankCardRepository()
     )
 
+    fun provideGetBankCardUseCase() = GetBankCardUseCase(
+        repository = provideBankCardRepository(),
+        dispatcher = Dispatchers.IO
+    )
+
     fun provideEditBankCardUseCase() = EditBankCardUseCase(
+        repository = provideBankCardRepository(),
+        dispatcher = Dispatchers.IO
+    )
+
+    fun provideDeleteBankCardUseCase() = DeleteBankCardUseCase(
         repository = provideBankCardRepository(),
         dispatcher = Dispatchers.IO
     )

@@ -6,22 +6,16 @@ import com.cashbacks.domain.repository.CategoryRepository
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 
-class EditCategoryUseCase(
-    private val categoryRepository: CategoryRepository,
+class GetCategoryUseCase(
+    private val repository: CategoryRepository,
     private val dispatcher: CoroutineDispatcher
 ) {
     private companion object {
-        const val TAG = "CategoriesUseCase"
-    }
-
-    suspend fun updateCategory(category: Category): Result<Unit> {
-        return withContext(dispatcher) {
-            categoryRepository.updateCategory(category)
-        }
+        const val TAG = "GetCategoryUseCase"
     }
 
     suspend fun getCategoryById(id: Long): Result<Category> = withContext(dispatcher) {
-        return@withContext categoryRepository.getCategoryById(id)
+        return@withContext repository.getCategoryById(id)
             .also { result ->
                 result.exceptionOrNull()?.let { Log.e(TAG, it.message, it) }
             }
