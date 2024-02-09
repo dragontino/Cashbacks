@@ -7,6 +7,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.withContext
 
@@ -29,14 +30,18 @@ class SettingsUseCase(
         }
     }
 
-    fun fetchSettings(): Flow<Settings> = repository.fetchSettings().mapLatest { settings ->
-        when (settings) {
-            null -> {
-                repository.addSettings(Settings())
-                delay(200)
-                return@mapLatest Settings()
+    fun fetchSettings(): Flow<Settings> = repository
+        .fetchSettings()
+        .mapLatest { settings ->
+            when (settings) {
+                null -> {
+                    repository.addSettings(Settings())
+                    delay(200)
+                    return@mapLatest Settings()
+                }
+
+                else -> return@mapLatest settings
             }
-            else -> return@mapLatest settings
         }
-    }
+        .flowOn(dispatcher)
 }
