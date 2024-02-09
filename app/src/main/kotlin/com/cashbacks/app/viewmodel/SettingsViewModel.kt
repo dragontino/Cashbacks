@@ -16,11 +16,10 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 import kotlin.reflect.KProperty1
 
-class SettingsViewModel(
-    private val useCase: SettingsUseCase
-) : ViewModel() {
+class SettingsViewModel @Inject constructor(private val useCase: SettingsUseCase) : ViewModel() {
     private val _settings = mutableStateOf(Settings())
     val settings = derivedStateOf { _settings.value }
 

@@ -6,7 +6,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
 import com.cashbacks.app.model.ComposableCashback
@@ -19,17 +18,20 @@ import com.cashbacks.domain.usecase.card.FetchBankCardsUseCase
 import com.cashbacks.domain.usecase.cashback.CashbackCategoryUseCase
 import com.cashbacks.domain.usecase.cashback.CashbackShopUseCase
 import com.cashbacks.domain.usecase.cashback.EditCashbackUseCase
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-class CashbackViewModel(
+class CashbackViewModel @AssistedInject constructor(
     private val cashbackCategoryUseCase: CashbackCategoryUseCase,
     private val cashbackShopUseCase: CashbackShopUseCase,
     private val editCashbackUseCase: EditCashbackUseCase,
     private val fetchBankCardsUseCase: FetchBankCardsUseCase,
-    internal val cashbackId: Long?,
-    private val parentId: Long,
-    private val parentName: String
+    @Assisted internal val cashbackId: Long?,
+    @Assisted private val parentId: Long,
+    @Assisted private val parentName: String
 ) : ViewModel() {
 
     private val _state = mutableStateOf(ViewModelState.Loading)
@@ -124,26 +126,8 @@ class CashbackViewModel(
     }
 
 
-    @Suppress("UNCHECKED_CAST")
-    class Factory(
-        private val cashbackCategoryUseCase: CashbackCategoryUseCase,
-        private val cashbackShopUseCase: CashbackShopUseCase,
-        private val editCashbackUseCase: EditCashbackUseCase,
-        private val fetchBankCardsUseCase: FetchBankCardsUseCase,
-        private val id: Long?,
-        private val parentId: Long,
-        private val parentName: String
-    ) : ViewModelProvider.Factory {
-        override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            return CashbackViewModel(
-                cashbackCategoryUseCase,
-                cashbackShopUseCase,
-                editCashbackUseCase,
-                fetchBankCardsUseCase,
-                id,
-                parentId,
-                parentName
-            ) as T
-        }
+    @AssistedFactory
+    interface Factory {
+        fun create(id: Long?, parentId: Long, parentName: String): CashbackViewModel
     }
 }

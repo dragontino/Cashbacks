@@ -1,10 +1,14 @@
 package com.cashbacks.app.app
 
 import android.app.Application
-import com.cashbacks.app.di.DependencyFactory
-import com.cashbacks.app.viewmodel.ViewModelFactory
+import com.cashbacks.app.di.AppComponent
+import com.cashbacks.app.di.DaggerAppComponent
+import com.cashbacks.app.di.modules.DataModule
 
 class App : Application() {
-    val dependencyFactory by lazy { DependencyFactory(this) }
-    val viewModelFactory by lazy { ViewModelFactory(this) }
+    val appComponent: AppComponent by lazy {
+        DaggerAppComponent.builder()
+            .dataModule(DataModule(context = this))
+            .build()
+    }
 }

@@ -1,15 +1,13 @@
 package com.cashbacks.app.viewmodel
 
-import android.app.Application
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.cashbacks.app.app.App
 import com.cashbacks.app.model.ExceptionMapper.getMessage
 import com.cashbacks.app.ui.managment.DialogType
 import com.cashbacks.app.ui.managment.ListState
@@ -18,6 +16,9 @@ import com.cashbacks.domain.model.Category
 import com.cashbacks.domain.usecase.categories.AddCategoryUseCase
 import com.cashbacks.domain.usecase.categories.DeleteCategoryUseCase
 import com.cashbacks.domain.usecase.categories.FetchCategoriesUseCase
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -29,11 +30,12 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 
 @OptIn(FlowPreview::class)
-class CategoriesViewModel(
+class CategoriesViewModel
+@AssistedInject constructor(
     private val addCategoryUseCase: AddCategoryUseCase,
     fetchCategoriesUseCase: FetchCategoriesUseCase,
     private val deleteCategoryUseCase: DeleteCategoryUseCase,
-    application: Application
+    @Assisted application: App
 ) : AndroidViewModel(application), EventsFlow, DebounceOnClick {
 
     private val _state = mutableStateOf(ListState.Loading)
@@ -142,20 +144,8 @@ class CategoriesViewModel(
     }
 
 
-    @Suppress("UNCHECKED_CAST")
-    class Factory(
-        private val addCategoryUseCase: AddCategoryUseCase,
-        private val fetchCategoriesUseCase: FetchCategoriesUseCase,
-        private val deleteCategoryUseCase: DeleteCategoryUseCase,
-        private val application: Application
-    ) : ViewModelProvider.Factory {
-        override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            return CategoriesViewModel(
-                addCategoryUseCase,
-                fetchCategoriesUseCase,
-                deleteCategoryUseCase,
-                application
-            ) as T
-        }
+    @AssistedFactory
+    interface Factory {
+        fun create(application: App): CategoriesViewModel
     }
 }

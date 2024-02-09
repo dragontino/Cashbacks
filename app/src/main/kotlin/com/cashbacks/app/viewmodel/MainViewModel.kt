@@ -10,8 +10,9 @@ import com.cashbacks.domain.model.Settings
 import com.cashbacks.domain.usecase.settings.SettingsUseCase
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import javax.inject.Inject
 
-class MainViewModel(settingsUseCase: SettingsUseCase) : ViewModel() {
+class MainViewModel @Inject constructor(settingsUseCase: SettingsUseCase) : ViewModel() {
 
     private val _settings = mutableStateOf(Settings())
     val settings = derivedStateOf { _settings.value }

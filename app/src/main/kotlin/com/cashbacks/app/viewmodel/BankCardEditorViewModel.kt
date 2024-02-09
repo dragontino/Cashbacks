@@ -5,7 +5,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.cashbacks.app.model.ComposableBankCard
 import com.cashbacks.app.ui.managment.ViewModelState
@@ -13,13 +12,16 @@ import com.cashbacks.app.util.AnimationDefaults
 import com.cashbacks.domain.model.PaymentSystem
 import com.cashbacks.domain.usecase.card.EditBankCardUseCase
 import com.cashbacks.domain.usecase.card.GetBankCardUseCase
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-class BankCardEditorViewModel(
+class BankCardEditorViewModel @AssistedInject constructor(
     private val getBankCardUseCase: GetBankCardUseCase,
     private val editBankCardUseCase: EditBankCardUseCase,
-    private val bankCardId: Long?
+    @Assisted private val bankCardId: Long?
 ) : ViewModel() {
 
     private val _state = mutableStateOf(ViewModelState.Loading)
@@ -58,14 +60,8 @@ class BankCardEditorViewModel(
     }
 
 
-    @Suppress("UNCHECKED_CAST")
-    class Factory(
-        private val getBankCardUseCase: GetBankCardUseCase,
-        private val editBankCardUseCase: EditBankCardUseCase,
-        private val id: Long?
-    ) : ViewModelProvider.Factory {
-        override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            return BankCardEditorViewModel(getBankCardUseCase, editBankCardUseCase, id) as T
-        }
+    @AssistedFactory
+    interface Factory {
+        fun create(bankCardId: Long?): BankCardEditorViewModel
     }
 }

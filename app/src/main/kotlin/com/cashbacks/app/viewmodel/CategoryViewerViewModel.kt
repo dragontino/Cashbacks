@@ -3,7 +3,6 @@ package com.cashbacks.app.viewmodel
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
 import com.cashbacks.app.ui.managment.DialogType
@@ -18,6 +17,9 @@ import com.cashbacks.domain.usecase.cashback.FetchCashbacksUseCase
 import com.cashbacks.domain.usecase.categories.GetCategoryUseCase
 import com.cashbacks.domain.usecase.shops.DeleteShopUseCase
 import com.cashbacks.domain.usecase.shops.FetchShopsFromCategoryUseCase
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -28,13 +30,13 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 
 @OptIn(FlowPreview::class)
-class CategoryViewerViewModel(
+class CategoryViewerViewModel @AssistedInject constructor(
     private val getCategoryUseCase: GetCategoryUseCase,
     fetchShopsFromCategoryUseCase: FetchShopsFromCategoryUseCase,
     fetchCashbacksUseCase: FetchCashbacksUseCase,
     private val deleteShopUseCase: DeleteShopUseCase,
     private val deleteCashbackUseCase: CashbackCategoryUseCase,
-    val categoryId: Long
+    @Assisted val categoryId: Long
     ) : ViewModel(), EventsFlow, DebounceOnClick {
 
     private val _state = mutableStateOf(ViewModelState.Loading)
@@ -143,24 +145,8 @@ class CategoryViewerViewModel(
     }
 
 
-    @Suppress("UNCHECKED_CAST")
-    class Factory(
-        private val getCategoryUseCase: GetCategoryUseCase,
-        private val fetchShopsFromCategoryUseCase: FetchShopsFromCategoryUseCase,
-        private val fetchCashbacksUseCase: FetchCashbacksUseCase,
-        private val deleteShopUseCase: DeleteShopUseCase,
-        private val deleteCashbackUseCase: CashbackCategoryUseCase,
-        private val categoryId: Long
-    ) : ViewModelProvider.Factory {
-        override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            return CategoryViewerViewModel(
-                getCategoryUseCase,
-                fetchShopsFromCategoryUseCase,
-                fetchCashbacksUseCase,
-                deleteShopUseCase,
-                deleteCashbackUseCase,
-                categoryId
-            ) as T
-        }
+    @AssistedFactory
+    interface Factory {
+        fun create(categoryId: Long): CategoryViewerViewModel
     }
 }

@@ -27,6 +27,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NamedNavArgument
 import androidx.navigation.NavBackStackEntry
@@ -54,14 +56,7 @@ import com.cashbacks.app.ui.screens.SingleCashbackScreen
 import com.cashbacks.app.util.AnimationDefaults
 import com.cashbacks.app.util.getActivity
 import com.cashbacks.app.util.mirror
-import com.cashbacks.app.viewmodel.BankCardEditorViewModel
-import com.cashbacks.app.viewmodel.BankCardViewerViewModel
-import com.cashbacks.app.viewmodel.CardsViewModel
-import com.cashbacks.app.viewmodel.CashbackViewModel
-import com.cashbacks.app.viewmodel.CategoriesViewModel
-import com.cashbacks.app.viewmodel.CategoryEditorViewModel
-import com.cashbacks.app.viewmodel.CategoryViewerViewModel
-import com.cashbacks.app.viewmodel.ShopViewModel
+import com.cashbacks.app.viewmodel.BasicViewModelFactory
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
@@ -159,14 +154,18 @@ fun NavigationScreen(application: App, isDarkTheme: Boolean) {
                     )
                 },
             ) {
-                val vmFactory = CategoriesViewModel.Factory(
-                    application = application,
-                    addCategoryUseCase = application.dependencyFactory.provideAddCategoryUseCase(),
-                    fetchCategoriesUseCase = application.dependencyFactory.provideFetchCategoriesUseCase(),
-                    deleteCategoryUseCase = application.dependencyFactory.provideDeleteCategoryUseCase()
-                )
+                val factory = remember {
+                    object : ViewModelProvider.Factory {
+                        @Suppress("UNCHECKED_CAST")
+                        override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                            return application.appComponent.categoriesViewModel()
+                                .create(application) as T
+                        }
+                    }
+                }
+
                 CategoriesScreen(
-                    viewModel = viewModel(factory = vmFactory),
+                    viewModel = viewModel(factory = factory),
                     openDrawer = { openDrawer() },
                     navigateTo = navController::navigateTo,
                     popBackStack = { context.getActivity()?.finish() }
@@ -185,7 +184,11 @@ fun NavigationScreen(application: App, isDarkTheme: Boolean) {
                 }
             ) {
                 SettingsScreen(
-                    viewModel = viewModel(factory = application.viewModelFactory),
+                    viewModel = viewModel(
+                        factory = BasicViewModelFactory {
+                            application.appComponent.settingsViewModel()
+                        }
+                    ),
                     isDarkTheme = isDarkTheme,
                     openDrawer = openDrawer
                 )
@@ -203,13 +206,13 @@ fun NavigationScreen(application: App, isDarkTheme: Boolean) {
                 },
                 popEnterTransition = { enterScreenTransition(expandFrom = it.animationAlignment.mirror) }
             ) {
-                val vmFactory = CardsViewModel.Factory(
-                    useCase = application.dependencyFactory.provideFetchBankCardsUseCase()
-                )
-
                 CardsScreen(
                     openDrawer = openDrawer,
-                    viewModel = viewModel(factory = vmFactory),
+                    viewModel = viewModel(
+                        factory = BasicViewModelFactory {
+                            application.appComponent.cardsViewModel()
+                        }
+                    ),
                     navigateTo = remember {
                         fun (route: String) {
                             navController.navigateTo(route, parentScreen = AppScreens.BankCards)
@@ -230,17 +233,21 @@ fun NavigationScreen(application: App, isDarkTheme: Boolean) {
                     }
                 )
             ) {
-                val vmFactory = BankCardViewerViewModel.Factory(
-                    getBankCardUseCase = application.dependencyFactory.provideGetBankCardUseCase(),
-                    deleteBankCardUseCase = application.dependencyFactory.provideDeleteBankCardUseCase(),
-                    cardId = it.arguments?.getLong(AppScreens.BankCardViewer.Args.Id.name) ?: 0
-                )
+                val vmFactory = remember {
+                    object : ViewModelProvider.Factory {
+                        @Suppress("UNCHECKED_CAST")
+                        override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                            return application.appComponent.bankCardViewerViewModel().create(
+                                cardId = it.arguments
+                                    ?.getLong(AppScreens.BankCardViewer.Args.Id.name)
+                                    ?: 0
+                            ) as T
+                        }
+                    }
+                }
 
                 BankCardViewerScreen(
-                    viewModel = viewModel(
-                        viewModelStoreOwner = it,
-                        factory = vmFactory
-                    ),
+                    viewModel = viewModel(viewModelStoreOwner = it, factory = vmFactory),
                     popBackStack = navController::popBackStack,
                     navigateTo = { route ->
                         navController.navigateTo(
@@ -264,11 +271,18 @@ fun NavigationScreen(application: App, isDarkTheme: Boolean) {
                     }
                 )
             ) {
-                val vmFactory = BankCardEditorViewModel.Factory(
-                    getBankCardUseCase = application.dependencyFactory.provideGetBankCardUseCase(),
-                    editBankCardUseCase = application.dependencyFactory.provideEditBankCardUseCase(),
-                    id = it.arguments?.getString(AppScreens.BankCardEditor.Args.Id.name)?.toLongOrNull()
-                )
+                val vmFactory = remember {
+                    object : ViewModelProvider.Factory {
+                        @Suppress("UNCHECKED_CAST")
+                        override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                            return application.appComponent.bankCardEditorViewModel().create(
+                                bankCardId = it.arguments
+                                    ?.getString(AppScreens.BankCardEditor.Args.Id.name)
+                                    ?.toLongOrNull()
+                            ) as T
+                        }
+                    }
+                }
 
                 BankCardEditorScreen(
                     viewModel = viewModel(factory = vmFactory),
@@ -293,14 +307,18 @@ fun NavigationScreen(application: App, isDarkTheme: Boolean) {
                     }
                 )
             ) {
-                val vmFactory = CategoryViewerViewModel.Factory(
-                    getCategoryUseCase = application.dependencyFactory.provideGetCategoryUseCase(),
-                    deleteShopUseCase = application.dependencyFactory.provideDeleteShopUseCase(),
-                    deleteCashbackUseCase = application.dependencyFactory.provideCashbackCategoryUseCase(),
-                    fetchShopsFromCategoryUseCase = application.dependencyFactory.provideFetchShopsUseCase(),
-                    fetchCashbacksUseCase = application.dependencyFactory.provideFetchCashbacksUseCase(),
-                    categoryId = it.arguments?.getLong(AppScreens.CategoryViewer.Args.Id.name) ?: 0
-                )
+                val vmFactory = remember {
+                    object : ViewModelProvider.Factory {
+                        @Suppress("UNCHECKED_CAST")
+                        override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                            return application.appComponent.categoryViewerViewModel().create(
+                                categoryId = it.arguments
+                                    ?.getLong(AppScreens.CategoryViewer.Args.Id.name)
+                                    ?: 0
+                            ) as T
+                        }
+                    }
+                }
 
                 CategoryViewerScreen(
                     viewModel = viewModel(factory = vmFactory),
@@ -324,18 +342,19 @@ fun NavigationScreen(application: App, isDarkTheme: Boolean) {
                     }
                 )
             ) {
-                val vmFactory = CategoryEditorViewModel.Factory(
-                    application = application,
-                    getCategoryUseCase = application.dependencyFactory.provideGetCategoryUseCase(),
-                    addShopUseCase = application.dependencyFactory.provideAddShopUseCase(),
-                    updateCategoryUseCase = application.dependencyFactory.provideUpdateCategoryUseCase(),
-                    deleteCategoryUseCase = application.dependencyFactory.provideDeleteCategoryUseCase(),
-                    fetchShopsFromCategoryUseCase = application.dependencyFactory.provideFetchShopsUseCase(),
-                    fetchCashbacksUseCase = application.dependencyFactory.provideFetchCashbacksUseCase(),
-                    deleteShopUseCase = application.dependencyFactory.provideDeleteShopUseCase(),
-                    deleteCashbackUseCase = application.dependencyFactory.provideCashbackCategoryUseCase(),
-                    categoryId = it.arguments?.getLong(AppScreens.CategoryEditor.Args.Id.name) ?: 0
-                )
+                val vmFactory = remember {
+                    object : ViewModelProvider.Factory {
+                        @Suppress("UNCHECKED_CAST")
+                        override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                            return application.appComponent.categoryEditorViewModel().create(
+                                application = application,
+                                categoryId = it.arguments
+                                    ?.getLong(AppScreens.CategoryEditor.Args.Id.name)
+                                    ?: 0
+                            ) as T
+                        }
+                    }
+                }
 
                 CategoryEditorScreen(
                     viewModel = viewModel(factory = vmFactory),
@@ -364,15 +383,24 @@ fun NavigationScreen(application: App, isDarkTheme: Boolean) {
                     },
                 )
             ) {
-                val vmFactory = CashbackViewModel.Factory(
-                    cashbackCategoryUseCase = application.dependencyFactory.provideCashbackCategoryUseCase(),
-                    cashbackShopUseCase = application.dependencyFactory.provideCashbackShopUseCase(),
-                    editCashbackUseCase = application.dependencyFactory.provideEditCashbackUseCase(),
-                    fetchBankCardsUseCase = application.dependencyFactory.provideFetchBankCardsUseCase(),
-                    id = it.arguments?.getString(AppScreens.Cashback.Args.Id.name)?.toLong(),
-                    parentId = it.arguments!!.getLong(AppScreens.Cashback.Args.ParentId.name),
-                    parentName = it.arguments?.getString(AppScreens.Cashback.Args.ParentName.name) ?: ""
-                )
+                val vmFactory = remember {
+                    object : ViewModelProvider.Factory {
+                        @Suppress("UNCHECKED_CAST")
+                        override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                            return application.appComponent.cashbackViewModel().create(
+                                id = it.arguments
+                                    ?.getString(AppScreens.Cashback.Args.Id.name)
+                                    ?.toLong(),
+                                parentId = it.arguments
+                                    ?.getLong(AppScreens.Cashback.Args.ParentId.name)
+                                    ?: 0,
+                                parentName = it.arguments
+                                    ?.getString(AppScreens.Cashback.Args.ParentName.name)
+                                    ?: ""
+                            ) as T
+                        }
+                    }
+                }
 
                 SingleCashbackScreen(
                     viewModel = viewModel(factory = vmFactory),
@@ -401,16 +429,25 @@ fun NavigationScreen(application: App, isDarkTheme: Boolean) {
                     }
                 )
             ) {
-                val vmFactory = ShopViewModel.Factory(
-                    application = application,
-                    fetchCashbacksUseCase = application.dependencyFactory.provideFetchCashbacksUseCase(),
-                    editShopUseCase = application.dependencyFactory.provideShopUseCase(),
-                    deleteShopUseCase = application.dependencyFactory.provideDeleteShopUseCase(),
-                    deleteCashbackUseCase = application.dependencyFactory.provideCashbackShopUseCase(),
-                    categoryId = it.arguments?.getLong(AppScreens.Shop.Args.CategoryId.name) ?: 0,
-                    shopId = it.arguments?.getLong(AppScreens.Shop.Args.ShopId.name) ?: 0,
-                    isEditing = it.arguments?.getBoolean(AppScreens.Shop.Args.IsEdit.name) ?: false
-                )
+                val vmFactory = remember {
+                    object : ViewModelProvider.Factory {
+                        @Suppress("UNCHECKED_CAST")
+                        override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                            return application.appComponent.shopViewModel().create(
+                                application = application,
+                                categoryId = it.arguments
+                                    ?.getLong(AppScreens.Shop.Args.CategoryId.name)
+                                    ?: 0,
+                                shopId = it.arguments
+                                    ?.getLong(AppScreens.Shop.Args.ShopId.name)
+                                    ?: 0,
+                                isEditing = it.arguments
+                                    ?.getBoolean(AppScreens.Shop.Args.IsEdit.name)
+                                    ?: false
+                            ) as T
+                        }
+                    }
+                }
 
                 ShopScreen(
                     viewModel = viewModel(factory = vmFactory),

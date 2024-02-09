@@ -33,9 +33,14 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
@@ -53,6 +58,7 @@ import com.cashbacks.app.ui.composables.DisposableEffectWithLifecycle
 import com.cashbacks.app.ui.composables.EditableTextField
 import com.cashbacks.app.ui.composables.EmptyList
 import com.cashbacks.app.ui.managment.DialogType
+import com.cashbacks.app.ui.managment.ScreenEvents
 import com.cashbacks.app.ui.managment.ViewModelState
 import com.cashbacks.app.ui.screens.navigation.AppScreens
 import com.cashbacks.app.util.LoadingInBox
@@ -94,9 +100,21 @@ fun ShopScreen(
             scope.launch { snackbarHostState.showSnackbar(message) }
         }
     }
-    
-    if (viewModel.showDialog) {
-        when (val type = viewModel.dialogType) {
+
+    var dialogType by rememberSaveable { mutableStateOf<DialogType?>(null) }
+    LaunchedEffect(key1 = true) {
+        viewModel.eventsFlow.collect { event ->
+            when (event) {
+                is ScreenEvents.Navigate -> event.route?.let(navigateTo) ?: popBackStack()
+                is ScreenEvents.ShowSnackbar -> showSnackbar(event.message)
+                is ScreenEvents.OpenDialog -> dialogType = event.type
+                ScreenEvents.CloseDialog -> dialogType = null
+            }
+        }
+    }
+
+    dialogType?.let { type ->
+        when (type) {
             is DialogType.ConfirmDeletion<*> -> {
                 ConfirmDeletionDialog(
                     text = when (type.value) {
@@ -108,9 +126,10 @@ fun ShopScreen(
                         when (type.value) {
                             is Shop -> {
                                 viewModel.deleteShop()
-                                viewModel.closeDialog() 
+                                viewModel.closeDialog()
                                 popBackStack()
                             }
+
                             is Cashback -> {
                                 viewModel.deleteCashback(type.value, errorMessage = showSnackbar)
                             }
@@ -119,6 +138,7 @@ fun ShopScreen(
                     onDismiss = viewModel::closeDialog
                 )
             }
+
             DialogType.Save -> {
                 ConfirmExitWithSaveDataDialog(
                     onConfirm = {
@@ -129,7 +149,6 @@ fun ShopScreen(
                     onClose = viewModel::closeDialog
                 )
             }
-            null -> {}
         }
     }
 

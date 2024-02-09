@@ -3,20 +3,22 @@ package com.cashbacks.app.viewmodel
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.cashbacks.app.ui.managment.ViewModelState
 import com.cashbacks.app.util.AnimationDefaults
 import com.cashbacks.domain.model.BankCard
 import com.cashbacks.domain.usecase.card.DeleteBankCardUseCase
 import com.cashbacks.domain.usecase.card.GetBankCardUseCase
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-class BankCardViewerViewModel(
+class BankCardViewerViewModel @AssistedInject constructor(
     private val getBankCardUseCase: GetBankCardUseCase,
     private val deleteBankCardUseCase: DeleteBankCardUseCase,
-    val cardId: Long
+    @Assisted val cardId: Long
 ) : ViewModel() {
 
     private val _state = mutableStateOf(ViewModelState.Viewing)
@@ -46,14 +48,8 @@ class BankCardViewerViewModel(
     }
 
 
-    @Suppress("UNCHECKED_CAST")
-    class Factory(
-        private val getBankCardUseCase: GetBankCardUseCase,
-        private val deleteBankCardUseCase: DeleteBankCardUseCase,
-        private val cardId: Long
-    ) : ViewModelProvider.Factory {
-        override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            return BankCardViewerViewModel(getBankCardUseCase, deleteBankCardUseCase, cardId) as T
-        }
+    @AssistedFactory
+    interface Factory {
+        fun create(cardId: Long): BankCardViewerViewModel
     }
 }
