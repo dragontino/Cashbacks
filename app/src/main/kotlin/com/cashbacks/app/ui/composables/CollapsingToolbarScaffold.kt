@@ -10,11 +10,11 @@ import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.only
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.tappableElement
 import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FabPosition
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.TopAppBarState
@@ -37,7 +37,7 @@ fun CollapsingToolbarScaffold(
     ),
     floatingActionButtons: @Composable (ColumnScope.() -> Unit) = {},
     snackbarHost: @Composable (() -> Unit) = {},
-    contentWindowInsets: WindowInsets = CollapsingToolbarScaffoldDefaults.contentWindowInsets(),
+    contentWindowInsets: WindowInsets = CollapsingToolbarScaffoldDefaults.contentWindowInsets,
     content: @Composable ((PaddingValues) -> Unit),
 ) {
     val nestedScrollConnection = remember {
@@ -52,6 +52,17 @@ fun CollapsingToolbarScaffold(
         topBar = topBar,
         snackbarHost = snackbarHost,
         contentWindowInsets = contentWindowInsets,
+        floatingActionButton = {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalAlignment = Alignment.End,
+                modifier = Modifier.windowInsetsPadding(
+                    WindowInsets.tappableElement.only(WindowInsetsSides.Horizontal)
+                ),
+                content = floatingActionButtons
+            )
+        },
+        floatingActionButtonPosition = FabPosition.EndOverlay,
         containerColor = MaterialTheme.colorScheme.background.animate(),
         contentColor = MaterialTheme.colorScheme.onBackground.animate(),
     ) { contentPadding ->
@@ -63,16 +74,6 @@ fun CollapsingToolbarScaffold(
             ) {
                 topBar()
             }*/
-
-            Column(
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                horizontalAlignment = Alignment.End,
-                modifier = Modifier
-                    .windowInsetsPadding(WindowInsets.tappableElement)
-                    .padding(16.dp)
-                    .align(Alignment.BottomEnd),
-                content = floatingActionButtons
-            )
         }
     }
 }
@@ -81,10 +82,11 @@ fun CollapsingToolbarScaffold(
 
 object CollapsingToolbarScaffoldDefaults {
 
-    @Composable
-    fun contentWindowInsets() = WindowInsets
-        .tappableElement.only(WindowInsetsSides.Bottom)
-        .union(
-            WindowInsets.ime.only(WindowInsetsSides.Bottom)
-        )
+    val contentWindowInsets: WindowInsets
+        @Composable
+        get() = WindowInsets
+            .tappableElement.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal)
+            .union(
+                WindowInsets.ime.only(WindowInsetsSides.Bottom)
+            )
 }
