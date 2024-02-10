@@ -11,10 +11,15 @@ class EditShopUseCase(
 ) {
     suspend fun updateShopInCategory(
         categoryId: Long,
-        shop: Shop
-    ): Result<Unit> {
+        shop: Shop,
+        errorMessage: (String) -> Unit
+    ) {
         return withContext(dispatcher) {
-            repository.updateShopInCategory(categoryId, shop)
+            repository
+                .updateShopInCategory(categoryId, shop)
+                .exceptionOrNull()
+                ?.message
+                ?.let(errorMessage)
         }
     }
 

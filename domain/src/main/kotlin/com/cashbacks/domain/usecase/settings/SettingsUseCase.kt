@@ -20,13 +20,17 @@ class SettingsUseCase(
         const val TAG = "SettingsUseCase"
     }
 
-    suspend fun updateSettingsProperty(name: String, value: Any): Result<Long> {
-        return withContext(dispatcher) {
-            val result = repository.updateSettingsProperty(name, value)
-            result.exceptionOrNull()?.let { exception ->
-                Log.e(TAG, exception.message, exception)
-            }
-            return@withContext result
+    suspend fun updateSettingsProperty(
+        name: String,
+        value: Any,
+        errorMessage: (String) -> Unit
+    ) {
+        withContext(dispatcher) {
+            repository.updateSettingsProperty(name, value)
+                .exceptionOrNull()
+                ?.also { Log.e(TAG, it.message, it) }
+                ?.message
+                ?.let(errorMessage)
         }
     }
 
