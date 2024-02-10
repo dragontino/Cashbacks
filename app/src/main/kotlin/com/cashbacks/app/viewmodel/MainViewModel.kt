@@ -24,7 +24,7 @@ class MainViewModel @Inject constructor(settingsUseCase: SettingsUseCase) : View
     }
 
     fun navigationBarStyle(isDarkTheme: Boolean) = when {
-        isDarkTheme -> SystemBarStyle.dark(scrim = Color.RED)
+        isDarkTheme -> SystemBarStyle.dark(scrim = Color.TRANSPARENT)
         else -> SystemBarStyle.light(scrim = Color.TRANSPARENT, darkScrim = Color.TRANSPARENT)
     }
 
