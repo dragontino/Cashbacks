@@ -62,6 +62,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -176,11 +177,68 @@ fun NewNameTextField(
 
 
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditableTextField(
     text: String,
     onTextChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    label: String = "",
+    enabled: Boolean = true,
+    readOnly: Boolean = false,
+    singleLine: Boolean = true,
+    error: Boolean = false,
+    errorMessage: String = "",
+    textStyle: TextStyle = when {
+        enabled -> MaterialTheme.typography.bodyMedium
+        else -> MaterialTheme.typography.bodyLarge.copy(
+            textAlign = TextAlign.Center,
+            letterSpacing = 3.sp,
+            fontWeight = FontWeight.Bold
+        )
+    },
+    maxLines: Int = if (singleLine) 1 else Int.MAX_VALUE,
+    keyboardType: KeyboardType = KeyboardType.Text,
+    imeAction: ImeAction = ImeAction.Next,
+    keyboardCapitalization: KeyboardCapitalization = KeyboardCapitalization.Sentences,
+    onImeActionClick: KeyboardActionScope.(text: String) -> Unit = {},
+    visualTransformation: VisualTransformation = VisualTransformation.None,
+    leadingIcon: @Composable (() -> Unit)? = null,
+    trailingActions: @Composable (RowScope.() -> Unit) = {},
+    shape: Shape = MaterialTheme.shapes.medium,
+    borderColors: Collection<Color> = EditableTextFieldDefaults.borderColors()
+) {
+    EditableTextField(
+        value = TextFieldValue(text),
+        onValueChange = { onTextChange(it.text) },
+        modifier = modifier,
+        label = label,
+        enabled = enabled,
+        readOnly = readOnly,
+        singleLine = singleLine,
+        error = error,
+        errorMessage = errorMessage,
+        textStyle = textStyle,
+        maxLines = maxLines,
+        keyboardType = keyboardType,
+        imeAction = imeAction,
+        keyboardCapitalization = keyboardCapitalization,
+        onImeActionClick = onImeActionClick,
+        visualTransformation = visualTransformation,
+        leadingIcon = leadingIcon,
+        trailingActions = trailingActions,
+        shape = shape,
+        borderColors = borderColors
+    )
+}
+
+
+
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun EditableTextField(
+    value: TextFieldValue,
+    onValueChange: (TextFieldValue) -> Unit,
     modifier: Modifier = Modifier,
     label: String = "",
     enabled: Boolean = true,
@@ -216,7 +274,7 @@ fun EditableTextField(
         capitalization = keyboardCapitalization,
         autoCorrect = false
     ) {
-        onImeActionClick(text)
+        onImeActionClick(value.text)
         when (imeAction) {
             ImeAction.Next -> focusManager.moveFocus(FocusDirection.Down)
             ImeAction.Done -> focusManager.clearFocus()
@@ -251,8 +309,8 @@ fun EditableTextField(
     val isFocused by interactionSource.collectIsFocusedAsState()
 
     BasicTextField(
-        value = text,
-        onValueChange = onTextChange,
+        value = value,
+        onValueChange = onValueChange,
         readOnly = readOnly,
         singleLine = singleLine,
         maxLines = maxLines,
@@ -265,7 +323,7 @@ fun EditableTextField(
         visualTransformation = visualTransformation,
         decorationBox = { innerTextField ->
             OutlinedTextFieldDefaults.DecorationBox(
-                value = text,
+                value = value.text,
                 innerTextField = innerTextField,
                 enabled = enabled,
                 singleLine = singleLine,
@@ -277,14 +335,14 @@ fun EditableTextField(
                         Text(
                             text = label,
                             style = when {
-                                text.isEmpty() && !isFocused -> MaterialTheme.typography.bodyMedium
+                                value.text.isEmpty() && !isFocused -> MaterialTheme.typography.bodyMedium
                                 else -> MaterialTheme.typography.bodySmall
                             },
                             maxLines = 1,
                             color = when {
                                 error -> MaterialTheme.colorScheme.error
                                 readOnly -> textColor
-                                text.isEmpty() && !isFocused -> unfocusedTextColor
+                                value.text.isEmpty() && !isFocused -> unfocusedTextColor
                                 else -> MaterialTheme.colorScheme.primary
                             }.animate()
                         )
