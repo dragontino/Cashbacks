@@ -26,7 +26,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.debounce
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -60,7 +59,12 @@ class ShopViewModel @AssistedInject constructor(
         editShopUseCase
             .getShopById(shopId)
             .getOrNull()
-            ?.let { _shop.value = ComposableShop(it) }
+            ?.let {
+                _shop.value = ComposableShop(it)
+                if (!isEditing) {
+                    title = it.name
+                }
+            }
         _state.value = if (isEditing) ViewModelState.Editing else ViewModelState.Viewing
     }
 
@@ -83,19 +87,6 @@ class ShopViewModel @AssistedInject constructor(
 
 
     init {
-        flow {
-            emit(ViewModelState.Loading)
-            delay(200)
-            emit(if (isEditing) ViewModelState.Editing else ViewModelState.Viewing)
-        }.onEach {
-            _state.value = it
-            when (it) {
-                ViewModelState.Editing -> title = application.getString(AppScreens.Shop.titleRes!!)
-                ViewModelState.Viewing -> title = shop.value.name
-                ViewModelState.Loading -> {}
-            }
-        }.launchIn(viewModelScope)
-
         debounceOnClick
             .debounce(50)
             .onEach { it.invoke() }
@@ -153,10 +144,14 @@ class ShopViewModel @AssistedInject constructor(
     }
 
 
-    private suspend fun saveShop() {
+    suspend fun saveShop() {
         val shop = shop.value
         if (shop.isChanged) {
-            editShopUseCase.updateShopInCategory(categoryId, shop.mapToShop())
+            editShopUseCase.updateShopInCategory(
+                categoryId = categoryId,
+                shop = shop.mapToShop(),
+                errorMessage = ::showSnackbar
+            )
         }
     }
 
@@ -166,7 +161,11 @@ class ShopViewModel @AssistedInject constructor(
             val currentState = _state.value
             _state.value = ViewModelState.Loading
             delay(100)
-            deleteShopUseCase.deleteShopFromCategory(categoryId, shop.value.mapToShop())
+            deleteShopUseCase.deleteShopFromCategory(
+                categoryId = categoryId,
+                shop = shop.value.mapToShop(),
+                errorMessage = ::showSnackbar
+            )
             delay(100)
             _state.value = currentState
         }
@@ -174,12 +173,16 @@ class ShopViewModel @AssistedInject constructor(
 
 
 
-    fun deleteCashback(cashback: Cashback, errorMessage: (String) -> Unit) {
+    fun deleteCashback(cashback: Cashback) {
         viewModelScope.launch {
             val currentState = _state.value
             _state.value = ViewModelState.Loading
             delay(100)
-            deleteCashbackUseCase.deleteCashbackFromShop(shopId, cashback, errorMessage)
+            deleteCashbackUseCase.deleteCashbackFromShop(
+                shopId = shopId,
+                cashback = cashback,
+                errorMessage = ::showSnackbar
+            )
             delay(100)
             _state.value = currentState
         }

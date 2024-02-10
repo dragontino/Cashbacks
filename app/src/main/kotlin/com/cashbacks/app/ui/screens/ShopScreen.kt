@@ -83,7 +83,7 @@ fun ShopScreen(
     DisposableEffectWithLifecycle(
         onDestroy = {
             if (viewModel.state.value == ViewModelState.Editing) {
-                viewModel.save()
+                scope.launch { viewModel.saveShop() }
             }
         }
     )
@@ -129,10 +129,7 @@ fun ShopScreen(
                                 viewModel.closeDialog()
                                 popBackStack()
                             }
-
-                            is Cashback -> {
-                                viewModel.deleteCashback(type.value, errorMessage = showSnackbar)
-                            }
+                            is Cashback -> viewModel.deleteCashback(type.value)
                         }
                     },
                     onDismiss = viewModel::closeDialog
@@ -256,16 +253,12 @@ fun ShopScreen(
             label = "content loading animation",
             animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing),
             modifier = Modifier
-                .imePadding()
                 .padding(contentPadding)
                 .fillMaxSize()
         ) { state ->
             when (state) {
                 ViewModelState.Loading -> LoadingInBox()
-                else -> ShopScreenContent(
-                    viewModel = viewModel,
-                    navigateTo = navigateTo
-                )
+                else -> ShopScreenContent(viewModel)
             }
         }
     }
@@ -274,15 +267,13 @@ fun ShopScreen(
 
 
 @Composable
-private fun ShopScreenContent(
-    viewModel: ShopViewModel,
-    navigateTo: (route: String) -> Unit
-) {
+private fun ShopScreenContent(viewModel: ShopViewModel) {
     val listState = rememberLazyListState()
 
     Column(
         verticalArrangement = Arrangement.spacedBy(16.dp),
         modifier = Modifier
+            .imePadding()
             .padding(vertical = 16.dp)
             .fillMaxSize()
     ) {
@@ -318,14 +309,13 @@ private fun ShopScreenContent(
                     LazyColumn(
                         state = listState,
                         verticalArrangement = Arrangement.spacedBy(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.fillMaxSize()
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         items(cashbacks) {
                             CashbackComposable(
                                 cashback = it,
                                 onClick = {
-                                    navigateTo(
+                                    viewModel.navigateTo(
                                         AppScreens.Cashback.createUrlFromShop(
                                             id = it.id,
                                             shopId = viewModel.shopId
