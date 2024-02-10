@@ -89,10 +89,10 @@ data object PaymentSystemMapper {
 
 
 data object BankCardMapper {
-    fun addSpacesToCardNumber(cardNumber: String) = buildString {
-        for (i in cardNumber.indices) {
+    fun addSpacesToCardNumber(numberWithoutSpaces: String) = buildString {
+        for (i in numberWithoutSpaces.indices) {
             if (i > 0 && i % 4 == 0) append(" ")
-            append(cardNumber[i])
+            append(numberWithoutSpaces[i])
         }
     }.trimIndent()
 

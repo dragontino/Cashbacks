@@ -5,13 +5,14 @@ import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateMap
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.TextFieldValue
 import com.cashbacks.domain.model.BankCard
-import com.cashbacks.domain.model.BasicInfoBankCard
 import com.cashbacks.domain.model.PaymentSystem
 import kotlin.reflect.KMutableProperty0
 
 class ComposableBankCard(
-    override val id: Long = 0,
+    val id: Long = 0,
     name: String = "",
     number: String = "",
     paymentSystem: PaymentSystem? = null,
@@ -20,7 +21,7 @@ class ComposableBankCard(
     cvv: String = "",
     pin: String = "",
     comment: String = ""
-) : BasicInfoBankCard {
+) {
     constructor(bankCard: BankCard) : this(
         id = bankCard.id,
         name = bankCard.name,
@@ -33,13 +34,13 @@ class ComposableBankCard(
         comment = bankCard.comment
     )
 
-    override var name by mutableStateOf(name)
+    var name by mutableStateOf(name)
+    var number by mutableStateOf(TextFieldValue(BankCardMapper.addSpacesToCardNumber(number)))
+        private set
 
-    override var number by mutableStateOf(BankCardMapper.addSpacesToCardNumber(number))
-
-    override var paymentSystem by mutableStateOf(paymentSystem)
+    var paymentSystem by mutableStateOf(paymentSystem)
     var holder by mutableStateOf(holder)
-    var validityPeriod by mutableStateOf(validityPeriod)
+    var validityPeriod by mutableStateOf(TextFieldValue(validityPeriod))
         private set
 
     var cvv by mutableStateOf(cvv)
@@ -68,31 +69,49 @@ class ComposableBankCard(
         }
     }
 
-    fun updateNumber(newNumber: String) {
-        BankCardMapper
-            .addSpacesToCardNumber(newNumber)
-            .takeIf { it.length <= 19 }
-            ?.let { updateValue(::number, it) }
+    fun updateNumber(newNumber: TextFieldValue) {
+        val newText = when (newNumber.text.length) {
+            5, 10, 15 -> buildString {
+                append(newNumber.text.substring(0..<newNumber.text.length - 1))
+                append(" ")
+                append(newNumber.text.last())
+            }
+            20 -> number.text
+            else -> newNumber.text
+        }
+        updateValue(
+            property = ::number,
+            newValue = newNumber.copy(
+                text = newText,
+                selection = TextRange(newText.length)
+            )
+        )
     }
 
-    fun updateValidityPeriod(newPeriod: String) {
-        val newValue = when {
-            newPeriod.length < 2 -> newPeriod
-            newPeriod.length == 2 -> "$newPeriod / "
-            newPeriod.length == 4 -> newPeriod.substring(0 .. 1)
-            newPeriod.length <= 7 -> newPeriod
-            else -> this.validityPeriod
+    fun updateValidityPeriod(newPeriod: TextFieldValue) {
+        val newText = when {
+            newPeriod.text.length < 2 -> newPeriod.text
+            newPeriod.text.length == 2 -> "${newPeriod.text} / "
+            newPeriod.text.length == 4 -> newPeriod.text.substring(0 .. 1)
+            newPeriod.text.length <= 7 -> newPeriod.text
+            else -> this.validityPeriod.text
         }
-        updateValue(::validityPeriod, newValue)
+        updateValue(
+            property = ::validityPeriod,
+            newValue = newPeriod.copy(
+                text = newText,
+                selection = TextRange(newText.length)
+            )
+        )
     }
 
     fun mapToBankCard() = BankCard(
         id = this.id,
         name = this.name,
-        number = BankCardMapper.removeSpacesFromNumber(number),
+        number = BankCardMapper.removeSpacesFromNumber(number.text),
         paymentSystem = this.paymentSystem,
         holder = this.holder,
-        validityPeriod = this.validityPeriod,
+        validityPeriod = this.validityPeriod.text,
         cvv = this.cvv,
         pin = this.pin,
         comment = this.comment

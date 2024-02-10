@@ -179,64 +179,6 @@ fun NewNameTextField(
 
 @Composable
 fun EditableTextField(
-    text: String,
-    onTextChange: (String) -> Unit,
-    modifier: Modifier = Modifier,
-    label: String = "",
-    enabled: Boolean = true,
-    readOnly: Boolean = false,
-    singleLine: Boolean = true,
-    error: Boolean = false,
-    errorMessage: String = "",
-    textStyle: TextStyle = when {
-        enabled -> MaterialTheme.typography.bodyMedium
-        else -> MaterialTheme.typography.bodyLarge.copy(
-            textAlign = TextAlign.Center,
-            letterSpacing = 3.sp,
-            fontWeight = FontWeight.Bold
-        )
-    },
-    maxLines: Int = if (singleLine) 1 else Int.MAX_VALUE,
-    keyboardType: KeyboardType = KeyboardType.Text,
-    imeAction: ImeAction = ImeAction.Next,
-    keyboardCapitalization: KeyboardCapitalization = KeyboardCapitalization.Sentences,
-    onImeActionClick: KeyboardActionScope.(text: String) -> Unit = {},
-    visualTransformation: VisualTransformation = VisualTransformation.None,
-    leadingIcon: @Composable (() -> Unit)? = null,
-    trailingActions: @Composable (RowScope.() -> Unit) = {},
-    shape: Shape = MaterialTheme.shapes.medium,
-    borderColors: Collection<Color> = EditableTextFieldDefaults.borderColors()
-) {
-    EditableTextField(
-        value = TextFieldValue(text),
-        onValueChange = { onTextChange(it.text) },
-        modifier = modifier,
-        label = label,
-        enabled = enabled,
-        readOnly = readOnly,
-        singleLine = singleLine,
-        error = error,
-        errorMessage = errorMessage,
-        textStyle = textStyle,
-        maxLines = maxLines,
-        keyboardType = keyboardType,
-        imeAction = imeAction,
-        keyboardCapitalization = keyboardCapitalization,
-        onImeActionClick = onImeActionClick,
-        visualTransformation = visualTransformation,
-        leadingIcon = leadingIcon,
-        trailingActions = trailingActions,
-        shape = shape,
-        borderColors = borderColors
-    )
-}
-
-
-
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun EditableTextField(
     value: TextFieldValue,
     onValueChange: (TextFieldValue) -> Unit,
     modifier: Modifier = Modifier,
@@ -263,7 +205,117 @@ fun EditableTextField(
     leadingIcon: @Composable (() -> Unit)? = null,
     trailingActions: @Composable (RowScope.() -> Unit) = {},
     shape: Shape = MaterialTheme.shapes.medium,
-    borderColors: Collection<Color> = EditableTextFieldDefaults.borderColors()
+    borderColors: Collection<Color> = EditableTextFieldDefaults.borderColors
+) {
+    EditableTextField(
+        value = value,
+        onValueChange = { onValueChange(it as TextFieldValue) },
+        text = value.text,
+        modifier = modifier,
+        label = label,
+        enabled = enabled,
+        readOnly = readOnly,
+        singleLine = singleLine,
+        error = error,
+        errorMessage = errorMessage,
+        textStyle = textStyle,
+        maxLines = maxLines,
+        keyboardType = keyboardType,
+        imeAction = imeAction,
+        keyboardCapitalization = keyboardCapitalization,
+        onImeActionClick = onImeActionClick,
+        visualTransformation = visualTransformation,
+        leadingIcon = leadingIcon,
+        trailingActions = trailingActions,
+        shape = shape,
+        borderColors = borderColors
+    )
+}
+
+
+
+
+@Composable
+fun EditableTextField(
+    text: String,
+    onTextChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    label: String = "",
+    enabled: Boolean = true,
+    readOnly: Boolean = false,
+    singleLine: Boolean = true,
+    error: Boolean = false,
+    errorMessage: String = "",
+    textStyle: TextStyle = when {
+        enabled -> MaterialTheme.typography.bodyMedium
+        else -> MaterialTheme.typography.bodyLarge.copy(
+            textAlign = TextAlign.Center,
+            letterSpacing = 3.sp,
+            fontWeight = FontWeight.Bold
+        )
+    },
+    maxLines: Int = if (singleLine) 1 else Int.MAX_VALUE,
+    keyboardType: KeyboardType = KeyboardType.Text,
+    imeAction: ImeAction = ImeAction.Next,
+    keyboardCapitalization: KeyboardCapitalization = KeyboardCapitalization.Sentences,
+    onImeActionClick: KeyboardActionScope.(text: String) -> Unit = {},
+    visualTransformation: VisualTransformation = VisualTransformation.None,
+    leadingIcon: @Composable (() -> Unit)? = null,
+    trailingActions: @Composable (RowScope.() -> Unit) = {},
+    shape: Shape = MaterialTheme.shapes.medium,
+    borderColors: Collection<Color> = EditableTextFieldDefaults.borderColors
+) {
+    EditableTextField(
+        value = text,
+        onValueChange = { onTextChange(it as String) },
+        text = text,
+        modifier = modifier,
+        label = label,
+        enabled = enabled,
+        readOnly = readOnly,
+        singleLine = singleLine,
+        error = error,
+        errorMessage = errorMessage,
+        textStyle = textStyle,
+        maxLines = maxLines,
+        keyboardType = keyboardType,
+        imeAction = imeAction,
+        keyboardCapitalization = keyboardCapitalization,
+        onImeActionClick = onImeActionClick,
+        visualTransformation = visualTransformation,
+        leadingIcon = leadingIcon,
+        trailingActions = trailingActions,
+        shape = shape,
+        borderColors = borderColors
+    )
+}
+
+
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun <T> EditableTextField(
+    value: T,
+    onValueChange: (Any) -> Unit,
+    text: String,
+    modifier: Modifier,
+    label: String,
+    enabled: Boolean,
+    readOnly: Boolean,
+    singleLine: Boolean,
+    error: Boolean,
+    errorMessage: String,
+    textStyle: TextStyle,
+    maxLines: Int,
+    keyboardType: KeyboardType,
+    imeAction: ImeAction,
+    keyboardCapitalization: KeyboardCapitalization,
+    onImeActionClick: KeyboardActionScope.(text: String) -> Unit,
+    visualTransformation: VisualTransformation,
+    leadingIcon: @Composable (() -> Unit)?,
+    trailingActions: @Composable (RowScope.() -> Unit),
+    shape: Shape,
+    borderColors: Collection<Color>
 ) {
     val focusManager = LocalFocusManager.current
     var showSupportingText by rememberSaveable { mutableStateOf(true) }
@@ -274,7 +326,7 @@ fun EditableTextField(
         capitalization = keyboardCapitalization,
         autoCorrect = false
     ) {
-        onImeActionClick(value.text)
+        onImeActionClick(text)
         when (imeAction) {
             ImeAction.Next -> focusManager.moveFocus(FocusDirection.Down)
             ImeAction.Done -> focusManager.clearFocus()
@@ -286,21 +338,17 @@ fun EditableTextField(
         error -> SolidColor(MaterialTheme.colorScheme.error.animate())
         readOnly -> SolidColor(MaterialTheme.colorScheme.onBackground.animate())
         !enabled -> null
-        else -> Brush.horizontalGradient(
-            colors = borderColors.toList().map { it.animate() }
-        )
+        else -> Brush.horizontalGradient(colors = borderColors.map { it.animate() })
     }
     val cursorBrush = when {
         error || readOnly || !enabled -> borderBrush
         else -> Brush.verticalGradient(
-            colors = borderColors.toList().map { it.animate() },
+            colors = borderColors.map { it.animate() },
             tileMode = TileMode.Mirror
         )
     }
 
     val interactionSource = remember { MutableInteractionSource() }
-
-
 
     val textColor = MaterialTheme.colorScheme.onBackground
     val unfocusedTextColor = textColor.copy(alpha = 0.7f)
@@ -308,142 +356,237 @@ fun EditableTextField(
 
     val isFocused by interactionSource.collectIsFocusedAsState()
 
+
+    val basicTextFieldModifier = Modifier
+        .padding(horizontal = 16.dp)
+        .then(modifier)
+        .fillMaxWidth()
+    val decorationBox: @Composable (innerTextField: @Composable () -> Unit) -> Unit = { innerTextField ->
+        OutlinedTextFieldDefaults.DecorationBox(
+            value = text,
+            innerTextField = innerTextField,
+            enabled = enabled,
+            singleLine = singleLine,
+            visualTransformation = visualTransformation,
+            interactionSource = interactionSource,
+            isError = error,
+            label = {
+                if (enabled) {
+                    Text(
+                        text = label,
+                        style = when {
+                            text.isEmpty() && !isFocused -> MaterialTheme.typography.bodyMedium
+                            else -> MaterialTheme.typography.bodySmall
+                        },
+                        maxLines = 1,
+                        color = when {
+                            error -> MaterialTheme.colorScheme.error
+                            readOnly -> textColor
+                            text.isEmpty() && !isFocused -> unfocusedTextColor
+                            else -> MaterialTheme.colorScheme.primary
+                        }.animate()
+                    )
+                }
+            },
+            supportingText = {
+                AnimatedVisibility(
+                    visible = enabled && error && errorMessage.isNotEmpty() && showSupportingText,
+                    enter = expandVertically(
+                        animationSpec = tween(
+                            durationMillis = 250,
+                            easing = LinearEasing
+                        )
+                    ),
+                    exit = shrinkVertically(
+                        animationSpec = tween(
+                            durationMillis = 250,
+                            easing = LinearEasing
+                        )
+                    )
+                ) {
+                    Text(
+                        text = errorMessage,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            },
+            leadingIcon = leadingIcon,
+            trailingIcon = {
+                if (error && enabled) {
+                    IconButton(
+                        onClick = { showSupportingText = !showSupportingText },
+                        colors = IconButtonDefaults.iconButtonColors(
+                            containerColor = Color.Transparent,
+                            contentColor = MaterialTheme.colorScheme.error/*.animate()*/
+                        ),
+                        modifier = Modifier.padding(horizontal = 2.dp, vertical = 4.dp)
+                    ) {
+                        Icon(imageVector = Icons.Rounded.Error, contentDescription = "error")
+                    }
+                } else {
+                    Row(
+                        verticalAlignment = Alignment.Bottom,
+                        horizontalArrangement = Arrangement.SpaceAround
+                    ) {
+                        Spacer(modifier = Modifier.width(4.dp))
+                        trailingActions()
+                    }
+                }
+            },
+            contentPadding = TextFieldDefaults.contentPaddingWithLabel(
+                top = 16.dp,
+                bottom = 16.dp
+            ),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedTextColor = textColor.animate(),
+                unfocusedTextColor = unfocusedTextColor.animate(),
+                disabledTextColor = textColor.animate(),
+                focusedContainerColor = containerColor,
+                unfocusedContainerColor = containerColor,
+                disabledContainerColor = containerColor,
+                errorContainerColor = containerColor,
+                disabledBorderColor = Color.Transparent,
+                focusedLeadingIconColor = textColor.animate(),
+                unfocusedLeadingIconColor = textColor.animate(),
+                disabledLeadingIconColor = unfocusedTextColor.animate(),
+                errorLeadingIconColor = MaterialTheme.colorScheme.error.animate(),
+                focusedSupportingTextColor = MaterialTheme.colorScheme.error.animate(),
+                unfocusedSupportingTextColor = MaterialTheme.colorScheme.error.animate(),
+                disabledSupportingTextColor = Color.Transparent,
+                disabledLabelColor = Color.Transparent,
+            ),
+            container = {
+                val borderModifier = when (borderBrush) {
+                    null -> Modifier
+                    else -> Modifier.border(
+                        border = animateBorderStrokeAsState(
+                            borderBrush = borderBrush,
+                            enabled = !readOnly,
+                            interactionSource = interactionSource,
+                            focusedBorderThickness = 2.dp,
+                            unfocusedBorderThickness = 1.dp
+                        ).value,
+                        shape = shape
+                    )
+                }
+
+                Box(
+                    modifier = Modifier
+                        .then(borderModifier)
+                        .background(color = containerColor, shape = shape)
+                )
+            }
+        )
+    }
+
+    when (value) {
+        is String -> BasicTextField(
+            modifier = basicTextFieldModifier,
+            text = value,
+            onTextChange = onValueChange,
+            readOnly = readOnly,
+            singleLine = singleLine,
+            maxLines = maxLines,
+            enabled = enabled,
+            cursorBrush = cursorBrush ?: SolidColor(Color.Black),
+            textStyle = textStyle.copy(color = textColor.animate()),
+            interactionSource = interactionSource,
+            keyboardParams = keyboardParams,
+            visualTransformation = visualTransformation,
+            decorationBox = decorationBox
+        )
+
+        is TextFieldValue -> BasicTextField(
+            modifier = basicTextFieldModifier,
+            text = value,
+            onTextChange = onValueChange,
+            readOnly = readOnly,
+            singleLine = singleLine,
+            maxLines = maxLines,
+            enabled = enabled,
+            cursorBrush = cursorBrush ?: SolidColor(Color.Black),
+            textStyle = textStyle.copy(color = textColor.animate()),
+            interactionSource = interactionSource,
+            keyboardParams = keyboardParams,
+            visualTransformation = visualTransformation,
+            decorationBox = decorationBox
+        )
+    }
+}
+
+
+
+
+@Composable
+private fun BasicTextField(
+    modifier: Modifier,
+    text: String,
+    onTextChange: (String) -> Unit,
+    readOnly: Boolean,
+    singleLine: Boolean,
+    maxLines: Int,
+    enabled: Boolean,
+    cursorBrush: Brush,
+    textStyle: TextStyle,
+    interactionSource: MutableInteractionSource,
+    keyboardParams: KeyboardParams,
+    visualTransformation: VisualTransformation,
+    decorationBox: @Composable (innerTextField: @Composable () -> Unit) -> Unit
+) {
     BasicTextField(
-        value = value,
-        onValueChange = onValueChange,
+        value = text,
+        onValueChange = onTextChange,
         readOnly = readOnly,
         singleLine = singleLine,
         maxLines = maxLines,
         enabled = enabled,
-        cursorBrush = cursorBrush ?: SolidColor(Color.Black),
-        textStyle = textStyle.copy(color = textColor.animate()),
+        cursorBrush = cursorBrush,
+        textStyle = textStyle,
         interactionSource = interactionSource,
         keyboardOptions = keyboardParams.options,
         keyboardActions = keyboardParams.actions,
         visualTransformation = visualTransformation,
-        decorationBox = { innerTextField ->
-            OutlinedTextFieldDefaults.DecorationBox(
-                value = value.text,
-                innerTextField = innerTextField,
-                enabled = enabled,
-                singleLine = singleLine,
-                visualTransformation = visualTransformation,
-                interactionSource = interactionSource,
-                isError = error,
-                label = {
-                    if (enabled) {
-                        Text(
-                            text = label,
-                            style = when {
-                                value.text.isEmpty() && !isFocused -> MaterialTheme.typography.bodyMedium
-                                else -> MaterialTheme.typography.bodySmall
-                            },
-                            maxLines = 1,
-                            color = when {
-                                error -> MaterialTheme.colorScheme.error
-                                readOnly -> textColor
-                                value.text.isEmpty() && !isFocused -> unfocusedTextColor
-                                else -> MaterialTheme.colorScheme.primary
-                            }.animate()
-                        )
-                    }
-                },
-                supportingText = {
-                    AnimatedVisibility(
-                        visible = enabled && error && errorMessage.isNotEmpty() && showSupportingText,
-                        enter = expandVertically(
-                            animationSpec = tween(
-                                durationMillis = 250,
-                                easing = LinearEasing
-                            )
-                        ),
-                        exit = shrinkVertically(
-                            animationSpec = tween(
-                                durationMillis = 250,
-                                easing = LinearEasing
-                            )
-                        )
-                    ) {
-                        Text(
-                            text = errorMessage,
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                    }
-                },
-                leadingIcon = leadingIcon,
-                trailingIcon = {
-                    if (error && enabled) {
-                        IconButton(
-                            onClick = { showSupportingText = !showSupportingText },
-                            colors = IconButtonDefaults.iconButtonColors(
-                                containerColor = Color.Transparent,
-                                contentColor = MaterialTheme.colorScheme.error/*.animate()*/
-                            ),
-                            modifier = Modifier.padding(horizontal = 2.dp, vertical = 4.dp)
-                        ) {
-                            Icon(imageVector = Icons.Rounded.Error, contentDescription = "error")
-                        }
-                    } else {
-                        Row(
-                            verticalAlignment = Alignment.Bottom,
-                            horizontalArrangement = Arrangement.SpaceAround
-                        ) {
-                            Spacer(modifier = Modifier.width(4.dp))
-                            trailingActions()
-                        }
-                    }
-                },
-                contentPadding = TextFieldDefaults.contentPaddingWithLabel(
-                    top = 16.dp,
-                    bottom = 16.dp
-                ),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = textColor.animate(),
-                    unfocusedTextColor = unfocusedTextColor.animate(),
-                    disabledTextColor = textColor.animate(),
-                    focusedContainerColor = containerColor,
-                    unfocusedContainerColor = containerColor,
-                    disabledContainerColor = containerColor,
-                    errorContainerColor = containerColor,
-                    disabledBorderColor = Color.Transparent,
-                    focusedLeadingIconColor = textColor.animate(),
-                    unfocusedLeadingIconColor = textColor.animate(),
-                    disabledLeadingIconColor = unfocusedTextColor.animate(),
-                    errorLeadingIconColor = MaterialTheme.colorScheme.error.animate(),
-                    focusedSupportingTextColor = MaterialTheme.colorScheme.error.animate(),
-                    unfocusedSupportingTextColor = MaterialTheme.colorScheme.error.animate(),
-                    disabledSupportingTextColor = Color.Transparent,
-                    disabledLabelColor = Color.Transparent,
-                ),
-                container = {
-                    val borderModifier = when (borderBrush) {
-                        null -> Modifier
-                        else -> Modifier.border(
-                            border = animateBorderStrokeAsState(
-                                borderBrush = borderBrush,
-                                enabled = !readOnly,
-                                interactionSource = interactionSource,
-                                focusedBorderThickness = 2.dp,
-                                unfocusedBorderThickness = 1.dp
-                            ).value,
-                            shape = shape
-                        )
-                    }
-
-                    Box(
-                        modifier = Modifier
-                            .then(borderModifier)
-                            .background(color = containerColor, shape = shape)
-                    )
-                }
-            )
-        },
-        modifier = Modifier
-            .padding(horizontal = 16.dp)
-            .then(modifier)
-            .fillMaxWidth()
+        decorationBox = decorationBox,
+        modifier = modifier
     )
 }
+
+
+@Composable
+private fun BasicTextField(
+    modifier: Modifier,
+    text: TextFieldValue,
+    onTextChange: (TextFieldValue) -> Unit,
+    readOnly: Boolean,
+    singleLine: Boolean,
+    maxLines: Int,
+    enabled: Boolean,
+    cursorBrush: Brush,
+    textStyle: TextStyle,
+    interactionSource: MutableInteractionSource,
+    keyboardParams: KeyboardParams,
+    visualTransformation: VisualTransformation,
+    decorationBox: @Composable (innerTextField: @Composable () -> Unit) -> Unit
+) {
+    BasicTextField(
+        value = text,
+        onValueChange = onTextChange,
+        readOnly = readOnly,
+        singleLine = singleLine,
+        maxLines = maxLines,
+        enabled = enabled,
+        cursorBrush = cursorBrush,
+        textStyle = textStyle,
+        interactionSource = interactionSource,
+        keyboardOptions = keyboardParams.options,
+        keyboardActions = keyboardParams.actions,
+        visualTransformation = visualTransformation,
+        decorationBox = decorationBox,
+        modifier = modifier
+    )
+}
+
+
 
 
 internal class KeyboardParams private constructor(
@@ -487,8 +630,9 @@ internal class KeyboardParams private constructor(
 
 
 object EditableTextFieldDefaults {
+    val borderColors
     @Composable
-    fun borderColors(): Collection<Color> = listOf(
+    get() = listOf(
         MaterialTheme.colorScheme.primary,
         MaterialTheme.colorScheme.primaryContainer,
         MaterialTheme.colorScheme.secondary,

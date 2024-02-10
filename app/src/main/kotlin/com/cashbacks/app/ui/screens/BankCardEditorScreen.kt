@@ -35,6 +35,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -57,6 +58,8 @@ import com.cashbacks.app.ui.composables.CollapsingToolbarScaffold
 import com.cashbacks.app.ui.composables.ConfirmExitWithSaveDataDialog
 import com.cashbacks.app.ui.composables.EditableTextField
 import com.cashbacks.app.ui.composables.EditableTextFieldDefaults
+import com.cashbacks.app.ui.managment.DialogType
+import com.cashbacks.app.ui.managment.ScreenEvents
 import com.cashbacks.app.ui.managment.ViewModelState
 import com.cashbacks.app.ui.screens.navigation.AppScreens
 import com.cashbacks.app.ui.theme.DarkerGray
@@ -74,7 +77,7 @@ fun BankCardEditorScreen(
 ) {
     val snackbarState = remember(::SnackbarHostState)
     val scope = rememberCoroutineScope()
-    var showDialog by rememberSaveable { mutableStateOf(false) }
+    var dialogType: DialogType? by rememberSaveable { mutableStateOf(null) }
 
     val showSnackbar = remember {
         fun(message: String) {
@@ -82,20 +85,31 @@ fun BankCardEditorScreen(
         }
     }
 
+    LaunchedEffect(key1 = true) {
+        viewModel.eventsFlow.collect { event ->
+            when (event) {
+                is ScreenEvents.Navigate -> popBackStack()
+                is ScreenEvents.ShowSnackbar -> showSnackbar(event.message)
+                is ScreenEvents.OpenDialog -> dialogType = event.type
+                ScreenEvents.CloseDialog -> dialogType = null
+            }
+        }
+    }
+
     val onBackPress = remember {
         fun () = when {
-            viewModel.bankCard.value.haveChanges -> showDialog = true
-            else -> popBackStack()
+            viewModel.bankCard.value.haveChanges -> viewModel.openDialog(DialogType.Save)
+            else -> viewModel.navigateTo(null)
         }
     }
 
     BackHandler(onBack = onBackPress)
 
-    if (showDialog) {
+    if (dialogType == DialogType.Save) {
         ConfirmExitWithSaveDataDialog(
             onConfirm = viewModel::saveCard,
             onDismiss = popBackStack,
-            onClose = { showDialog = false }
+            onClose = viewModel::closeDialog
         )
     }
 
@@ -133,7 +147,7 @@ fun BankCardEditorScreen(
                                 IconButton(
                                     onClick = {
                                         viewModel.saveCard()
-                                        popBackStack()
+                                        viewModel.navigateTo(null)
                                     },
                                 ) {
                                     Icon(
@@ -163,8 +177,7 @@ fun BankCardEditorScreen(
                 ) { contentPadding ->
                     BankCardEditingContent(
                         viewModel = viewModel,
-                        modifier = Modifier.padding(contentPadding),
-                        showSnackbar = showSnackbar
+                        modifier = Modifier.padding(contentPadding)
                     )
                 }
             }
@@ -178,7 +191,6 @@ fun BankCardEditorScreen(
 private fun BankCardEditingContent(
     viewModel: BankCardEditorViewModel,
     modifier: Modifier = Modifier,
-    showSnackbar: (String) -> Unit
 ) {
     val bankCard = viewModel.bankCard.value
 
@@ -206,12 +218,12 @@ private fun BankCardEditingContent(
         )
 
         EditableTextField(
-            text = bankCard.number,
-            onTextChange = {
+            value = bankCard.number,
+            onValueChange = {
                 bankCard.updateNumber(it)
                 bankCard.updateValue(
                     property = bankCard::paymentSystem,
-                    newValue = viewModel.getPaymentSystemByNumber(it)
+                    newValue = viewModel.getPaymentSystemByNumber(it.text)
                 )
             },
             label = stringResource(R.string.card_number),
@@ -307,8 +319,8 @@ private fun BankCardEditingContent(
         )
 
         EditableTextField(
-            text = bankCard.validityPeriod,
-            onTextChange = bankCard::updateValidityPeriod,
+            value = bankCard.validityPeriod,
+            onValueChange = bankCard::updateValidityPeriod,
             label = stringResource(R.string.validity_period),
             keyboardType = KeyboardType.Number
         )
