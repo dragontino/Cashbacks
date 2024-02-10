@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -40,6 +41,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -70,6 +72,7 @@ import com.cashbacks.app.ui.composables.BottomSheetContent
 import com.cashbacks.app.ui.composables.Header
 import com.cashbacks.app.ui.composables.ModalSheetDefaults
 import com.cashbacks.app.ui.composables.ModalSheetItems.IconTextItem
+import com.cashbacks.app.ui.managment.ScreenEvents
 import com.cashbacks.app.ui.managment.ViewModelState
 import com.cashbacks.app.ui.screens.navigation.AppScreens
 import com.cashbacks.app.util.LoadingInBox
@@ -93,6 +96,14 @@ fun SettingsScreen(
     val showSnackbar = { message: String ->
         scope.launch {
             snackbarHostState.showSnackbar(message)
+        }
+    }
+
+    LaunchedEffect(key1 = true) {
+        viewModel.eventsFlow.collect { event ->
+            if (event is ScreenEvents.ShowSnackbar) {
+                showSnackbar(event.message)
+            }
         }
     }
 
@@ -137,8 +148,7 @@ fun SettingsScreen(
         ) {
             SettingsContent(
                 viewModel = viewModel,
-                isDarkTheme = isDarkTheme,
-                showSnackbar = { showSnackbar(it) }
+                isDarkTheme = isDarkTheme
             )
 
             AnimatedVisibility(
@@ -161,8 +171,7 @@ fun SettingsScreen(
 @Composable
 private fun SettingsContent(
     viewModel: SettingsViewModel,
-    isDarkTheme: Boolean,
-    showSnackbar: (message: String) -> Unit
+    isDarkTheme: Boolean
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -252,10 +261,7 @@ private fun SettingsContent(
                 ) {
                     viewModel.updateSettingsProperty(
                         property = Settings::dynamicColor,
-                        value = it,
-                        error = { exception ->
-                            exception.message?.let(showSnackbar)
-                        }
+                        value = it
                     )
                 }
             }
@@ -270,6 +276,7 @@ private fun SettingsContent(
             containerColor = MaterialTheme.colorScheme.surface.animate(),
             contentColor = MaterialTheme.colorScheme.onSurface.animate(),
             dragHandle = null,
+            windowInsets = WindowInsets(0),
             tonalElevation = 50.dp
         ) {
             ThemeSheetContent(
@@ -277,8 +284,7 @@ private fun SettingsContent(
                 updateDesign = {
                     viewModel.updateSettingsProperty(
                         property = Settings::colorDesign,
-                        value = it.name,
-                        error = { exception -> exception.message?.let(showSnackbar) }
+                        value = it.name
                     )
                     scope.launch {
                         bottomSheetState.hide()

@@ -218,7 +218,7 @@ private fun <T> ListContentTabPage(
     val lazyListState = rememberLazyListState()
 
     val modifier = when {
-        isPrimary -> Modifier
+        isPrimary -> Modifier.clip(MaterialTheme.shapes.extraSmall).padding(horizontal = 8.dp)
         else -> Modifier.clip(MaterialTheme.shapes.small)
     }
 
