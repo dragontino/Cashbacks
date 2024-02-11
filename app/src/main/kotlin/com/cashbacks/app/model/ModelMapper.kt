@@ -21,12 +21,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.cashbacks.app.R
-import com.cashbacks.domain.model.AppException
 import com.cashbacks.domain.model.ColorDesign
-import com.cashbacks.domain.model.EntryAlreadyExistsException
-import com.cashbacks.domain.model.InsertionException
 import com.cashbacks.domain.model.PaymentSystem
-import com.cashbacks.domain.model.SettingsNotFoundException
 
 data object ColorDesignMapper {
     fun ColorDesign.title(context: Context): String = when (this) {
@@ -97,18 +93,4 @@ data object BankCardMapper {
     }.trimIndent()
 
     fun removeSpacesFromNumber(cardNumber: String) = cardNumber.filter { it != ' ' }
-}
-
-
-data object ExceptionMapper {
-    fun AppException.getMessage(context: Context) = when (this) {
-        EntryAlreadyExistsException -> context.getString(R.string.entry_already_exists_exception)
-        is InsertionException -> this.message ?: ""
-        SettingsNotFoundException -> context.getString(R.string.settings_not_found_exception)
-    }
-
-    fun Throwable.getMessage(context: Context) = when (this) {
-        is AppException -> getMessage(context)
-        else -> ""
-    }
 }
