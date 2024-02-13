@@ -1,84 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Мои Кешбэки</string>
-    <string name="categories">Мои Категории</string>
-    <string name="settings">Настройки</string>
-    <string name="bank_card">Банковская карта</string>
-    <string name="bank_cards">Мои Карты</string>
-    <string name="shop">Магазин</string>
-    <string name="cashback_title">Кешбэк</string>
-    <string name="category_title">Категория</string>
+    <string name="app_name">My cashbacks</string>
+    <string name="app_version_pattern">Version %1$s dated %2$s</string>
 
+    <string name="home">Home</string>
+    <string name="categories_title">My categories</string>
+    <string name="shops_title">My shops</string>
+    <string name="bank_cards_title">My cards</string>
+    <string name="categories">Categories</string>
+    <string name="shops">Shops</string>
+    <string name="cashbacks">Cashbacks</string>
+    <string name="bank_cards">Cards</string>
+    <string name="settings">Settings</string>
 
-    <string name="app_version">Версия 1.6.10 от 30 января 2024</string>
-    <string name="dynamic_color">Использовать в оформлении динамические цвета</string>
-    <string name="dynamic_color_desc">Цветовая палитра приложения автоматически адаптируется и интегрируется с пользовательскими настройками</string>
+    <string name="bank_card">Bank Card</string>
+    <string name="shop">Shop</string>
+    <string name="cashback_title">Cashback</string>
+    <string name="category_title">Category</string>
+
+    <string name="dynamic_color">Use dynamic colors in application design</string>
+    <string name="dynamic_color_desc">Application color palette automatically adapts and integrates with user settings</string>
 
     <!-- Оформление -->
-    <string name="dark_theme">Тёмное</string>
-    <string name="light_theme">Светлое</string>
-    <string name="system_theme">Как на устройстве</string>
-    <string name="now">(сейчас %s)</string>
+    <string name="dark_theme">Dark</string>
+    <string name="light_theme">Light</string>
+    <string name="system_theme">As on device</string>
+    <string name="now">(Now %s)</string>
 
-    <string name="switchThemeText">Оформление:</string>
+    <string name="switchThemeText">App design:</string>
 
 
-    <string name="empty_categories_list_viewing">Категорий с кешбэками нет.\nНажмите на карандаш для просмотра всех категорий</string>
-    <string name="empty_categories_list_editing">Нажмите + для добавления категорий</string>
-    <string name="add_category">Добавить категорию</string>
-    <string name="no_cashbacks_for_category">Нет кешбэков для этой категории</string>
-    <string name="confirm_category_deletion">Удалить категорию «%s»?</string>
+    <string name="empty_categories_list_viewing">There are no categories with cashbacks.\nClick on the pencil to view all categories</string>
+    <string name="empty_categories_list_editing">Click + to add categories</string>
+    <string name="add_category">Add category</string>
+    <string name="no_cashbacks_for_category">There are no cashbacks for this category</string>
+    <string name="confirm_category_deletion">Delete category «%s»?</string>
 
-    <string name="category_placeholder">Название категории</string>
-    <string name="shop_placeholder">Название магазина</string>
-    <string name="tab_shops">Магазины</string>
-    <string name="tab_cashbacks">Кешбэки</string>
-    <string name="add_cashback">Добавить кешбэк</string>
-    <string name="no_cashbacks_for_shop">Нет кешбэков для этого магазина</string>
+    <string name="category_placeholder">Category name</string>
+    <string name="shop_placeholder">Shop name</string>
+    <string name="add_cashback">Add cashback</string>
+    <string name="no_cashbacks_for_shop">There are no cashbacks for this shop</string>
 
     <string name="empty_shops_list_viewing">
-        Магазинов с кешбэками нет.\nНажмите на карандаш для просмотра всех магазинов в этой категории
+        There are no shops with cashbacks.\nClick on the pencil to view all stores in this category
     </string>
-    <string name="empty_shops_list_editing">Нажмите + для добавления магазинов</string>
-    <string name="empty_cashbacks_list">Нажмите на + для добавления кешбэков</string>
-    <string name="empty_bank_cards_list">Нажмите + для добавления банковской карты</string>
-    <string name="confirm_shop_deletion">Удалить магазин «%s»?</string>
+    <string name="empty_shops_list_editing">Click + to add shops</string>
+    <string name="empty_cashbacks_list">Click + to add cashbacks</string>
+    <string name="empty_bank_cards_list">Click + to add bank card</string>
+    <string name="confirm_shop_deletion">Delete shop «%s»?</string>
 
     <!-- Экран кешбэка -->
-    <string name="amount">Значение</string>
-    <string name="expiration_date">Срок действия кешбэка</string>
-    <string name="comment">Комментарий</string>
-    <string name="confrim_cashback_deletion">Удалить кешбэк?</string>
-    <string name="add_card">Добавить банковскую карту</string>
+    <string name="amount">Amount</string>
+    <string name="comment">Comment</string>
+    <string name="confirm_cashback_deletion">Delete cashback?</string>
+    <string name="add_card">Add bank card</string>
 
     <!-- Экран редактирования банковской карты -->
-    <string name="card_name">Название</string>
-    <string name="main_info">Основные данные</string>
-    <string name="card_number">Номер карты</string>
-    <string name="payment_system">Платежная система</string>
-    <string name="card_holder">Владелец карты</string>
-    <string name="validity_period">Срок действия</string>
-    <string name="cvv">CVC2/CVV2</string>
-    <string name="pin">PIN</string>
-    <string name="additional_info">Дополнительно</string>
-    <string name="value_not_selected">Не выбрано</string>
-    <string name="text_is_copied">Текст скопирован!</string>
-    <string name="confirm_card_deletion">Удалить банковскую карту «%s»?</string>
+    <string name="card_name">Name</string>
+    <string name="main_info">Basic data</string>
+    <string name="card_number">Card number</string>
+    <string name="payment_system">Payment system</string>
+    <string name="card_holder">Card holder</string>
+    <string name="validity_period">Validity period</string>
+    <string name="cvv" translatable="false">CVC2/CVV2</string>
+    <string name="pin" translatable="false">PIN</string>
+    <string name="additional_info">Optional</string>
+    <string name="value_not_selected">Not selected</string>
+    <string name="text_is_copied">Text has been copied!</string>
+    <string name="confirm_card_deletion">Delete bank card «%s»?</string>
 
     <!-- Экран просмотра карт -->
-    <string name="open">Открыть</string>
+    <string name="open">Open</string>
 
     <!-- Диалоговые окна -->
-    <string name="save">Сохранить</string>
-    <string name="delete">Удалить</string>
-    <string name="cancel">Отменить</string>
-    <string name="confirm_delete">Подтверждение удаления</string>
-    <string name="do_not_save">Не сохранять</string>
-    <string name="unsaved_data">У вас есть несохранённые данные. Сохранить?</string>
-    <string name="yes">Да</string>
-    <string name="no">Нет</string>
+    <string name="save">Save</string>
+    <string name="delete">Delete</string>
+    <string name="cancel">Cancel</string>
+    <string name="confirm_deletion">Confirm deletion</string>
+    <string name="do_not_save">Do not save</string>
+    <string name="unsaved_data">You have unsaved data. Save it?</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
 
     <!-- Платежные системы -->
-    <string-array name="payment_systems">
+    <string-array name="payment_systems" translatable="false">
         <item name="visa">Visa</item>
         <item name="master_card">Mastercard</item>
         <item name="mir">МИР</item>
@@ -88,6 +93,10 @@
     </string-array>
 
     <!-- Обработка ошибок -->
-    <string name="entry_already_exists_exception">Такая запись уже существует!</string>
-    <string name="settings_not_found_exception">Не удалось найти сохраненных настроек в базе данных!</string>
+    <string name="entry_already_exists_exception">Such an entry already exists!</string>
+    <string name="settings_not_found_exception">Failed to find saved settings in database!</string>
+
+
+    <!-- FeatureApi -->
+    <string name="title_feature_api" translatable="false">FeatureApi</string>
 </resources>
