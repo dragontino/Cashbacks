@@ -11,7 +11,7 @@ interface EventsFlow {
 
     fun closeDialog()
 
-    fun navigateTo(route: String?)
+    fun navigateTo(args: Any?)
 
     fun showSnackbar(message: String)
 }
