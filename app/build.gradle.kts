@@ -4,6 +4,10 @@ plugins {
     id("com.google.devtools.ksp")
 }
 
+val versionName by extra("1.7.0")
+val versionDate by extra("17/02/2024")
+val debugVersionExt by extra("beta18")
+
 android {
     namespace = "com.cashbacks.app"
     compileSdk = 34
@@ -12,8 +16,8 @@ android {
         applicationId = "com.cashbacks.app"
         minSdk = 28
         targetSdk = 34
-        versionCode = 1
-        versionName = "1.6.10"
+        versionCode = this@Build_gradle.versionName[0].toString().toInt()
+        versionName = this@Build_gradle.versionName
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -28,6 +32,14 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+
+            buildConfigField("String", "VERSION_NAME", "\"$versionName\"")
+            buildConfigField("String", "VERSION_DATE", "\"$versionDate\"")
+        }
+
+        debug {
+            buildConfigField("String", "VERSION_NAME", "\"$versionName-$debugVersionExt\"")
+            buildConfigField("String", "VERSION_DATE", "\"$versionDate\"")
         }
     }
     compileOptions {
@@ -39,6 +51,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.8"
@@ -53,7 +66,7 @@ android {
 dependencies {
     implementation(project(":data"))
     implementation(project(":domain"))
-    implementation(kotlin("reflect"))
+    implementation("org.jetbrains.kotlin:kotlin-reflect:1.9.22")
 
     implementation("androidx.core:core-ktx:1.12.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
