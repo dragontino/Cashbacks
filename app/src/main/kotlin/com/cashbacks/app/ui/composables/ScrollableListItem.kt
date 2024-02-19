@@ -13,8 +13,13 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.tappableElement
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Edit
@@ -23,16 +28,21 @@ import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalConfiguration
@@ -57,8 +67,11 @@ fun ScrollableListItem(
     ),
     onClick: (() -> Unit)? = null,
     hiddenContent: @Composable (RowScope.() -> Unit) = {},
-    shape: Shape = ScrollableListItemDefaults.shape(),
-    border: BorderStroke = ScrollableListItemDefaults.borderStroke(),
+    shape: Shape = ScrollableListItemDefaults.shape,
+    contentWindowInsets: WindowInsets = ScrollableListItemDefaults.contentWindowInsets,
+    border: BorderStroke = ScrollableListItemDefaults.borderStroke,
+    containerColor: Color = MaterialTheme.colorScheme.surface,
+    contentColor: Color = contentColorFor(containerColor),
     mainContent: @Composable (() -> Unit)
 ) {
     val scope = rememberCoroutineScope()
@@ -67,78 +80,89 @@ fun ScrollableListItem(
         return@rememberScrollableState delta
     }
 
-    Box(
-        modifier = modifier,
-        contentAlignment = Alignment.Center
-    ) {
+    CompositionLocalProvider(LocalContentColor provides contentColor) {
         Box(
-            modifier = Modifier
-                .offset {
-                    IntOffset(
-                        x = state.contentOffset.floatValue.roundToInt(),
-                        y = 0
-                    )
-                }
-                .clip(shape)
-                .border(border, shape)
-                .background(MaterialTheme.colorScheme.surface.animate())
-                .clickable(
-                    indication = LocalIndication.current,
-                    interactionSource = remember(::MutableInteractionSource),
-                    role = Role.Button,
-                    onClick = {
-                        when {
-                            scrollableState.isScrollInProgress || state.isSwiped.value || onClick == null ->
-                                scope.launch { state.swipe() }
-                            else -> onClick.invoke()
-                        }
+            modifier = modifier,
+            contentAlignment = Alignment.Center
+        ) {
+            Box(
+                modifier = Modifier
+                    .offset {
+                        IntOffset(
+                            x = state.contentOffset.floatValue.roundToInt(),
+                            y = 0
+                        )
                     }
-                )
-                .scrollable(
-                    orientation = Orientation.Horizontal,
-                    state = scrollableState
-                )
-                .zIndex(2f)
-        ) {
-            mainContent()
-        }
+                    .shadow(elevation = 4.dp, shape = shape)
+                    .clip(shape)
+                    .border(border, shape)
+                    .background(containerColor.animate())
+                    .clickable(
+                        indication = LocalIndication.current,
+                        interactionSource = remember(::MutableInteractionSource),
+                        role = Role.Button,
+                        onClick = {
+                            when {
+                                scrollableState.isScrollInProgress || state.isSwiped.value || onClick == null ->
+                                    scope.launch { state.swipe() }
 
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.End,
-            modifier = Modifier
-                .zIndex(1f)
-                .onGloballyPositioned {
-                    state.updateMinOffset(-it.size.width - 16f)
-                }
-                .align(Alignment.CenterEnd)
-                .wrapContentSize()
-        ) {
-            Row(content = hiddenContent)
+                                else -> onClick.invoke()
+                            }
+                        }
+                    )
+                    .scrollable(
+                        orientation = Orientation.Horizontal,
+                        state = scrollableState
+                    )
+                    .windowInsetsPadding(contentWindowInsets)
+                    .zIndex(2f)
+            ) {
+                mainContent()
+            }
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.End,
+                modifier = Modifier
+                    .zIndex(1f)
+                    .onGloballyPositioned {
+                        state.updateMinOffset(-it.size.width - 16f)
+                    }
+                    .windowInsetsPadding(contentWindowInsets)
+                    .align(Alignment.CenterEnd)
+                    .wrapContentSize(),
+                content = hiddenContent
+            )
         }
     }
 }
 
 
 object ScrollableListItemDefaults {
-
-    @Composable
-    fun borderStroke() = BorderStroke(
-        width = 1.5.dp,
-        brush = Brush.linearGradient(
-            colors = listOf(
-                MaterialTheme.colorScheme.primary,
-                MaterialTheme.colorScheme.secondary,
-                MaterialTheme.colorScheme.tertiary,
-            ).map { it.animate() }
+    val borderStroke: BorderStroke
+        @Composable
+        get() = BorderStroke(
+            width = 1.5.dp,
+            brush = Brush.linearGradient(
+                colors = listOf(
+                    MaterialTheme.colorScheme.primary,
+                    MaterialTheme.colorScheme.secondary,
+                    MaterialTheme.colorScheme.tertiary,
+                ).map { it.animate() }
+            )
         )
-    )
 
-    @Composable
-    fun shape() = MaterialTheme.shapes.small
+    val shape
+        @Composable
+        get() = MaterialTheme.shapes.small
 
-    val initialMinOffset @Composable
-    get() = -LocalConfiguration.current.screenWidthDp.toFloat()
+    val contentWindowInsets: WindowInsets
+        @Composable
+        get() = WindowInsets.tappableElement.only(WindowInsetsSides.Horizontal)
+
+    val initialMinOffset
+        @Composable
+        get() = -LocalConfiguration.current.screenWidthDp.toFloat()
 }
 
 

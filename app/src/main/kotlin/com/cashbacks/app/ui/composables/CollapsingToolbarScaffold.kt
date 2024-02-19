@@ -36,6 +36,9 @@ fun CollapsingToolbarScaffold(
         initialContentOffset = 100f
     ),
     floatingActionButtons: @Composable (ColumnScope.() -> Unit) = {},
+    fabModifier: Modifier = Modifier.windowInsetsPadding(
+        WindowInsets.tappableElement.only(WindowInsetsSides.Horizontal + WindowInsetsSides.End)
+    ),
     snackbarHost: @Composable (() -> Unit) = {},
     contentWindowInsets: WindowInsets = CollapsingToolbarScaffoldDefaults.contentWindowInsets,
     content: @Composable ((PaddingValues) -> Unit),
@@ -56,13 +59,11 @@ fun CollapsingToolbarScaffold(
             Column(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 horizontalAlignment = Alignment.End,
-                modifier = Modifier.windowInsetsPadding(
-                    WindowInsets.tappableElement.only(WindowInsetsSides.Horizontal)
-                ),
+                modifier = fabModifier,
                 content = floatingActionButtons
             )
         },
-        floatingActionButtonPosition = FabPosition.EndOverlay,
+        floatingActionButtonPosition = FabPosition.End,
         containerColor = MaterialTheme.colorScheme.background.animate(),
         contentColor = MaterialTheme.colorScheme.onBackground.animate(),
     ) { contentPadding ->
@@ -85,8 +86,6 @@ object CollapsingToolbarScaffoldDefaults {
     val contentWindowInsets: WindowInsets
         @Composable
         get() = WindowInsets
-            .tappableElement.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal)
-            .union(
-                WindowInsets.ime.only(WindowInsetsSides.Bottom)
-            )
+            .tappableElement.only(WindowInsetsSides.Bottom + WindowInsetsSides.End)
+            .union(WindowInsets.ime.only(WindowInsetsSides.Bottom))
 }

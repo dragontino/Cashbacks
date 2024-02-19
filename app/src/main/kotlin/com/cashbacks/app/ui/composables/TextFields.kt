@@ -337,7 +337,6 @@ private fun <T> EditableTextField(
     val borderBrush = when {
         error -> SolidColor(MaterialTheme.colorScheme.error.animate())
         readOnly -> SolidColor(MaterialTheme.colorScheme.onBackground.animate())
-        !enabled -> null
         else -> Brush.horizontalGradient(colors = borderColors.map { it.animate() })
     }
     val cursorBrush = when {
@@ -371,22 +370,20 @@ private fun <T> EditableTextField(
             interactionSource = interactionSource,
             isError = error,
             label = {
-                if (enabled) {
-                    Text(
-                        text = label,
-                        style = when {
-                            text.isEmpty() && !isFocused -> MaterialTheme.typography.bodyMedium
-                            else -> MaterialTheme.typography.bodySmall
-                        },
-                        maxLines = 1,
-                        color = when {
-                            error -> MaterialTheme.colorScheme.error
-                            readOnly -> textColor
-                            text.isEmpty() && !isFocused -> unfocusedTextColor
-                            else -> MaterialTheme.colorScheme.primary
-                        }.animate()
-                    )
-                }
+                Text(
+                    text = label,
+                    style = when {
+                        text.isEmpty() && !isFocused -> MaterialTheme.typography.bodyMedium
+                        else -> MaterialTheme.typography.bodySmall
+                    },
+                    maxLines = 1,
+                    color = when {
+                        error -> MaterialTheme.colorScheme.error
+                        readOnly -> textColor
+                        text.isEmpty() && !isFocused -> unfocusedTextColor
+                        else -> MaterialTheme.colorScheme.primary
+                    }.animate()
+                )
             },
             supportingText = {
                 AnimatedVisibility(
@@ -452,23 +449,19 @@ private fun <T> EditableTextField(
                 errorLeadingIconColor = MaterialTheme.colorScheme.error.animate(),
                 focusedSupportingTextColor = MaterialTheme.colorScheme.error.animate(),
                 unfocusedSupportingTextColor = MaterialTheme.colorScheme.error.animate(),
-                disabledSupportingTextColor = Color.Transparent,
-                disabledLabelColor = Color.Transparent,
+                disabledSupportingTextColor = MaterialTheme.colorScheme.error.animate(),
             ),
             container = {
-                val borderModifier = when (borderBrush) {
-                    null -> Modifier
-                    else -> Modifier.border(
-                        border = animateBorderStrokeAsState(
-                            borderBrush = borderBrush,
-                            enabled = !readOnly,
-                            interactionSource = interactionSource,
-                            focusedBorderThickness = 2.dp,
-                            unfocusedBorderThickness = 1.dp
-                        ).value,
-                        shape = shape
-                    )
-                }
+                val borderModifier = Modifier.border(
+                    border = animateBorderStrokeAsState(
+                        borderBrush = borderBrush,
+                        enabled = !readOnly,
+                        interactionSource = interactionSource,
+                        focusedBorderThickness = 2.dp,
+                        unfocusedBorderThickness = 1.dp
+                    ).value,
+                    shape = shape
+                )
 
                 Box(
                     modifier = Modifier
@@ -488,7 +481,7 @@ private fun <T> EditableTextField(
             singleLine = singleLine,
             maxLines = maxLines,
             enabled = enabled,
-            cursorBrush = cursorBrush ?: SolidColor(Color.Black),
+            cursorBrush = cursorBrush,
             textStyle = textStyle.copy(color = textColor.animate()),
             interactionSource = interactionSource,
             keyboardParams = keyboardParams,
@@ -504,7 +497,7 @@ private fun <T> EditableTextField(
             singleLine = singleLine,
             maxLines = maxLines,
             enabled = enabled,
-            cursorBrush = cursorBrush ?: SolidColor(Color.Black),
+            cursorBrush = cursorBrush,
             textStyle = textStyle.copy(color = textColor.animate()),
             interactionSource = interactionSource,
             keyboardParams = keyboardParams,
