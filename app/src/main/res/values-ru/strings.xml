@@ -22,6 +22,8 @@
     <string name="dynamic_color">Использовать в оформлении динамические цвета</string>
     <string name="dynamic_color_desc">Цветовая палитра приложения автоматически адаптируется и интегрируется с пользовательскими настройками</string>
 
+    <string name="expired_cashbacks_deletion_success">Просроченные кешбэки удалены</string>
+
     <!-- Оформление -->
     <string name="dark_theme">Тёмное</string>
     <string name="light_theme">Светлое</string>

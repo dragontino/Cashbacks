@@ -6,13 +6,21 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.cashbacks.domain.model.AppExceptionMessage
 import com.cashbacks.domain.model.Settings
+import com.cashbacks.domain.usecase.cashback.DeleteExpiredCashbacksUseCase
 import com.cashbacks.domain.usecase.settings.SettingsUseCase
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
+import java.time.LocalDate
 import javax.inject.Inject
 
-class MainViewModel @Inject constructor(settingsUseCase: SettingsUseCase) : ViewModel() {
+class MainViewModel @Inject constructor(
+    settingsUseCase: SettingsUseCase,
+    private val deleteExpiredCashbacksUseCase: DeleteExpiredCashbacksUseCase,
+    private val exceptionMessage: AppExceptionMessage
+) : ViewModel() {
 
     private val _settings = mutableStateOf(Settings())
     val settings = derivedStateOf { _settings.value }
@@ -32,5 +40,20 @@ class MainViewModel @Inject constructor(settingsUseCase: SettingsUseCase) : View
         settingsUseCase.fetchSettings()
             .onEach { _settings.value = it }
             .launchIn(viewModelScope)
+    }
+
+
+    fun deleteExpiredCashbacks(
+        success: () -> Unit,
+        failure: (message: String) -> Unit
+    ) {
+        viewModelScope.launch {
+            val nowDate = LocalDate.now()
+            deleteExpiredCashbacksUseCase.deleteExpiredCashbacks(
+                nowDate = nowDate,
+                onSuccess = success,
+                onFailure = { exceptionMessage.getMessage(it)?.let(failure) }
+            )
+        }
     }
 }

@@ -6,7 +6,7 @@ import com.cashbacks.domain.repository.CashbackRepository
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 
-class DeleteCashbackUseCase(
+class DeleteCashbacksUseCase(
     private val repository: CashbackRepository,
     private val dispatcher: CoroutineDispatcher
 ) {

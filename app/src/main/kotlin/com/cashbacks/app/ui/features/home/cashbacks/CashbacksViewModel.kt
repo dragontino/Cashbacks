@@ -9,7 +9,7 @@ import com.cashbacks.app.ui.managment.ListState
 import com.cashbacks.app.viewmodel.EventsViewModel
 import com.cashbacks.domain.model.AppExceptionMessage
 import com.cashbacks.domain.model.Cashback
-import com.cashbacks.domain.usecase.cashback.DeleteCashbackUseCase
+import com.cashbacks.domain.usecase.cashback.DeleteCashbacksUseCase
 import com.cashbacks.domain.usecase.cashback.FetchCashbacksUseCase
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.launchIn
@@ -19,7 +19,7 @@ import javax.inject.Inject
 
 class CashbacksViewModel @Inject constructor(
     fetchCashbacksUseCase: FetchCashbacksUseCase,
-    private val deleteCashbackUseCase: DeleteCashbackUseCase,
+    private val deleteCashbacksUseCase: DeleteCashbacksUseCase,
     private val exceptionMessage: AppExceptionMessage
 ) : EventsViewModel() {
     private val _state = mutableStateOf(ListState.Loading)
@@ -43,7 +43,7 @@ class CashbacksViewModel @Inject constructor(
         viewModelScope.launch {
             _state.value = ListState.Loading
             delay(100)
-            deleteCashbackUseCase
+            deleteCashbacksUseCase
                 .deleteCashback(cashback)
                 .exceptionOrNull()
                 ?.let(exceptionMessage::getMessage)

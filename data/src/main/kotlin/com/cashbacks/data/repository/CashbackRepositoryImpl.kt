@@ -4,6 +4,7 @@ import com.cashbacks.data.model.CashbackDB
 import com.cashbacks.data.model.CashbackWithParentAndBankCardDB
 import com.cashbacks.data.room.dao.CashbacksDao
 import com.cashbacks.domain.model.Cashback
+import com.cashbacks.domain.model.DeletionException
 import com.cashbacks.domain.model.InsertionException
 import com.cashbacks.domain.repository.CashbackRepository
 import kotlinx.coroutines.flow.Flow
@@ -57,8 +58,23 @@ class CashbackRepositoryImpl(private val dao: CashbacksDao) : CashbackRepository
     override suspend fun deleteCashback(cashback: Cashback): Result<Unit> {
         val deletedCount = dao.deleteCashbackById(id = cashback.id)
         return when {
-            deletedCount < 0 -> Result.failure(Exception())
+            deletedCount < 0 -> Result.failure(DeletionException(Cashback::class, cashback.amount))
             else -> Result.success(Unit)
+        }
+    }
+
+
+    override suspend fun deleteCashbacks(cashbacks: List<Cashback>): Result<Unit> {
+        if (cashbacks.isEmpty()) return Result.success(Unit)
+        val deletedCount = dao.deleteCashbacksById(cashbacks.map { it.id })
+        return when {
+            deletedCount >= cashbacks.size / 2 -> Result.success(Unit)
+            else -> Result.failure(
+                DeletionException(
+                    type = Cashback::class,
+                    name = cashbacks.joinToString { it.expirationDate!! }
+                )
+            )
         }
     }
 
@@ -91,5 +107,10 @@ class CashbackRepositoryImpl(private val dao: CashbacksDao) : CashbackRepository
         return dao.fetchAllCashbacks().map {
             it.map(CashbackWithParentAndBankCardDB::mapToCashbackPair)
         }
+    }
+
+
+    override suspend fun getAllCashbacks(): List<Cashback> {
+        return dao.getAllCashbacks().map { it.mapToCashback() }
     }
 }

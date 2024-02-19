@@ -67,6 +67,7 @@ interface CashbacksDao {
             FROM Cashbacks AS cash
             INNER JOIN (SELECT * FROM Cards) AS card ON card.id = cash.bankCardId
             WHERE cash.categoryId = :categoryId
+            ORDER BY cash.amount DESC
         """,
     )
     fun fetchCashbacksFromCategory(categoryId: Long): Flow<List<BasicCashbackDB>>
@@ -82,7 +83,7 @@ interface CashbacksDao {
             FROM Cashbacks AS cash
             INNER JOIN (SELECT * FROM Cards) AS card ON card.id = cash.bankCardId
             WHERE cash.shopId = :shopId
-            ORDER BY cash.amount
+            ORDER BY cash.amount DESC
         """
     )
     fun fetchCashbacksFromShop(shopId: Long): Flow<List<BasicCashbackDB>>
@@ -133,6 +134,24 @@ interface CashbacksDao {
     }
 
 
+    @Query(
+        """
+            SELECT cash.id, cash.amount, cash.expirationDate, cash.comment,
+                   card.id AS card_id,
+                   card.name AS card_name,
+                   card.number AS card_number,
+                   card.paymentSystem AS card_paymentSystem
+            FROM Cashbacks AS cash
+            INNER JOIN (SELECT * FROM Cards) AS card ON card.id = cash.bankCardId
+        """
+    )
+    suspend fun getAllCashbacks(): List<BasicCashbackDB>
+
+
     @Query("DELETE FROM Cashbacks WHERE id = :id")
     suspend fun deleteCashbackById(id: Long): Int
+
+
+    @Query("DELETE FROM Cashbacks WHERE id IN (:ids)")
+    suspend fun deleteCashbacksById(ids: List<Long>): Int
 }

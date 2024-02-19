@@ -7,8 +7,8 @@ import com.cashbacks.app.di.AppComponent
 import com.cashbacks.app.di.DaggerAppComponent
 import com.cashbacks.app.di.modules.AppModule
 import com.cashbacks.app.di.modules.DataModule
-import com.cashbacks.app.util.parseToDate
-import com.cashbacks.app.util.parseToString
+import com.cashbacks.domain.util.parseToDate
+import com.cashbacks.domain.util.parseToString
 
 class App : Application() {
 
@@ -27,4 +27,10 @@ class App : Application() {
     }
 
     val name by lazy { getString(R.string.app_name) }
+
+    @Suppress("UNUSED_PARAMETER")
+    var needToDeleteExpiredCashbacks: Boolean = true
+        set(value) {
+            field = false
+        }
 }

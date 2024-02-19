@@ -8,6 +8,7 @@ import com.cashbacks.domain.model.Cashback
 import com.cashbacks.domain.model.Category
 import com.cashbacks.domain.model.DeletionException
 import com.cashbacks.domain.model.EntryAlreadyExistsException
+import com.cashbacks.domain.model.ExpiredCashbacksDeletionException
 import com.cashbacks.domain.model.InsertionException
 import com.cashbacks.domain.model.SettingsNotFoundException
 import com.cashbacks.domain.model.Shop
@@ -28,6 +29,8 @@ class AppExceptionMessageImpl(private val context: Context) : AppExceptionMessag
                 }.lowercase()
                 return context.getString(R.string.deletion_exception, typeName, exception.name)
             }
+            is ExpiredCashbacksDeletionException ->
+                context.getString(R.string.expired_cashbacks_deletion_failture)
         }
     }
 }

@@ -16,7 +16,7 @@ import com.cashbacks.domain.model.Cashback
 import com.cashbacks.domain.model.Category
 import com.cashbacks.domain.model.Shop
 import com.cashbacks.domain.usecase.card.FetchBankCardsUseCase
-import com.cashbacks.domain.usecase.cashback.DeleteCashbackUseCase
+import com.cashbacks.domain.usecase.cashback.DeleteCashbacksUseCase
 import com.cashbacks.domain.usecase.cashback.EditCashbackUseCase
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
@@ -26,7 +26,7 @@ import kotlinx.coroutines.launch
 
 class CashbackViewModel @AssistedInject constructor(
     private val editCashbackUseCase: EditCashbackUseCase,
-    private val deleteCashbackUseCase: DeleteCashbackUseCase,
+    private val deleteCashbacksUseCase: DeleteCashbacksUseCase,
     private val fetchBankCardsUseCase: FetchBankCardsUseCase,
     private val exceptionMessage: AppExceptionMessage,
     @Assisted("cashback") internal val cashbackId: Long?,
@@ -97,7 +97,7 @@ class CashbackViewModel @AssistedInject constructor(
             val currentState = _state.value
             _state.value = ViewModelState.Loading
             delay(100)
-            deleteCashbackUseCase
+            deleteCashbacksUseCase
                 .deleteCashback(cashback.value.mapToCashback())
                 .exceptionOrNull()
                 ?.let(exceptionMessage::getMessage)

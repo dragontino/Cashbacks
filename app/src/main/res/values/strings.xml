@@ -22,7 +22,9 @@
     <string name="dynamic_color">Use dynamic colors in application design</string>
     <string name="dynamic_color_desc">Application color palette automatically adapts and integrates with user settings</string>
 
-    <!-- Оформление -->
+    <string name="expired_cashbacks_deletion_success">Expired cashbacks have been deleted</string>
+
+    <!-- App design -->
     <string name="dark_theme">Dark</string>
     <string name="light_theme">Light</string>
     <string name="system_theme">As on device</string>
@@ -52,7 +54,7 @@
     <string name="empty_bank_cards_list">Click + to add bank card</string>
     <string name="confirm_shop_deletion">Delete shop «%s»?</string>
 
-    <!-- Экран кешбэка -->
+    <!-- Cashback screen -->
     <string name="amount">Amount</string>
     <string name="comment">Comment</string>
     <string name="confirm_cashback_deletion">Delete cashback?</string>
@@ -101,4 +103,5 @@
     <string name="entry_already_exists_exception">Such an entry already exists!</string>
     <string name="settings_not_found_exception">Failed to find saved settings in database!</string>
     <string name="deletion_exception">Failed to delete %1$s «%2$s»</string>
+    <string name="expired_cashbacks_deletion_failture">Failed to delete expired cashbacks</string>
 </resources>

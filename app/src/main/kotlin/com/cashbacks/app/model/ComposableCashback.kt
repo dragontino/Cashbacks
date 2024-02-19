@@ -38,8 +38,4 @@ class ComposableCashback(
         expirationDate = this.expirationDate.takeIf { it.isNotBlank() },
         comment = this.comment
     )
-
-    companion object {
-        const val datePattern = "dd/MM/yyyy"
-    }
 }

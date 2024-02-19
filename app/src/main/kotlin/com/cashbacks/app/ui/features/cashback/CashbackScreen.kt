@@ -61,7 +61,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.cashbacks.app.R
-import com.cashbacks.app.model.ComposableCashback
 import com.cashbacks.app.model.PaymentSystemMapper
 import com.cashbacks.app.ui.composables.CollapsingToolbarScaffold
 import com.cashbacks.app.ui.composables.ConfirmDeletionDialog
@@ -73,12 +72,12 @@ import com.cashbacks.app.ui.managment.ScreenEvents
 import com.cashbacks.app.ui.managment.ViewModelState
 import com.cashbacks.app.util.Loading
 import com.cashbacks.app.util.LoadingInBox
-import com.cashbacks.app.util.LocalDate
 import com.cashbacks.app.util.animate
-import com.cashbacks.app.util.epochMillis
-import com.cashbacks.app.util.parseToDate
-import com.cashbacks.app.util.parseToString
 import com.cashbacks.domain.model.BankCard
+import com.cashbacks.domain.util.LocalDate
+import com.cashbacks.domain.util.epochMillis
+import com.cashbacks.domain.util.parseToDate
+import com.cashbacks.domain.util.parseToString
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 
@@ -133,7 +132,7 @@ fun CashbackScreen(
                     with(viewModel.cashback.value) {
                         updateValue(
                             property = ::expirationDate,
-                            newValue = it?.parseToString(ComposableCashback.datePattern) ?: ""
+                            newValue = it?.parseToString() ?: ""
                         )
                     }
                     viewModel.closeDialog()
@@ -361,7 +360,7 @@ private fun CashbackContent(
                     ) {
                         val date = viewModel.cashback.value.expirationDate
                             .takeIf { it.isNotBlank() }
-                            ?.parseToDate(ComposableCashback.datePattern)
+                            ?.parseToDate()
                         viewModel.openDialog(DialogType.DatePicker(date))
                     }
                     .fillMaxWidth()

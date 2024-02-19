@@ -14,7 +14,7 @@ import com.cashbacks.domain.model.AppExceptionMessage
 import com.cashbacks.domain.model.Cashback
 import com.cashbacks.domain.model.Category
 import com.cashbacks.domain.model.Shop
-import com.cashbacks.domain.usecase.cashback.DeleteCashbackUseCase
+import com.cashbacks.domain.usecase.cashback.DeleteCashbacksUseCase
 import com.cashbacks.domain.usecase.cashback.FetchCashbacksUseCase
 import com.cashbacks.domain.usecase.categories.GetCategoryUseCase
 import com.cashbacks.domain.usecase.shops.DeleteShopUseCase
@@ -30,7 +30,7 @@ class CategoryViewingViewModel @AssistedInject constructor(
     fetchShopsFromCategoryUseCase: FetchShopsFromCategoryUseCase,
     fetchCashbacksUseCase: FetchCashbacksUseCase,
     private val deleteShopUseCase: DeleteShopUseCase,
-    private val deleteCashbackUseCase: DeleteCashbackUseCase,
+    private val deleteCashbacksUseCase: DeleteCashbacksUseCase,
     private val exceptionMessage: AppExceptionMessage,
     @Assisted val categoryId: Long
     ) : EventsViewModel() {
@@ -94,7 +94,7 @@ class CategoryViewingViewModel @AssistedInject constructor(
         viewModelScope.launch {
             _state.value = ViewModelState.Loading
             delay(100)
-            deleteCashbackUseCase.deleteCashback(cashback)
+            deleteCashbacksUseCase.deleteCashback(cashback)
                 .exceptionOrNull()
                 ?.let(exceptionMessage::getMessage)
                 ?.let(::showSnackbar)

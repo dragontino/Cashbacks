@@ -11,3 +11,5 @@ data object EntryAlreadyExistsException : AppException()
 data class InsertionException(override val message: String? = null) : AppException(message)
 
 data class DeletionException(val type: KClass<*>, val name: String) : AppException()
+
+data object ExpiredCashbacksDeletionException : AppException()
