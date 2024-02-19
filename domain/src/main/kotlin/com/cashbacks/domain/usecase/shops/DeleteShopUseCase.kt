@@ -14,18 +14,11 @@ class DeleteShopUseCase(
         const val TAG = "DeleteShopUseCase"
     }
 
-    suspend fun deleteShopFromCategory(
-        categoryId: Long,
-        shop: Shop,
-        errorMessage: (String) -> Unit = {}
-    ) {
-        withContext(dispatcher) {
-            repository
-                .deleteShopFromCategory(categoryId, shop)
-                .exceptionOrNull()
-                .also { Log.e(TAG, it?.message, it) }
-                ?.message
-                ?.let(errorMessage)
+    suspend fun deleteShop(shop: Shop): Result<Unit> = withContext(dispatcher) {
+        repository.deleteShop(shop).also { result ->
+            result.exceptionOrNull()?.let {
+                Log.e(TAG, it.message, it)
+            }
         }
     }
 }

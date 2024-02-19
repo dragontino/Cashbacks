@@ -9,14 +9,13 @@ class EditShopUseCase(
     private val repository: ShopRepository,
     private val dispatcher: CoroutineDispatcher
 ) {
-    suspend fun updateShopInCategory(
-        categoryId: Long,
+    suspend fun updateShop(
         shop: Shop,
         errorMessage: (String) -> Unit
     ) {
         return withContext(dispatcher) {
             repository
-                .updateShopInCategory(categoryId, shop)
+                .updateShop(shop)
                 .exceptionOrNull()
                 ?.message
                 ?.let(errorMessage)

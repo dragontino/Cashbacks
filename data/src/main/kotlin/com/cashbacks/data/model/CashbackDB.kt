@@ -93,3 +93,26 @@ data class CashbackWithBankCardDB(
         bankCard = bankCard
     )
 }
+
+
+data class CashbackWithParentAndBankCardDB(
+    val id: Long,
+    val parentType: String,
+    val parentName: String,
+    @Embedded(prefix = "card_")
+    val bankCard: BasicBankCard,
+    val amount: Double,
+    val expirationDate: String?,
+    val comment: String
+) {
+    fun mapToCashbackPair(): Pair<Pair<String, String>, Cashback> {
+        val cashback = Cashback(
+            id = id,
+            amount = if (amount < 0) "" else amount.toString(),
+            bankCard = bankCard,
+            expirationDate = expirationDate,
+            comment = comment
+        )
+        return parentType to parentName to cashback
+    }
+}

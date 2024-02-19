@@ -21,15 +21,9 @@ class EditCashbackUseCase(
         }
     }
 
-    suspend fun updateCashbackInCategory(categoryId: Long, cashback: Cashback): Result<Unit> {
+    suspend fun updateCashback(cashback: Cashback): Result<Unit> {
         return withContext(dispatcher) {
-            repository.updateCashbackInCategory(categoryId, cashback)
-        }
-    }
-
-    suspend fun updateCashbackInShop(shopId: Long, cashback: Cashback): Result<Unit> {
-        return withContext(dispatcher) {
-            repository.updateCashbackInShop(shopId, cashback)
+            repository.updateCashback(cashback)
         }
     }
 

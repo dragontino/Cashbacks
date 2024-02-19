@@ -17,4 +17,8 @@ class FetchCashbacksUseCase(
     fun fetchCashbacksFromShop(shopId: Long): Flow<List<Cashback>> {
         return repository.fetchCashbacksFromShop(shopId).flowOn(dispatcher)
     }
+
+    fun fetchAllCashbacks(): Flow<List<Pair<Pair<String, String>, Cashback>>> {
+        return repository.fetchAllCashbacks().flowOn(dispatcher)
+    }
 }

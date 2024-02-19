@@ -14,13 +14,16 @@ class UpdateCategoryUseCase(
         const val TAG = "UpdateCategoriesUseCase"
     }
 
-    suspend fun updateCategory(category: Category): Result<Unit> {
-        return withContext(dispatcher) {
+    suspend fun updateCategory(
+        category: Category,
+        exceptionMessage: (Throwable) -> Unit
+    ) {
+        withContext(dispatcher) {
             categoryRepository
                 .updateCategory(category)
-                .apply {
-                    exceptionOrNull()?.let { Log.e(TAG, it.message, it) }
-                }
+                .exceptionOrNull()
+                ?.also { Log.e(TAG, it.message, it) }
+                ?.let(exceptionMessage)
         }
     }
 }

@@ -6,4 +6,10 @@ data class Cashback(
     val amount: String,
     val expirationDate: String?,
     val comment: String
-)
+) {
+    val roundedAmount: String get() = amount
+        .toDoubleOrNull()
+        ?.takeIf { it % 1 == 0.0 }
+        ?.toInt()?.toString()
+        ?: amount
+}

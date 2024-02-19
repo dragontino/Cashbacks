@@ -1,6 +1,7 @@
 package com.cashbacks.data.repository
 
 import com.cashbacks.data.model.CashbackDB
+import com.cashbacks.data.model.CashbackWithParentAndBankCardDB
 import com.cashbacks.data.room.dao.CashbacksDao
 import com.cashbacks.domain.model.Cashback
 import com.cashbacks.domain.model.InsertionException
@@ -36,25 +37,14 @@ class CashbackRepositoryImpl(private val dao: CashbacksDao) : CashbackRepository
     }
 
 
-    override suspend fun updateCashbackInCategory(
-        categoryId: Long,
-        cashback: Cashback
-    ): Result<Unit> {
-        val cashbackDB = CashbackDB(cashback, categoryId = categoryId)
-        return updateCashback(cashbackDB)
-    }
-
-    override suspend fun updateCashbackInShop(
-        shopId: Long,
-        cashback: Cashback
-    ): Result<Unit> {
-        val cashbackDB = CashbackDB(cashback, shopId = shopId)
-        return updateCashback(cashbackDB)
-    }
-
-
-    private suspend fun updateCashback(cashback: CashbackDB): Result<Unit> {
-        val updatedCount = dao.updateCashback(cashback)
+    override suspend fun updateCashback(cashback: Cashback): Result<Unit> {
+        val updatedCount = dao.updateCashbackById(
+            id = cashback.id,
+            bankCardId = cashback.bankCard.id,
+            amount = cashback.amount.toDoubleOrNull() ?: -1.0,
+            expirationDate = cashback.expirationDate,
+            comment = cashback.comment
+        )
         return when {
             updatedCount < 0 -> Result.failure(
                 InsertionException("Не удалось обновить кэшбек")
@@ -64,25 +54,8 @@ class CashbackRepositoryImpl(private val dao: CashbacksDao) : CashbackRepository
     }
 
 
-    override suspend fun deleteCashbackFromCategory(
-        categoryId: Long,
-        cashback: Cashback
-    ): Result<Unit> {
-        val cashbackDB = CashbackDB(cashback, categoryId = categoryId)
-        return deleteCashback(cashbackDB)
-    }
-
-    override suspend fun deleteCashbackFromShop(
-        shopId: Long,
-        cashback: Cashback
-    ): Result<Unit> {
-        val cashbackDB = CashbackDB(cashback, shopId = shopId)
-        return deleteCashback(cashbackDB)
-    }
-
-
-    private suspend fun deleteCashback(cashback: CashbackDB): Result<Unit> {
-        val deletedCount = dao.deleteCashbacks(cashback)
+    override suspend fun deleteCashback(cashback: Cashback): Result<Unit> {
+        val deletedCount = dao.deleteCashbackById(id = cashback.id)
         return when {
             deletedCount < 0 -> Result.failure(Exception())
             else -> Result.success(Unit)
@@ -110,6 +83,13 @@ class CashbackRepositoryImpl(private val dao: CashbacksDao) : CashbackRepository
     override fun fetchCashbacksFromShop(shopId: Long): Flow<List<Cashback>> {
         return dao.fetchCashbacksFromShop(shopId).map { list ->
             list.map { it.mapToCashback() }
+        }
+    }
+
+
+    override fun fetchAllCashbacks(): Flow<List<Pair<Pair<String, String>, Cashback>>> {
+        return dao.fetchAllCashbacks().map {
+            it.map(CashbackWithParentAndBankCardDB::mapToCashbackPair)
         }
     }
 }

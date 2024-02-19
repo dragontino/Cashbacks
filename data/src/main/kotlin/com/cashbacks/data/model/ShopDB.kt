@@ -45,3 +45,16 @@ data class ShopWithMaxCashbackDB(
         maxCashback = maxCashback?.mapToCashback()
     )
 }
+
+
+data class ShopWithCategoryNameAndCashbackDB(
+    val id: Long,
+    val name: String,
+    @Embedded(prefix = "category_")
+    val category: CategoryDB,
+    @Embedded(prefix = "cashback_")
+    val maxCashback: BasicCashbackDB?
+) {
+    fun mapToShopCategoryPair() =
+        category.mapToCategory() to Shop(id, name, maxCashback?.mapToCashback())
+}

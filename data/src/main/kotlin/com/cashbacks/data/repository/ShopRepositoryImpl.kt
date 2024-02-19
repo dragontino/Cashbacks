@@ -2,6 +2,8 @@ package com.cashbacks.data.repository
 
 import com.cashbacks.data.model.ShopDB
 import com.cashbacks.data.room.dao.ShopsDao
+import com.cashbacks.domain.model.Category
+import com.cashbacks.domain.model.DeletionException
 import com.cashbacks.domain.model.EntryAlreadyExistsException
 import com.cashbacks.domain.model.InsertionException
 import com.cashbacks.domain.model.Shop
@@ -34,12 +36,8 @@ class ShopRepositoryImpl(private val dao: ShopsDao) : ShopRepository {
     }
 
 
-    override suspend fun updateShopInCategory(
-        categoryId: Long,
-        shop: Shop
-    ): Result<Unit> {
-        val shopDB = ShopDB(id = shop.id, categoryId = categoryId, name = shop.name)
-        return dao.updateShop(shopDB).let { updatedCount ->
+    override suspend fun updateShop(shop: Shop): Result<Unit> {
+        return dao.updateShopById(shopId = shop.id, shopName = shop.name).let { updatedCount ->
             when {
                 updatedCount < 0 -> Result.failure(
                     InsertionException("Не удалось обновить все магазины")
@@ -50,14 +48,15 @@ class ShopRepositoryImpl(private val dao: ShopsDao) : ShopRepository {
     }
 
 
-    override suspend fun deleteShopFromCategory(
-        categoryId: Long,
-        shop: Shop
-    ): Result<Unit> {
-        val shopDB = ShopDB(id = shop.id, categoryId = categoryId, name = shop.name)
-        return dao.deleteShop(shopDB).let { deletedCount ->
+    override suspend fun deleteShop(shop: Shop): Result<Unit> {
+        return dao.deleteShopById(shop.id).let { deletedCount ->
             when {
-                deletedCount < 0 -> Result.failure(Exception())
+                deletedCount < 0 -> Result.failure(
+                    DeletionException(
+                        type = Shop::class,
+                        name = shop.name
+                    )
+                )
                 else -> Result.success(Unit)
             }
         }
@@ -83,15 +82,15 @@ class ShopRepositoryImpl(private val dao: ShopsDao) : ShopRepository {
         }
     }
 
-    override fun fetchAllShops(): Flow<List<Shop>> {
+    override fun fetchAllShopsWithCategories(): Flow<List<Pair<Category, Shop>>> {
         return dao.fetchAllShops().mapLatest { list ->
-            list.map { it.mapToShop() }
+            list.map { it.mapToShopCategoryPair() }
         }
     }
 
-    override fun fetchShopsWithCashback(): Flow<List<Shop>> {
+    override fun fetchShopsWithCategoriesAndCashbacks(): Flow<List<Pair<Category, Shop>>> {
         return dao.fetchShopsWithCashback().mapLatest { list ->
-            list.map { it.mapToShop() }
+            list.map { it.mapToShopCategoryPair() }
         }
     }
 }
