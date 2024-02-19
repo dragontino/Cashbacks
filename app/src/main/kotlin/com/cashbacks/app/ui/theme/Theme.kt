@@ -1,7 +1,6 @@
 package com.cashbacks.app.ui.theme
 
 import android.os.Build
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
@@ -10,7 +9,7 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import com.cashbacks.domain.model.ColorDesign
+import com.cashbacks.app.model.ColorDesignMapper.isDark
 import com.cashbacks.domain.model.Settings
 
 private val DarkColorScheme = darkColorScheme(
@@ -40,24 +39,19 @@ private val LightColorScheme = lightColorScheme(
     background = Color.White,
     onBackground = Color.Black,
     secondaryContainer = Color(0xFFEDEEF3),
+    surface = Color(red = 248, green = 228, blue = 221, alpha = 255),
     error = Color(0xFFB00909)
 )
 
 @Composable
 fun CashbacksTheme(
     settings: Settings,
-    content: @Composable (isDarkTheme: Boolean) -> Unit
+    content: @Composable () -> Unit
 ) {
-    val isDarkTheme = when (settings.colorDesign) {
-        ColorDesign.Light -> false
-        ColorDesign.Dark -> true
-        ColorDesign.System -> isSystemInDarkTheme()
-    }
-
     CashbacksTheme(
-        isDarkTheme = isDarkTheme,
+        isDarkTheme = settings.colorDesign.isDark,
         dynamicColor = settings.dynamicColor,
-        content = { content(isDarkTheme) }
+        content = content
     )
 }
 
