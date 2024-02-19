@@ -7,6 +7,7 @@
     <string name="categories_title">My categories</string>
     <string name="shops_title">My shops</string>
     <string name="bank_cards_title">My cards</string>
+    <string name="cashbacks_title">My cashbacks</string>
     <string name="categories">Categories</string>
     <string name="shops">Shops</string>
     <string name="cashbacks">Cashbacks</string>
@@ -40,11 +41,13 @@
     <string name="shop_placeholder">Shop name</string>
     <string name="add_cashback">Add cashback</string>
     <string name="no_cashbacks_for_shop">There are no cashbacks for this shop</string>
+    <string name="no_cashbacks">There are no cashbacks</string>
 
     <string name="empty_shops_list_viewing">
         There are no shops with cashbacks.\nClick on the pencil to view all stores in this category
     </string>
     <string name="empty_shops_list_editing">Click + to add shops</string>
+    <string name="empty_shops">There are no shops</string>
     <string name="empty_cashbacks_list">Click + to add cashbacks</string>
     <string name="empty_bank_cards_list">Click + to add bank card</string>
     <string name="confirm_shop_deletion">Delete shop «%s»?</string>
@@ -54,14 +57,16 @@
     <string name="comment">Comment</string>
     <string name="confirm_cashback_deletion">Delete cashback?</string>
     <string name="add_card">Add bank card</string>
+    <string name="on_card">On card</string>
 
-    <!-- Экран редактирования банковской карты -->
+    <!-- Bank card editing screen -->
     <string name="card_name">Name</string>
     <string name="main_info">Basic data</string>
     <string name="card_number">Card number</string>
     <string name="payment_system">Payment system</string>
     <string name="card_holder">Card holder</string>
     <string name="validity_period">Validity period</string>
+    <string name="indefinitely_period">Indefinitely</string>
     <string name="cvv" translatable="false">CVC2/CVV2</string>
     <string name="pin" translatable="false">PIN</string>
     <string name="additional_info">Optional</string>
@@ -69,10 +74,10 @@
     <string name="text_is_copied">Text has been copied!</string>
     <string name="confirm_card_deletion">Delete bank card «%s»?</string>
 
-    <!-- Экран просмотра карт -->
+    <!-- Bank card viewing screen -->
     <string name="open">Open</string>
 
-    <!-- Диалоговые окна -->
+    <!-- Dialogs -->
     <string name="save">Save</string>
     <string name="delete">Delete</string>
     <string name="cancel">Cancel</string>
@@ -82,7 +87,7 @@
     <string name="yes">Yes</string>
     <string name="no">No</string>
 
-    <!-- Платежные системы -->
+    <!-- Payment systems -->
     <string-array name="payment_systems" translatable="false">
         <item name="visa">Visa</item>
         <item name="master_card">Mastercard</item>
@@ -92,11 +97,8 @@
         <item name="american_express">American Express</item>
     </string-array>
 
-    <!-- Обработка ошибок -->
+    <!-- Exceptions handle -->
     <string name="entry_already_exists_exception">Such an entry already exists!</string>
     <string name="settings_not_found_exception">Failed to find saved settings in database!</string>
-
-
-    <!-- FeatureApi -->
-    <string name="title_feature_api" translatable="false">FeatureApi</string>
+    <string name="deletion_exception">Failed to delete %1$s «%2$s»</string>
 </resources>
