@@ -433,9 +433,9 @@ private fun CategoryInfoScreenContent(
 
                         is Cashback -> CashbackComposable(
                             cashback = item,
-                            isSwiped = viewModel.selectedShopIndex == index,
+                            isSwiped = viewModel.selectedCashbackIndex == index,
                             onSwipe = { isSwiped ->
-                                viewModel.selectedShopIndex = when {
+                                viewModel.selectedCashbackIndex = when {
                                     isSwiped -> index
                                     else -> null
                                 }

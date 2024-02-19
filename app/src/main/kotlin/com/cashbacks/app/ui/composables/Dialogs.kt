@@ -68,12 +68,15 @@ fun ConfirmExitWithSaveDataDialog(
 
 
 @Composable
-fun ConfirmDeletionDialog(text: String, onConfirm: () -> Unit, onDismiss: () -> Unit) {
+fun ConfirmDeletionDialog(text: String, onConfirm: () -> Unit, onClose: () -> Unit) {
     AlertDialog(
-        onDismissRequest = onDismiss,
+        onDismissRequest = onClose,
         confirmButton = {
             TextButton(
-                onClick = onConfirm,
+                onClick = {
+                    onConfirm()
+                    onClose()
+                },
                 shape = MaterialTheme.shapes.medium,
             ) {
                 Text(
@@ -88,7 +91,7 @@ fun ConfirmDeletionDialog(text: String, onConfirm: () -> Unit, onDismiss: () -> 
         },
         dismissButton = {
             TextButton(
-                onClick = onDismiss,
+                onClick = onClose,
                 shape = MaterialTheme.shapes.medium,
             ) {
                 Text(
@@ -103,7 +106,7 @@ fun ConfirmDeletionDialog(text: String, onConfirm: () -> Unit, onDismiss: () -> 
         },
         title = {
             Text(
-                text = stringResource(R.string.confirm_delete),
+                text = stringResource(R.string.confirm_deletion),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold
             )

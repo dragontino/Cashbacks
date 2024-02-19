@@ -2,7 +2,6 @@ package com.cashbacks.domain.repository
 
 import com.cashbacks.domain.model.Cashback
 import kotlinx.coroutines.flow.Flow
-import kotlin.reflect.KClass
 
 interface CashbackRepository {
     suspend fun addCashbackToCategory(categoryId: Long, cashback: Cashback): Result<Unit>
