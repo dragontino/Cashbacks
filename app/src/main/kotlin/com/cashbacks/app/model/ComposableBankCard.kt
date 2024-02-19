@@ -9,7 +9,6 @@ import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import com.cashbacks.domain.model.BankCard
 import com.cashbacks.domain.model.PaymentSystem
-import kotlin.reflect.KMutableProperty0
 
 class ComposableBankCard(
     val id: Long = 0,
@@ -21,7 +20,7 @@ class ComposableBankCard(
     cvv: String = "",
     pin: String = "",
     comment: String = ""
-) {
+) : Updatable {
     constructor(bankCard: BankCard) : this(
         id = bankCard.id,
         name = bankCard.name,
@@ -47,27 +46,7 @@ class ComposableBankCard(
     var pin by mutableStateOf(pin)
     var comment by mutableStateOf(comment)
 
-    private val updatedProperties: SnapshotStateMap<String, Pair<String, String>> = mutableStateMapOf()
-
-    val haveChanges: Boolean get() = updatedProperties.isNotEmpty()
-
-    fun <T> updateValue(property: KMutableProperty0<T>, newValue: T) {
-        val previousValue = property.get()
-        property.set(newValue)
-
-        with(updatedProperties) {
-            val changeHistory = this[property.name]
-
-            when {
-                changeHistory == null -> this[property.name] =
-                    previousValue.toString() to newValue.toString()
-
-                changeHistory.first == newValue.toString() -> remove(property.name)
-
-                else -> this[property.name] = changeHistory.copy(second = newValue.toString())
-            }
-        }
-    }
+    override val updatedProperties: SnapshotStateMap<String, Pair<String, String>> = mutableStateMapOf()
 
     fun updateNumber(newNumber: TextFieldValue) {
         val newText = when (newNumber.text.length) {

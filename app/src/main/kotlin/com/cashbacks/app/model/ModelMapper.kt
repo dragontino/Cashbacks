@@ -1,8 +1,8 @@
 package com.cashbacks.app.model
 
-import android.content.Context
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
@@ -11,6 +11,7 @@ import androidx.compose.material.icons.outlined.LightMode
 import androidx.compose.material.icons.rounded.Devices
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -25,16 +26,25 @@ import com.cashbacks.domain.model.ColorDesign
 import com.cashbacks.domain.model.PaymentSystem
 
 data object ColorDesignMapper {
-    fun ColorDesign.title(context: Context): String = when (this) {
-        ColorDesign.Light -> context.getString(R.string.light_theme)
-        ColorDesign.Dark -> context.getString(R.string.dark_theme)
-        ColorDesign.System -> context.getString(R.string.system_theme)
+    val ColorDesign.title: String
+    @Composable
+    get() = when (this) {
+        ColorDesign.Light -> stringResource(R.string.light_theme)
+        ColorDesign.Dark -> stringResource(R.string.dark_theme)
+        ColorDesign.System -> stringResource(R.string.system_theme)
     }
 
     val ColorDesign.icon get() = when (this) {
         ColorDesign.Light -> Icons.Outlined.LightMode
         ColorDesign.Dark -> Icons.Outlined.DarkMode
         ColorDesign.System -> Icons.Rounded.Devices
+    }
+
+    val ColorDesign.isDark: Boolean
+    @Composable get() = when (this) {
+        ColorDesign.Light -> false
+        ColorDesign.Dark -> true
+        ColorDesign.System -> isSystemInDarkTheme()
     }
 }
 
@@ -54,13 +64,15 @@ data object PaymentSystemMapper {
         maxWidth: Dp = 50.dp,
         drawBackground: Boolean = true
     ) {
-        val painterRes = when (paymentSystem) {
-            PaymentSystem.Visa -> R.drawable.visa_logo
-            PaymentSystem.MasterCard -> R.drawable.mastercard_logo
-            PaymentSystem.Mir -> R.drawable.mir_logo
-            PaymentSystem.JCB -> R.drawable.jcb_logo
-            PaymentSystem.UnionPay -> R.drawable.unionpay_logo
-            PaymentSystem.AmericanExpress -> R.drawable.american_express_logo
+        val painterRes = remember(paymentSystem) {
+            when (paymentSystem) {
+                PaymentSystem.Visa -> R.drawable.visa_logo
+                PaymentSystem.MasterCard -> R.drawable.mastercard_logo
+                PaymentSystem.Mir -> R.drawable.mir_logo
+                PaymentSystem.JCB -> R.drawable.jcb_logo
+                PaymentSystem.UnionPay -> R.drawable.unionpay_logo
+                PaymentSystem.AmericanExpress -> R.drawable.american_express_logo
+            }
         }
 
         val backgroundModifier = when {
