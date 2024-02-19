@@ -4,6 +4,7 @@ import com.cashbacks.domain.repository.ShopRepository
 import com.cashbacks.domain.usecase.shops.AddShopUseCase
 import com.cashbacks.domain.usecase.shops.DeleteShopUseCase
 import com.cashbacks.domain.usecase.shops.EditShopUseCase
+import com.cashbacks.domain.usecase.shops.FetchAllShopsUseCase
 import com.cashbacks.domain.usecase.shops.FetchShopsFromCategoryUseCase
 import dagger.Module
 import dagger.Provides
@@ -30,6 +31,10 @@ class ShopsModule {
     )
 
     @Provides
-    fun provideFetchShopsUseCase(shopRepository: ShopRepository) =
+    fun provideFetchShopsFromCategoryUseCase(shopRepository: ShopRepository) =
         FetchShopsFromCategoryUseCase(repository = shopRepository, dispatcher = Dispatchers.IO)
+
+    @Provides
+    fun provideFetchAllShopsUseCase(shopRepository: ShopRepository) =
+        FetchAllShopsUseCase(repository = shopRepository, dispatcher = Dispatchers.IO)
 }

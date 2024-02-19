@@ -1,8 +1,7 @@
 package com.cashbacks.app.di.modules
 
 import com.cashbacks.domain.repository.CashbackRepository
-import com.cashbacks.domain.usecase.cashback.CashbackCategoryUseCase
-import com.cashbacks.domain.usecase.cashback.CashbackShopUseCase
+import com.cashbacks.domain.usecase.cashback.DeleteCashbackUseCase
 import com.cashbacks.domain.usecase.cashback.EditCashbackUseCase
 import com.cashbacks.domain.usecase.cashback.FetchCashbacksUseCase
 import dagger.Module
@@ -12,13 +11,7 @@ import kotlinx.coroutines.Dispatchers
 @Module
 class CashbacksModule {
     @Provides
-    fun provideCashbackCategoryUseCase(cashbackRepository: CashbackRepository) = CashbackCategoryUseCase(
-        repository = cashbackRepository,
-        dispatcher = Dispatchers.IO
-    )
-
-    @Provides
-    fun provideCashbackShopUseCase(cashbackRepository: CashbackRepository) = CashbackShopUseCase(
+    fun provideDeleteCashbackUseCase(cashbackRepository: CashbackRepository) = DeleteCashbackUseCase(
         repository = cashbackRepository,
         dispatcher = Dispatchers.IO
     )
