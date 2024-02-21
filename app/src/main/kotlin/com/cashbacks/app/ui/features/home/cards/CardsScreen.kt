@@ -1,5 +1,6 @@
 package com.cashbacks.app.ui.features.home.cards
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
@@ -19,21 +20,15 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
-import androidx.compose.material.icons.rounded.Menu
-import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableFloatStateOf
@@ -47,7 +42,6 @@ import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -57,6 +51,7 @@ import com.cashbacks.app.ui.composables.BasicFloatingActionButton
 import com.cashbacks.app.ui.composables.CollapsingToolbarScaffold
 import com.cashbacks.app.ui.composables.EmptyList
 import com.cashbacks.app.ui.features.bankcard.BankCardArgs
+import com.cashbacks.app.ui.features.home.HomeTopAppBar
 import com.cashbacks.app.ui.managment.ListState
 import com.cashbacks.app.ui.managment.ScreenEvents
 import com.cashbacks.app.ui.theme.CashbacksTheme
@@ -99,45 +94,25 @@ internal fun CardsScreen(
 
     CollapsingToolbarScaffold(
         topBar = {
-            CenterAlignedTopAppBar(
-                title = {
-                    Text(
-                        text = title,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = openDrawer) {
-                        Icon(
-                            imageVector = Icons.Rounded.Menu,
-                            contentDescription = "open menu"
-                        )
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { viewModel.showSnackbar("Поиск") }) {
-                        Icon(
-                            imageVector = Icons.Rounded.Search,
-                            contentDescription = "search"
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary.animate(),
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary.animate(),
-                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary.animate(),
-                    actionIconContentColor = MaterialTheme.colorScheme.onPrimary.animate()
-                )
+            HomeTopAppBar(
+                title = title,
+                query = viewModel.query.value,
+                onQueryChange = viewModel.query::value::set,
+                state = viewModel.appBarState,
+                onStateChange = viewModel::appBarState::set,
+                searchPlaceholder = stringResource(R.string.search_cards_placeholder),
+                onNavigationIconClick = openDrawer
             )
         },
         floatingActionButtons = {
-            BasicFloatingActionButton(
-                icon = Icons.Rounded.Add,
-                onClick = {
-                    navigateToCard(BankCardArgs(id = null, isEditing = true))
-                },
-            )
+            AnimatedVisibility(visible = !viewModel.isSearch) {
+                BasicFloatingActionButton(
+                    icon = Icons.Rounded.Add,
+                    onClick = {
+                        navigateToCard(BankCardArgs(id = null, isEditing = true))
+                    },
+                )
+            }
         },
         fabModifier = Modifier
             .padding(bottom = bottomPadding)
@@ -170,11 +145,19 @@ internal fun CardsScreen(
                     modifier = Modifier.padding(bottom = bottomPadding)
                 )
                 ListState.Empty -> EmptyList(
-                    text = stringResource(R.string.empty_bank_cards_list),
+                    text = when {
+                        viewModel.isSearch -> {
+                            when {
+                                viewModel.query.value.isBlank() -> stringResource(R.string.empty_search_query)
+                                else -> stringResource(R.string.empty_search_results)
+                            }
+                        }
+                        else -> stringResource(R.string.empty_bank_cards_list)
+                    },
                     modifier = Modifier.padding(bottom = bottomPadding)
                 )
                 ListState.Stable -> CardsContentScreen(
-                    cards = viewModel.cards.value,
+                    cards = viewModel.cards,
                     navigateToCard = { viewModel.navigateTo(it) },
                     showSnackbar = viewModel::showSnackbar,
                     bottomPadding = bottomPadding + fabPaddingDp.floatValue.dp

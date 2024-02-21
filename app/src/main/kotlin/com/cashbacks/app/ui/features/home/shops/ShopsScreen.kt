@@ -1,10 +1,12 @@
 package com.cashbacks.app.ui.features.home.shops
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -23,18 +25,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.DataArray
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.EditOff
-import androidx.compose.material.icons.rounded.Menu
-import androidx.compose.material.icons.rounded.Search
-import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -49,7 +44,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.cashbacks.app.R
@@ -58,17 +52,19 @@ import com.cashbacks.app.ui.composables.CollapsingToolbarScaffold
 import com.cashbacks.app.ui.composables.ConfirmDeletionDialog
 import com.cashbacks.app.ui.composables.EmptyList
 import com.cashbacks.app.ui.composables.ShopComposable
+import com.cashbacks.app.ui.features.home.HomeTopAppBar
 import com.cashbacks.app.ui.features.shop.ShopArgs
 import com.cashbacks.app.ui.managment.DialogType
 import com.cashbacks.app.ui.managment.ListState
 import com.cashbacks.app.ui.managment.ScreenEvents
 import com.cashbacks.app.util.LoadingInBox
 import com.cashbacks.app.util.animate
+import com.cashbacks.app.util.keyboardAsState
 import com.cashbacks.app.util.reversed
 import com.cashbacks.domain.model.Shop
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun ShopsScreen(
     viewModel: ShopsViewModel,
@@ -88,6 +84,7 @@ fun ShopsScreen(
 
     val snackbarHostState = remember(::SnackbarHostState)
     val scope = rememberCoroutineScope()
+    val keyboardState = keyboardAsState()
 
     val showSnackbar = remember {
         fun(message: String) {
@@ -122,39 +119,14 @@ fun ShopsScreen(
 
     CollapsingToolbarScaffold(
         topBar = {
-            CenterAlignedTopAppBar(
-                title = {
-                    Text(
-                        text = title,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                },
-                navigationIcon = {
-                    IconButton(
-                        onClick = remember {
-                            fun() {
-                                viewModel.onItemClick(openDrawer)
-                            }
-                        },
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.Menu,
-                            contentDescription = "open menu"
-                        )
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { viewModel.showSnackbar("Поиск") }) {
-                        Icon(imageVector = Icons.Rounded.Search, contentDescription = "search")
-                    }
-                },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary.animate(),
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary.animate(),
-                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary.animate(),
-                    actionIconContentColor = MaterialTheme.colorScheme.onPrimary.animate()
-                )
+            HomeTopAppBar(
+                title = title,
+                query = viewModel.query.value,
+                onQueryChange = viewModel.query::value::set,
+                state = viewModel.appBarState,
+                onStateChange = viewModel::appBarState::set,
+                searchPlaceholder = stringResource(R.string.search_shops_placeholder),
+                onNavigationIconClick = openDrawer
             )
         },
         snackbarHost = {
@@ -168,14 +140,10 @@ fun ShopsScreen(
             }
         },
         floatingActionButtons = {
-            Crossfade(
-                targetState = viewModel.isEditing.value,
-                label = "is editing",
-                animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)
-            ) { isEditing ->
+            AnimatedVisibility(visible = !keyboardState.value) {
                 BasicFloatingActionButton(
                     icon = when {
-                        isEditing -> Icons.Rounded.EditOff
+                        viewModel.isEditing.value -> Icons.Rounded.EditOff
                         else -> Icons.Rounded.Edit
                     },
                     onClick = {
@@ -211,8 +179,14 @@ fun ShopsScreen(
                 )
                 ListState.Empty -> EmptyList(
                     text = when {
-                        viewModel.isEditing.value -> stringResource(R.string.empty_shops)
-                        else -> stringResource(R.string.empty_shops_list_viewing)
+                        !viewModel.isEditing.value -> stringResource(R.string.empty_shops_list_viewing)
+                        viewModel.isSearch -> {
+                            when {
+                                viewModel.query.value.isBlank() -> stringResource(R.string.empty_search_query)
+                                else -> stringResource(R.string.empty_search_results)
+                            }
+                        }
+                        else -> stringResource(R.string.empty_shops)
                     },
                     icon = Icons.Rounded.DataArray,
                     iconModifier = Modifier.scale(2.5f),

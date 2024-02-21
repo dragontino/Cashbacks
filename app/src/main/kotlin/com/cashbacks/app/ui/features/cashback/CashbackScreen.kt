@@ -263,7 +263,7 @@ private fun CashbackContent(
                 .padding(contentPadding)
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(16.dp)
+                .padding(vertical = 16.dp)
         ) {
             ExposedDropdownMenuBox(
                 expanded = viewModel.showBankCardsSelection,

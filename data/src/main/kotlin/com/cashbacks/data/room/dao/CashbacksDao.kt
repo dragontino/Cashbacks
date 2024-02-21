@@ -137,6 +137,59 @@ interface CashbacksDao {
     @Query(
         """
             SELECT cash.id, cash.amount, cash.expirationDate, cash.comment,
+                   "Category" AS parentType,
+                   cat.name AS parentName,
+                   card.id AS card_id,
+                   card.name AS card_name,
+                   card.number AS card_number,
+                   card.paymentSystem AS card_paymentSystem
+            FROM Cashbacks AS cash
+            INNER JOIN (SELECT id, name FROM Categories) AS cat ON cash.categoryId = cat.id
+            INNER JOIN (SELECT * FROM Cards) AS card ON card.id = cash.bankCardId
+            WHERE cash.categoryId IS NOT NULL
+            AND (
+                amount LIKE '%' || :query || '%' OR parentName LIKE '%' || :query || '%' 
+                OR expirationDate LIKE '%' || :query || '%' OR cash.comment LIKE '%' || :query || '%'
+                OR card_name LIKE '%' || :query || '%' OR card_number LIKE '%' || :query || '%'
+                OR card_paymentSystem LIKE '%' || :query || '%'
+            )
+        """
+    )
+    suspend fun searchCashbacksInCategories(query: String): List<CashbackWithParentAndBankCardDB>
+
+
+    @Query(
+        """
+            SELECT cash.id, cash.amount, cash.expirationDate, cash.comment,
+                   "Shop" AS parentType,
+                   s.name AS parentName,
+                   card.id AS card_id,
+                   card.name AS card_name,
+                   card.number AS card_number,
+                   card.paymentSystem AS card_paymentSystem
+            FROM Cashbacks AS cash
+            INNER JOIN (SELECT id, name FROM Shops) AS s ON cash.shopId = s.id
+            INNER JOIN (SELECT * FROM Cards) AS card ON card.id = cash.bankCardId
+            WHERE cash.shopId IS NOT NULL
+            AND (
+                amount LIKE '%' || :query || '%' OR parentName LIKE '%' || :query || '%' 
+                OR expirationDate LIKE '%' || :query || '%' OR cash.comment LIKE '%' || :query || '%'
+                OR card_name LIKE '%' || :query || '%' OR card_number LIKE '%' || :query || '%'
+                OR card_paymentSystem LIKE '%' || :query || '%'
+            )
+        """
+    )
+    suspend fun searchCashbacksInShops(query: String): List<CashbackWithParentAndBankCardDB>
+
+
+    suspend fun searchCashbacks(query: String): List<CashbackWithParentAndBankCardDB> {
+        return searchCashbacksInCategories(query) + searchCashbacksInShops(query)
+    }
+
+
+    @Query(
+        """
+            SELECT cash.id, cash.amount, cash.expirationDate, cash.comment,
                    card.id AS card_id,
                    card.name AS card_name,
                    card.number AS card_number,

@@ -13,8 +13,8 @@ import com.cashbacks.app.viewmodel.EventsViewModel
 import com.cashbacks.domain.model.AppExceptionMessage
 import com.cashbacks.domain.model.Cashback
 import com.cashbacks.domain.model.Shop
-import com.cashbacks.domain.usecase.cashback.DeleteCashbacksUseCase
-import com.cashbacks.domain.usecase.cashback.FetchCashbacksUseCase
+import com.cashbacks.domain.usecase.cashbacks.DeleteCashbacksUseCase
+import com.cashbacks.domain.usecase.cashbacks.FetchCashbacksUseCase
 import com.cashbacks.domain.usecase.categories.DeleteCategoryUseCase
 import com.cashbacks.domain.usecase.categories.GetCategoryUseCase
 import com.cashbacks.domain.usecase.categories.UpdateCategoryUseCase

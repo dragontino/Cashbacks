@@ -43,6 +43,7 @@ fun CollapsingToolbarScaffold(
     contentWindowInsets: WindowInsets = CollapsingToolbarScaffoldDefaults.contentWindowInsets,
     content: @Composable ((PaddingValues) -> Unit),
 ) {
+    topBarState.heightOffsetLimit
     val nestedScrollConnection = remember {
         object : NestedScrollConnection {
 

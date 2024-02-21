@@ -20,4 +20,6 @@ interface ShopRepository {
     fun fetchAllShopsWithCategories(): Flow<List<Pair<Category, Shop>>>
 
     fun fetchShopsWithCategoriesAndCashbacks(): Flow<List<Pair<Category, Shop>>>
+
+    suspend fun searchShops(query: String, cashbacksRequired: Boolean): List<Pair<Category, Shop>>
 }

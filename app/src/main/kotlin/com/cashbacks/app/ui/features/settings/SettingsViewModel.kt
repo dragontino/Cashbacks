@@ -28,13 +28,13 @@ class SettingsViewModel @Inject constructor(
     private val _settings = mutableStateOf(Settings())
     val settings = derivedStateOf { _settings.value }
 
-    private val _state = mutableStateOf(ViewModelState.Viewing)
+    private val _state = mutableStateOf(ViewModelState.Loading)
     val state = derivedStateOf { _state.value }
 
     init {
         flow {
             emit(ViewModelState.Loading)
-            delay(150)
+            delay(250)
             emit(ViewModelState.Viewing)
         }.onEach { _state.value = it }.launchIn(viewModelScope)
 

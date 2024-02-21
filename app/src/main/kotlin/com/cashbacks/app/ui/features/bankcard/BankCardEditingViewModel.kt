@@ -10,8 +10,8 @@ import com.cashbacks.app.ui.managment.ViewModelState
 import com.cashbacks.app.util.AnimationDefaults
 import com.cashbacks.app.viewmodel.EventsViewModel
 import com.cashbacks.domain.model.PaymentSystem
-import com.cashbacks.domain.usecase.card.EditBankCardUseCase
-import com.cashbacks.domain.usecase.card.GetBankCardUseCase
+import com.cashbacks.domain.usecase.cards.EditBankCardUseCase
+import com.cashbacks.domain.usecase.cards.GetBankCardUseCase
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject

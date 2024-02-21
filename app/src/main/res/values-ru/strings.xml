@@ -45,6 +45,14 @@
     <string name="no_cashbacks_for_shop">Нет кешбэков для этого магазина</string>
     <string name="no_cashbacks">Кешбэков нет</string>
 
+    <string name="search_categories_placeholder">Поиск по категориям</string>
+    <string name="search_shops_placeholder">Поиск по магазинам</string>
+    <string name="search_cashbacks_placeholder">Поиск по кешбэкам</string>
+    <string name="search_cards_placeholder">Поиск по банковским картам</string>
+
+    <string name="empty_search_query">Начите вводить запрос…</string>
+    <string name="empty_search_results">Поиск не дал результатов</string>
+
     <string name="empty_shops_list_viewing">
         Магазинов с кешбэками нет.\nНажмите на карандаш для просмотра всех магазинов в этой категории
     </string>

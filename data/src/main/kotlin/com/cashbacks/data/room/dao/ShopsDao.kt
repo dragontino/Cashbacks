@@ -107,6 +107,50 @@ interface ShopsDao {
     )
     fun fetchShopsWithCashback(): Flow<List<ShopWithCategoryNameAndCashbackDB>>
 
+    @Query(
+        """
+        SELECT s.id, s.name,
+               cat.id AS category_id, cat.name AS category_name,
+               cash.id AS cashback_id, cash.amount AS cashback_amount, 
+               cash.expirationDate AS cashback_expirationDate, cash.comment AS cashback_comment,
+               card.id AS cashback_card_id, card.name AS cashback_card_name,
+               card.number AS cashback_card_number, card.paymentSystem AS cashback_card_paymentSystem
+        FROM Shops AS s
+        LEFT JOIN (SELECT id, name FROM Categories) AS cat ON s.categoryId = cat.id
+        LEFT JOIN (SELECT * FROM Cashbacks) AS cash 
+        ON s.id = cash.shopId AND cash.amount = (
+            SELECT MAX(amount) FROM Cashbacks WHERE shopId = s.id
+        )
+        LEFT JOIN Cards AS card ON cash.bankCardId = card.id
+        WHERE s.name LIKE '%' || :query || '%' OR category_name LIKE '%' || :query || '%'
+        ORDER BY s.name ASC
+        """
+    )
+    suspend fun searchAllShops(query: String): List<ShopWithCategoryNameAndCashbackDB>
+
+    @Query(
+        """
+        SELECT s.id, s.name,
+               cat.id AS category_id, cat.name AS category_name,
+               cash.id AS cashback_id, cash.amount AS cashback_amount, 
+               cash.expirationDate AS cashback_expirationDate, cash.comment AS cashback_comment,
+               card.id AS cashback_card_id, card.name AS cashback_card_name,
+               card.number AS cashback_card_number, card.paymentSystem AS cashback_card_paymentSystem
+        FROM Shops AS s
+        LEFT JOIN (SELECT id, name FROM Categories) AS cat ON s.categoryId = cat.id
+        LEFT JOIN (SELECT * FROM Cashbacks) AS cash 
+        ON s.id = cash.shopId AND cash.amount = (
+            SELECT MAX(amount) FROM Cashbacks WHERE shopId = s.id
+        )
+        LEFT JOIN Cards AS card ON cash.bankCardId = card.id
+        WHERE cash.id IS NOT NULL AND (
+            s.name LIKE '%' || :query || '%' OR category_name LIKE '%' || :query || '%'
+        ) 
+        ORDER BY s.name ASC
+        """
+    )
+    suspend fun searchShopsWithCashback(query: String): List<ShopWithCategoryNameAndCashbackDB>
+
     @Transaction
     @Query("SELECT * FROM Shops WHERE id = :id")
     suspend fun getShopById(id: Long): ShopDB?

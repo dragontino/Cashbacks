@@ -19,18 +19,11 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.DataArray
-import androidx.compose.material.icons.rounded.Menu
-import androidx.compose.material.icons.rounded.Search
-import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -43,7 +36,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.cashbacks.app.R
@@ -52,6 +44,7 @@ import com.cashbacks.app.ui.composables.CollapsingToolbarScaffold
 import com.cashbacks.app.ui.composables.ConfirmDeletionDialog
 import com.cashbacks.app.ui.composables.EmptyList
 import com.cashbacks.app.ui.features.cashback.CashbackArgs
+import com.cashbacks.app.ui.features.home.HomeTopAppBar
 import com.cashbacks.app.ui.managment.DialogType
 import com.cashbacks.app.ui.managment.ListState
 import com.cashbacks.app.ui.managment.ScreenEvents
@@ -112,39 +105,14 @@ fun CashbacksScreen(
 
     CollapsingToolbarScaffold(
         topBar = {
-            CenterAlignedTopAppBar(
-                title = {
-                    Text(
-                        text = title,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                },
-                navigationIcon = {
-                    IconButton(
-                        onClick = remember {
-                            fun() {
-                                viewModel.onItemClick(openDrawer)
-                            }
-                        }
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.Menu,
-                            contentDescription = "open menu",
-                        )
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { viewModel.showSnackbar("Поиск") }) {
-                        Icon(imageVector = Icons.Rounded.Search, contentDescription = "search")
-                    }
-                },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary.animate(),
-                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary.animate(),
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary.animate(),
-                    actionIconContentColor = MaterialTheme.colorScheme.onPrimary.animate()
-                )
+            HomeTopAppBar(
+                title = title,
+                query = viewModel.query.value,
+                onQueryChange = viewModel.query::value::set,
+                state = viewModel.appBarState,
+                onStateChange = viewModel::appBarState::set,
+                searchPlaceholder = stringResource(R.string.search_cashbacks_placeholder),
+                onNavigationIconClick = openDrawer
             )
         },
         snackbarHost = {
@@ -178,7 +146,15 @@ fun CashbacksScreen(
                     modifier = Modifier.padding(bottom = bottomPadding)
                 )
                 ListState.Empty -> EmptyList(
-                    text = stringResource(R.string.no_cashbacks),
+                    text = when {
+                        viewModel.isSearch -> {
+                            when {
+                                viewModel.query.value.isBlank() -> stringResource(R.string.empty_search_query)
+                                else -> stringResource(R.string.empty_search_results)
+                            }
+                        }
+                        else -> stringResource(R.string.no_cashbacks)
+                    },
                     icon = Icons.Rounded.DataArray,
                     iconModifier = Modifier.scale(2.5f),
                     modifier = Modifier
@@ -204,7 +180,7 @@ private fun CashbacksList(
         verticalArrangement = Arrangement.spacedBy(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        itemsIndexed(viewModel.cashbacks.value) { index, (parent, cashback) ->
+        itemsIndexed(viewModel.cashbacks) { index, (parent, cashback) ->
             CashbackComposable(
                 cashback = cashback,
                 parentType = when (parent.first) {

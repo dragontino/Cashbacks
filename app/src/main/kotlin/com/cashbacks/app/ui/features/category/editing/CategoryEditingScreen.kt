@@ -424,11 +424,22 @@ private fun CategoryInfoScreenContent(
                             },
                             onClick = {},
                             onEdit = {
-                                viewModel.navigateTo(
-                                    args = ShopArgs(shopId = item.id, isEditing = true)
-                                )
+                                viewModel.onItemClick {
+                                    viewModel.selectedShopIndex = -1
+                                    viewModel.navigateTo(
+                                        args = ShopArgs(
+                                            shopId = item.id,
+                                            isEditing = true
+                                        )
+                                    )
+                                }
                             },
-                            onDelete = { viewModel.openDialog(DialogType.ConfirmDeletion(item)) }
+                            onDelete = {
+                                viewModel.onItemClick {
+                                    viewModel.selectedShopIndex = -1
+                                    viewModel.openDialog(DialogType.ConfirmDeletion(item))
+                                }
+                            }
                         )
 
                         is Cashback -> CashbackComposable(
@@ -441,9 +452,17 @@ private fun CategoryInfoScreenContent(
                                 }
                             },
                             onClick = {
-                                viewModel.navigateTo(CashbackArgs.Existing(id = item.id))
+                                viewModel.onItemClick {
+                                    viewModel.selectedCashbackIndex = -1
+                                    viewModel.navigateTo(CashbackArgs.Existing(id = item.id))
+                                }
                             },
-                            onDelete = { viewModel.openDialog(DialogType.ConfirmDeletion(item)) }
+                            onDelete = {
+                                viewModel.onItemClick {
+                                    viewModel.selectedCashbackIndex = -1
+                                    viewModel.openDialog(DialogType.ConfirmDeletion(item))
+                                }
+                            }
                         )
                     }
                 }

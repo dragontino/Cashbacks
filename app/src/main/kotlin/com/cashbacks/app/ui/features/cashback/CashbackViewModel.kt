@@ -15,9 +15,9 @@ import com.cashbacks.domain.model.BankCard
 import com.cashbacks.domain.model.Cashback
 import com.cashbacks.domain.model.Category
 import com.cashbacks.domain.model.Shop
-import com.cashbacks.domain.usecase.card.FetchBankCardsUseCase
-import com.cashbacks.domain.usecase.cashback.DeleteCashbacksUseCase
-import com.cashbacks.domain.usecase.cashback.EditCashbackUseCase
+import com.cashbacks.domain.usecase.cards.FetchBankCardsUseCase
+import com.cashbacks.domain.usecase.cashbacks.DeleteCashbacksUseCase
+import com.cashbacks.domain.usecase.cashbacks.EditCashbackUseCase
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject

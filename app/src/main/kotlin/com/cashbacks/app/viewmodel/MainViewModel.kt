@@ -8,7 +8,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.cashbacks.domain.model.AppExceptionMessage
 import com.cashbacks.domain.model.Settings
-import com.cashbacks.domain.usecase.cashback.DeleteExpiredCashbacksUseCase
+import com.cashbacks.domain.usecase.cashbacks.DeleteExpiredCashbacksUseCase
 import com.cashbacks.domain.usecase.settings.SettingsUseCase
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach

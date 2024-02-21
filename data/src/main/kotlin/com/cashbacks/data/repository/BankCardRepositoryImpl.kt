@@ -22,6 +22,10 @@ class BankCardRepositoryImpl(private val dao: CardsDao) : BankCardRepository {
         }
     }
 
+    override suspend fun searchBankCards(query: String): List<BankCard> {
+        return dao.searchBankCards(query).map { it.mapToBankCard() }
+    }
+
     override suspend fun getBankCardById(id: Long): Result<BankCard> {
         return dao.getBankCardById(id)
             ?.let { Result.success(it.mapToBankCard()) }
@@ -32,5 +36,4 @@ class BankCardRepositoryImpl(private val dao: CardsDao) : BankCardRepository {
         val success = dao.deleteBankCard(BankCardDB(card)) == 1
         return if (success) Result.success(Unit) else Result.failure(Exception())
     }
-
 }

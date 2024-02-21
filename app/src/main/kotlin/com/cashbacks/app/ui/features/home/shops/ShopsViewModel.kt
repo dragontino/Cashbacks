@@ -6,6 +6,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.lifecycle.viewModelScope
+import com.cashbacks.app.ui.features.home.HomeTopAppBarState
+import com.cashbacks.app.ui.features.home.Search
 import com.cashbacks.app.ui.managment.ListState
 import com.cashbacks.app.viewmodel.EventsViewModel
 import com.cashbacks.domain.model.AppExceptionMessage
@@ -13,6 +15,7 @@ import com.cashbacks.domain.model.Category
 import com.cashbacks.domain.model.Shop
 import com.cashbacks.domain.usecase.shops.DeleteShopUseCase
 import com.cashbacks.domain.usecase.shops.FetchAllShopsUseCase
+import com.cashbacks.domain.usecase.shops.SearchShopsUseCase
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -21,9 +24,10 @@ import javax.inject.Inject
 
 class ShopsViewModel @Inject constructor(
     fetchAllShopsUseCase: FetchAllShopsUseCase,
+    searchShopsUseCase: SearchShopsUseCase,
     private val deleteShopUseCase: DeleteShopUseCase,
     private val exceptionMessage: AppExceptionMessage,
-) : EventsViewModel() {
+) : EventsViewModel(), Search {
 
     private val _state = mutableStateOf(ListState.Loading)
     val state = derivedStateOf { _state.value }
@@ -37,6 +41,11 @@ class ShopsViewModel @Inject constructor(
 
     var selectedShopIndex by mutableStateOf<Int?>(null)
 
+    internal var appBarState: HomeTopAppBarState by mutableStateOf(HomeTopAppBarState.TopBar)
+    override val query = mutableStateOf("")
+
+    val isSearch: Boolean get() = appBarState == HomeTopAppBarState.Search
+
     init {
         fetchAllShopsUseCase.fetchAllShops()
             .onEach { allShops.value = it }
@@ -47,14 +56,24 @@ class ShopsViewModel @Inject constructor(
             .launchIn(viewModelScope)
 
         snapshotFlow {
-            Triple(allShops.value, shopsWithCashback.value, isEditing.value)
+            arrayOf(
+                allShops.value,
+                shopsWithCashback.value,
+                isEditing.value,
+                appBarState,
+                query.value
+            )
         }.onEach {
             _state.value = ListState.Loading
-            delay(200)
             shops = when {
+                isSearch -> searchShopsUseCase.searchShops(
+                    query = query.value,
+                    cashbacksRequired = !isEditing.value
+                )
                 isEditing.value -> allShops.value
                 else -> shopsWithCashback.value
             }
+            delay(200)
             _state.value = if (shops.isEmpty()) ListState.Empty else ListState.Stable
         }.launchIn(viewModelScope)
     }

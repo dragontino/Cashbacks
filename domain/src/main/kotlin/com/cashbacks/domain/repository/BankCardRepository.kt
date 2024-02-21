@@ -10,6 +10,8 @@ interface BankCardRepository {
 
     fun fetchBankCards(): Flow<List<BankCard>>
 
+    suspend fun searchBankCards(query: String): List<BankCard>
+
     suspend fun getBankCardById(id: Long): Result<BankCard>
 
     suspend fun deleteBankCard(card: BankCard): Result<Unit>

@@ -6,6 +6,7 @@ import com.cashbacks.domain.usecase.shops.DeleteShopUseCase
 import com.cashbacks.domain.usecase.shops.EditShopUseCase
 import com.cashbacks.domain.usecase.shops.FetchAllShopsUseCase
 import com.cashbacks.domain.usecase.shops.FetchShopsFromCategoryUseCase
+import com.cashbacks.domain.usecase.shops.SearchShopsUseCase
 import dagger.Module
 import dagger.Provides
 import kotlinx.coroutines.Dispatchers
@@ -37,4 +38,8 @@ class ShopsModule {
     @Provides
     fun provideFetchAllShopsUseCase(shopRepository: ShopRepository) =
         FetchAllShopsUseCase(repository = shopRepository, dispatcher = Dispatchers.IO)
+
+    @Provides
+    fun provideSearchShopsUseCase(shopRepository: ShopRepository) =
+        SearchShopsUseCase(repository = shopRepository, dispatcher = Dispatchers.IO)
 }

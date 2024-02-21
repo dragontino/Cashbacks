@@ -1,4 +1,4 @@
-package com.cashbacks.domain.usecase.cashback
+package com.cashbacks.domain.usecase.cashbacks
 
 import com.cashbacks.domain.model.Cashback
 import com.cashbacks.domain.repository.CashbackRepository

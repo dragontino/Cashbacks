@@ -1,10 +1,11 @@
 package com.cashbacks.app.di.modules
 
 import com.cashbacks.domain.repository.CashbackRepository
-import com.cashbacks.domain.usecase.cashback.DeleteCashbacksUseCase
-import com.cashbacks.domain.usecase.cashback.DeleteExpiredCashbacksUseCase
-import com.cashbacks.domain.usecase.cashback.EditCashbackUseCase
-import com.cashbacks.domain.usecase.cashback.FetchCashbacksUseCase
+import com.cashbacks.domain.usecase.cashbacks.DeleteCashbacksUseCase
+import com.cashbacks.domain.usecase.cashbacks.DeleteExpiredCashbacksUseCase
+import com.cashbacks.domain.usecase.cashbacks.EditCashbackUseCase
+import com.cashbacks.domain.usecase.cashbacks.FetchCashbacksUseCase
+import com.cashbacks.domain.usecase.cashbacks.SearchCashbacksUseCase
 import dagger.Module
 import dagger.Provides
 import kotlinx.coroutines.Dispatchers
@@ -26,6 +27,10 @@ class CashbacksModule {
     @Provides
     fun provideFetchCashbacksUseCase(cashbackRepository: CashbackRepository) =
         FetchCashbacksUseCase(repository = cashbackRepository, dispatcher = Dispatchers.IO)
+
+    @Provides
+    fun providesSearchCashbacksUseCase(cashbackRepository: CashbackRepository) =
+        SearchCashbacksUseCase(repository = cashbackRepository, dispatcher = Dispatchers.IO)
     
     @Provides
     fun provideDeleteExpiredCashbacksUseCase(cashbackRepository: CashbackRepository) =

@@ -12,6 +12,8 @@ interface CategoryRepository {
 
     fun fetchCategoriesWithCashback(): Flow<List<Category>>
 
+    suspend fun searchCategories(query: String, cashbacksRequired: Boolean): List<Category>
+
     suspend fun getCategoryById(id: Long): Result<Category>
 
     suspend fun deleteCategory(category: Category): Result<Unit>

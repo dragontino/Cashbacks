@@ -5,6 +5,7 @@ import com.cashbacks.domain.usecase.categories.AddCategoryUseCase
 import com.cashbacks.domain.usecase.categories.DeleteCategoryUseCase
 import com.cashbacks.domain.usecase.categories.FetchCategoriesUseCase
 import com.cashbacks.domain.usecase.categories.GetCategoryUseCase
+import com.cashbacks.domain.usecase.categories.SearchCategoriesUseCase
 import com.cashbacks.domain.usecase.categories.UpdateCategoryUseCase
 import dagger.Module
 import dagger.Provides
@@ -20,6 +21,11 @@ class CategoriesModule {
 
     @Provides
     fun provideFetchCategoriesUseCase(categoryRepository: CategoryRepository) = FetchCategoriesUseCase(
+        repository = categoryRepository, dispatcher = Dispatchers.IO
+    )
+
+    @Provides
+    fun provideSearchCategoriesUseCase(categoryRepository: CategoryRepository) = SearchCategoriesUseCase(
         repository = categoryRepository, dispatcher = Dispatchers.IO
     )
 

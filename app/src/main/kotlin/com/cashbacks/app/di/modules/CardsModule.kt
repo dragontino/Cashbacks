@@ -1,10 +1,11 @@
 package com.cashbacks.app.di.modules
 
 import com.cashbacks.domain.repository.BankCardRepository
-import com.cashbacks.domain.usecase.card.DeleteBankCardUseCase
-import com.cashbacks.domain.usecase.card.EditBankCardUseCase
-import com.cashbacks.domain.usecase.card.FetchBankCardsUseCase
-import com.cashbacks.domain.usecase.card.GetBankCardUseCase
+import com.cashbacks.domain.usecase.cards.DeleteBankCardUseCase
+import com.cashbacks.domain.usecase.cards.EditBankCardUseCase
+import com.cashbacks.domain.usecase.cards.FetchBankCardsUseCase
+import com.cashbacks.domain.usecase.cards.GetBankCardUseCase
+import com.cashbacks.domain.usecase.cards.SearchBankCardsUseCase
 import dagger.Module
 import dagger.Provides
 import kotlinx.coroutines.Dispatchers
@@ -29,6 +30,10 @@ class CardsModule {
         repository = bankCardRepository,
         dispatcher = Dispatchers.IO
     )
+
+    @Provides
+    fun provideSearchBankCardsUseCase(bankCardRepository: BankCardRepository) =
+        SearchBankCardsUseCase(repository = bankCardRepository, dispatcher = Dispatchers.IO)
 
     @Provides
     fun provideDeleteBankCardUseCase(bankCardRepository: BankCardRepository) = DeleteBankCardUseCase(

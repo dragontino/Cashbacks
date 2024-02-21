@@ -18,8 +18,19 @@ interface CardsDao {
     @Update(onConflict = OnConflictStrategy.IGNORE)
     suspend fun updateBankCard(bankCardDB: BankCardDB): Int
 
-    @Query("SELECT * FROM Cards ORDER BY id ASC")
+    @Query("SELECT * FROM Cards ORDER BY name ASC")
     fun fetchBankCards(): Flow<List<BankCardDB>>
+
+    @Query(
+        """
+        SELECT * FROM Cards
+        WHERE name LIKE '%' || :query || '%' OR number LIKE '%' || :query || '%' 
+        OR paymentSystem LIKE '%' || :query || '%' OR holder LIKE '%' || :query || '%'
+        OR validityPeriod LIKE '%' || :query || '%' OR comment LIKE '%' || :query || '%'
+        ORDER BY name ASC
+        """
+    )
+    suspend fun searchBankCards(query: String): List<BankCardDB>
 
     @Query("SELECT * FROM Cards WHERE id = :id")
     suspend fun getBankCardById(id: Long): BankCardDB?

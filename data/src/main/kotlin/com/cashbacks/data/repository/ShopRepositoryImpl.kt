@@ -47,7 +47,6 @@ class ShopRepositoryImpl(private val dao: ShopsDao) : ShopRepository {
         }
     }
 
-
     override suspend fun deleteShop(shop: Shop): Result<Unit> {
         return dao.deleteShopById(shop.id).let { deletedCount ->
             when {
@@ -61,7 +60,6 @@ class ShopRepositoryImpl(private val dao: ShopsDao) : ShopRepository {
             }
         }
     }
-
 
     override suspend fun getShopById(id: Long): Result<Shop> {
         return dao
@@ -92,5 +90,15 @@ class ShopRepositoryImpl(private val dao: ShopsDao) : ShopRepository {
         return dao.fetchShopsWithCashback().mapLatest { list ->
             list.map { it.mapToShopCategoryPair() }
         }
+    }
+
+    override suspend fun searchShops(
+        query: String,
+        cashbacksRequired: Boolean
+    ): List<Pair<Category, Shop>> {
+        return when {
+            cashbacksRequired -> dao.searchShopsWithCashback(query)
+            else -> dao.searchAllShops(query)
+        }.map { it.mapToShopCategoryPair() }
     }
 }

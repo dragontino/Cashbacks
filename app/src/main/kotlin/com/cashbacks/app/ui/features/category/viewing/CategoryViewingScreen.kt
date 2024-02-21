@@ -21,7 +21,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.ArrowBackIosNew
 import androidx.compose.material.icons.rounded.Edit
-import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -157,17 +156,6 @@ internal fun CategoryViewingScreen(
                         )
                     }
                 },
-                actions = {
-                    IconButton(
-                        onClick = { viewModel.showSnackbar("Поиск") },
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.Search,
-                            contentDescription = "search",
-                            modifier = Modifier.scale(1.2f)
-                        )
-                    }
-                },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primary.animate(),
                     titleContentColor = MaterialTheme.colorScheme.onPrimary.animate(),
@@ -286,16 +274,27 @@ private fun CategoryViewerContent(
                             }
                         },
                         onClick = {
-                            viewModel.navigateTo(
-                                args = ShopArgs(shopId = item.id, isEditing = false)
-                            )
+                            viewModel.onItemClick {
+                                viewModel.selectedShopIndex = -1
+                                viewModel.navigateTo(
+                                    args = ShopArgs(shopId = item.id, isEditing = false)
+                                )
+                            }
                         },
                         onEdit = {
-                            viewModel.navigateTo(
-                                args = ShopArgs(shopId = item.id, isEditing = true)
-                            )
+                            viewModel.onItemClick {
+                                viewModel.selectedShopIndex = -1
+                                viewModel.navigateTo(
+                                    args = ShopArgs(shopId = item.id, isEditing = true)
+                                )
+                            }
                         },
-                        onDelete = { viewModel.openDialog(DialogType.ConfirmDeletion(item)) }
+                        onDelete = {
+                            viewModel.onItemClick {
+                                viewModel.selectedShopIndex = -1
+                                viewModel.openDialog(DialogType.ConfirmDeletion(item))
+                            }
+                        }
                     )
 
                     is Cashback -> CashbackComposable(
@@ -309,10 +308,16 @@ private fun CategoryViewerContent(
                         },
                         onClick = {
                             viewModel.onItemClick {
+                                viewModel.selectedCashbackIndex = -1
                                 viewModel.navigateTo(CashbackArgs.Existing(item.id))
                             }
                         },
-                        onDelete = { viewModel.openDialog(DialogType.ConfirmDeletion(item)) }
+                        onDelete = {
+                            viewModel.onItemClick {
+                                viewModel.selectedCashbackIndex = -1
+                                viewModel.openDialog(DialogType.ConfirmDeletion(item))
+                            }
+                        }
                     )
                 }
             }

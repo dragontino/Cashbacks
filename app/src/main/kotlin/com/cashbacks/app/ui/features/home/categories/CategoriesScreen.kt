@@ -31,12 +31,7 @@ import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.DataArray
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.EditOff
-import androidx.compose.material.icons.rounded.Menu
-import androidx.compose.material.icons.rounded.Search
-import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
@@ -44,7 +39,6 @@ import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -62,7 +56,6 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.cashbacks.app.R
@@ -75,6 +68,8 @@ import com.cashbacks.app.ui.composables.EmptyList
 import com.cashbacks.app.ui.composables.NewNameTextField
 import com.cashbacks.app.ui.composables.ScrollableListItem
 import com.cashbacks.app.ui.features.category.CategoryArgs
+import com.cashbacks.app.ui.features.home.HomeTopAppBar
+import com.cashbacks.app.ui.features.home.HomeTopAppBarState
 import com.cashbacks.app.ui.managment.DialogType
 import com.cashbacks.app.ui.managment.ListState
 import com.cashbacks.app.ui.managment.ScreenEvents
@@ -160,36 +155,14 @@ internal fun CategoriesScreen(
 
     CollapsingToolbarScaffold(
         topBar = {
-            CenterAlignedTopAppBar(
-                title = {
-                    Text(
-                        text = title,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                },
-                navigationIcon = {
-                    IconButton(
-                        onClick = remember {
-                            fun() {
-                                viewModel.onItemClick(onClick = openDrawer)
-                            }
-                        }
-                    ) {
-                        Icon(Icons.Rounded.Menu, contentDescription = "open menu")
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { viewModel.showSnackbar("Поиск") }) {
-                        Icon(imageVector = Icons.Rounded.Search, contentDescription = "search")
-                    }
-                },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary.animate(),
-                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary.animate(),
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary.animate(),
-                    actionIconContentColor = MaterialTheme.colorScheme.onPrimary.animate()
-                )
+            HomeTopAppBar(
+                title = title,
+                query = viewModel.query.value,
+                onQueryChange = viewModel.query::value::set,
+                state = viewModel.appBarState,
+                onStateChange = viewModel::appBarState::set,
+                searchPlaceholder = stringResource(R.string.search_categories_placeholder),
+                onNavigationIconClick = openDrawer
             )
         },
         snackbarHost = {
@@ -204,7 +177,9 @@ internal fun CategoriesScreen(
         },
         floatingActionButtons = {
             AnimatedVisibility(
-                visible = viewModel.isEditing.value && !viewModel.addingCategoriesState,
+                visible = viewModel.isEditing.value
+                        && viewModel.appBarState != HomeTopAppBarState.Search
+                        && !viewModel.addingCategoriesState,
                 enter = floatingActionButtonEnterAnimation(),
                 exit = floatingActionButtonExitAnimation()
             ) {
@@ -218,9 +193,7 @@ internal fun CategoriesScreen(
                     }
                 }
             }
-            AnimatedVisibility(
-                visible = !viewModel.addingCategoriesState,
-            ) {
+            AnimatedVisibility(visible = !viewModel.addingCategoriesState && !keyboardState.value) {
                 BasicFloatingActionButton(
                     icon = when {
                         viewModel.isEditing.value -> Icons.Rounded.EditOff
@@ -265,8 +238,14 @@ internal fun CategoriesScreen(
                     )
                     ListState.Empty -> EmptyList(
                         text = when {
-                            viewModel.isEditing.value -> stringResource(R.string.empty_categories_list_editing)
-                            else -> stringResource(R.string.empty_categories_list_viewing)
+                            !viewModel.isEditing.value -> stringResource(R.string.empty_categories_list_viewing)
+                            viewModel.isSearch -> {
+                                when {
+                                    viewModel.query.value.isBlank() -> stringResource(R.string.empty_search_query)
+                                    else -> stringResource(R.string.empty_search_results)
+                                }
+                            }
+                            else -> stringResource(R.string.empty_categories_list_editing)
                         },
                         icon = Icons.Rounded.DataArray,
                         iconModifier = Modifier.scale(2.5f),

@@ -1,4 +1,4 @@
-package com.cashbacks.domain.usecase.card
+package com.cashbacks.domain.usecase.cards
 
 import com.cashbacks.domain.model.BankCard
 import com.cashbacks.domain.repository.BankCardRepository

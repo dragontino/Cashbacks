@@ -23,4 +23,6 @@ interface CashbackRepository {
     fun fetchAllCashbacks(): Flow<List<Pair<Pair<String, String>, Cashback>>>
 
     suspend fun getAllCashbacks(): List<Cashback>
+
+    suspend fun searchCashbacks(query: String): List<Pair<Pair<String, String>, Cashback>>
 }

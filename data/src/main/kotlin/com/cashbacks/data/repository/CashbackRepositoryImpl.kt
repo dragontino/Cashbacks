@@ -110,6 +110,11 @@ class CashbackRepositoryImpl(private val dao: CashbacksDao) : CashbackRepository
     }
 
 
+    override suspend fun searchCashbacks(query: String): List<Pair<Pair<String, String>, Cashback>> {
+        return dao.searchCashbacks(query).map { it.mapToCashbackPair() }
+    }
+
+
     override suspend fun getAllCashbacks(): List<Cashback> {
         return dao.getAllCashbacks().map { it.mapToCashback() }
     }

@@ -45,6 +45,14 @@
     <string name="no_cashbacks_for_shop">There are no cashbacks for this shop</string>
     <string name="no_cashbacks">There are no cashbacks</string>
 
+    <string name="search_categories_placeholder">Search by category</string>
+    <string name="search_shops_placeholder">Search by shops</string>
+    <string name="search_cashbacks_placeholder">Search by cashbacks</string>
+    <string name="search_cards_placeholder">Search by bank cards</string>
+
+    <string name="empty_search_query">Start typing a query…</string>
+    <string name="empty_search_results">The search was inconclusive</string>
+
     <string name="empty_shops_list_viewing">
         There are no shops with cashbacks.\nClick on the pencil to view all stores in this category
     </string>
