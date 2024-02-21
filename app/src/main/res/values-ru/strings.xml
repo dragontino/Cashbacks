@@ -99,4 +99,5 @@
     <string name="entry_already_exists_exception">Такая запись уже существует!</string>
     <string name="settings_not_found_exception">Не удалось найти сохраненных настроек в базе данных!</string>
     <string name="deletion_exception">Не удалось удалить %1$s «%2$s»</string>
+    <string name="expired_cashbacks_deletion_failture">Не удалось удалить просроченные кешбэки</string>
 </resources>
