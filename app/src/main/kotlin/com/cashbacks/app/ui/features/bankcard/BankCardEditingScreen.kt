@@ -176,11 +176,11 @@ fun BankCardEditingScreen(
                             )
                         }
                     }
-                ) { contentPadding ->
+                ) {
                     BankCardEditingContent(
                         viewModel = viewModel,
                         state = scrollState,
-                        modifier = Modifier.padding(contentPadding)
+                        modifier = Modifier.fillMaxSize()
                     )
                 }
             }

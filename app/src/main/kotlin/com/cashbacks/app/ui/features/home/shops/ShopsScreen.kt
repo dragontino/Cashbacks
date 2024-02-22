@@ -176,14 +176,12 @@ fun ShopsScreen(
         modifier = Modifier
             .then(modifier)
             .fillMaxSize()
-    ) { contentPadding ->
+    ) {
         Crossfade(
             targetState = viewModel.state.value,
             label = "loading animation",
             animationSpec = tween(durationMillis = 100, easing = FastOutSlowInEasing),
-            modifier = Modifier
-                .padding(contentPadding)
-                .fillMaxSize()
+            modifier = Modifier.fillMaxSize()
         ) { state ->
             when (state) {
                 ListState.Loading -> LoadingInBox(

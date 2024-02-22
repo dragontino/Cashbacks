@@ -267,12 +267,11 @@ private fun CashbackContent(
                 )
             }
         }
-    ) { contentPadding ->
+    ) {
         Column(
             verticalArrangement = Arrangement.spacedBy(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
-                .padding(contentPadding)
                 .fillMaxSize()
                 .verticalScroll(scrollState)
                 .padding(vertical = 16.dp)

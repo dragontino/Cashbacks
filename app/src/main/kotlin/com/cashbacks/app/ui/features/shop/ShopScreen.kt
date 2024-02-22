@@ -270,14 +270,12 @@ fun ShopScreen(
         fabModifier = Modifier
             .graphicsLayer { viewModel.fabPaddingDp.floatValue = size.height.toDp().value }
             .windowInsetsPadding(CollapsingToolbarScaffoldDefaults.contentWindowInsets)
-    ) { contentPadding ->
+    ) {
         Crossfade(
             targetState = viewModel.state.value,
             label = "content loading animation",
             animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing),
-            modifier = Modifier
-                .padding(contentPadding)
-                .fillMaxSize()
+            modifier = Modifier.fillMaxSize()
         ) { state ->
             when (state) {
                 ViewModelState.Loading -> LoadingInBox()

@@ -147,12 +147,12 @@ internal fun CardsScreen(
         modifier = Modifier
             .then(modifier)
             .fillMaxSize()
-    ) { contentPadding ->
+    ) {
         Crossfade(
             targetState = viewModel.state.value,
             label = "loading animation",
             animationSpec = tween(durationMillis = 150, easing = LinearEasing),
-            modifier = Modifier.padding(contentPadding),
+            modifier = Modifier.fillMaxSize(),
         ) { state ->
             when (state) {
                 ListState.Loading -> LoadingInBox(

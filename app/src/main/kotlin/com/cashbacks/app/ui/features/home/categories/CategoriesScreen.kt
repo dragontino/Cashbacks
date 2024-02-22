@@ -2,9 +2,7 @@ package com.cashbacks.app.ui.features.home.categories
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
@@ -154,137 +152,128 @@ internal fun CategoriesScreen(
     val fabOffsetPx = rememberSaveable { mutableFloatStateOf(0f) }
 
 
-    CollapsingToolbarScaffold(
-        contentState = lazyListState,
-        topBar = {
-            HomeTopAppBar(
-                title = title,
-                query = viewModel.query.value,
-                onQueryChange = viewModel.query::value::set,
-                state = viewModel.appBarState,
-                onStateChange = viewModel::appBarState::set,
-                searchPlaceholder = stringResource(R.string.search_categories_placeholder),
-                onNavigationIconClick = openDrawer
-            )
-        },
-        topBarContainerColor = when (viewModel.appBarState) {
-            HomeTopAppBarState.Search -> Color.Unspecified
-            HomeTopAppBarState.TopBar -> MaterialTheme.colorScheme.primary
-        },
-        snackbarHost = {
-            SnackbarHost(snackbarHostState) {
-                Snackbar(
-                    snackbarData = it,
-                    containerColor = MaterialTheme.colorScheme.background.reversed.animate(),
-                    contentColor = MaterialTheme.colorScheme.onBackground.reversed.animate(),
-                    shape = MaterialTheme.shapes.medium
+    Box(contentAlignment = Alignment.Center) {
+        CollapsingToolbarScaffold(
+            contentState = lazyListState,
+            topBar = {
+                HomeTopAppBar(
+                    title = title,
+                    query = viewModel.query.value,
+                    onQueryChange = viewModel.query::value::set,
+                    state = viewModel.appBarState,
+                    onStateChange = viewModel::appBarState::set,
+                    searchPlaceholder = stringResource(R.string.search_categories_placeholder),
+                    onNavigationIconClick = openDrawer
                 )
-            }
-        },
-        floatingActionButtons = {
-            AnimatedVisibility(
-                visible = viewModel.isEditing.value
-                        && viewModel.appBarState != HomeTopAppBarState.Search
-                        && !viewModel.addingCategoriesState,
-                enter = floatingActionButtonEnterAnimation(),
-                exit = floatingActionButtonExitAnimation()
-            ) {
-                BasicFloatingActionButton(icon = Icons.Rounded.Add) {
-                    viewModel.onItemClick {
-                        viewModel.addingCategoriesState = true
-                        scope.launch {
-                            delay(700)
-                            lazyListState.smoothScrollToItem(viewModel.categories.lastIndex)
-                        }
-                    }
+            },
+            topBarContainerColor = when (viewModel.appBarState) {
+                HomeTopAppBarState.Search -> Color.Unspecified
+                HomeTopAppBarState.TopBar -> MaterialTheme.colorScheme.primary
+            },
+            snackbarHost = {
+                SnackbarHost(snackbarHostState) {
+                    Snackbar(
+                        snackbarData = it,
+                        containerColor = MaterialTheme.colorScheme.background.reversed.animate(),
+                        contentColor = MaterialTheme.colorScheme.onBackground.reversed.animate(),
+                        shape = MaterialTheme.shapes.medium
+                    )
                 }
-            }
-            AnimatedVisibility(visible = !viewModel.addingCategoriesState && !keyboardState.value) {
-                BasicFloatingActionButton(
-                    icon = when {
-                        viewModel.isEditing.value -> Icons.Rounded.EditOff
-                        else -> Icons.Rounded.Edit
-                    },
-                    onClick = remember {
-                        fun() {
-                            viewModel.onItemClick {
-                                viewModel.isEditing.value = !viewModel.isEditing.value
+            },
+            floatingActionButtons = {
+                AnimatedVisibility(
+                    visible = viewModel.isEditing.value
+                            && viewModel.appBarState != HomeTopAppBarState.Search
+                            && !viewModel.addingCategoriesState,
+                    enter = floatingActionButtonEnterAnimation(),
+                    exit = floatingActionButtonExitAnimation()
+                ) {
+                    BasicFloatingActionButton(icon = Icons.Rounded.Add) {
+                        viewModel.onItemClick {
+                            viewModel.addingCategoriesState = true
+                            scope.launch {
+                                delay(700)
+                                lazyListState.smoothScrollToItem(viewModel.categories.lastIndex)
                             }
                         }
                     }
-                )
-            }
-        },
-        contentWindowInsets = WindowInsets.ime.only(WindowInsetsSides.Bottom),
-        fabModifier = Modifier
-            .onGloballyPositioned { fabOffsetPx.floatValue = it.size.height.toFloat() }
-            .windowInsetsPadding(WindowInsets.tappableElement.only(WindowInsetsSides.End))
-            .padding(bottom = bottomPadding),
-        modifier = Modifier
-            .then(modifier)
-            .fillMaxSize()
-    ) { contentPadding ->
-        Crossfade(
-            targetState = viewModel.state.value,
-            animationSpec = tween(durationMillis = 100, easing = LinearEasing),
-            label = "loading animation",
-            modifier = Modifier
-                .padding(contentPadding)
-                .fillMaxSize()
-        ) { state ->
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.TopCenter
-            ) {
-                when (state) {
-                    ListState.Loading -> LoadingInBox(
-                        modifier = Modifier.padding(bottom = bottomPadding)
-                    )
-                    ListState.Empty -> EmptyList(
-                        text = when {
-                            !viewModel.isEditing.value -> stringResource(R.string.empty_categories_list_viewing)
-                            viewModel.isSearch -> {
-                                when {
-                                    viewModel.query.value.isBlank() -> stringResource(R.string.empty_search_query)
-                                    else -> stringResource(R.string.empty_search_results)
+                }
+                AnimatedVisibility(visible = !viewModel.addingCategoriesState && !keyboardState.value) {
+                    BasicFloatingActionButton(
+                        icon = when {
+                            viewModel.isEditing.value -> Icons.Rounded.EditOff
+                            else -> Icons.Rounded.Edit
+                        },
+                        onClick = remember {
+                            fun() {
+                                viewModel.onItemClick {
+                                    viewModel.isEditing.value = !viewModel.isEditing.value
                                 }
                             }
-                            else -> stringResource(R.string.empty_categories_list_editing)
-                        },
-                        icon = Icons.Rounded.DataArray,
-                        iconModifier = Modifier.scale(2.5f),
-                        modifier = Modifier
-                            .padding(bottom = bottomPadding)
-                            .align(Alignment.Center)
-                            .fillMaxSize()
-                    )
-
-                    ListState.Stable -> CategoriesList(
-                        lazyListState = lazyListState,
-                        viewModel = viewModel,
-                        bottomPadding = with(LocalDensity.current) {
-                            (bottomPadding + fabOffsetPx.floatValue.toDp()).animate()
                         }
                     )
                 }
+            },
+            contentWindowInsets = WindowInsets.ime.only(WindowInsetsSides.Bottom),
+            fabModifier = Modifier
+                .onGloballyPositioned { fabOffsetPx.floatValue = it.size.height.toFloat() }
+                .windowInsetsPadding(WindowInsets.tappableElement.only(WindowInsetsSides.End))
+                .padding(bottom = bottomPadding),
+            modifier = modifier.fillMaxSize()
+        ) {
+            when (viewModel.state.value) {
+                ListState.Loading -> LoadingInBox(
+                    modifier = Modifier.padding(bottom = bottomPadding)
+                )
 
-                AnimatedVisibility(
-                    visible = viewModel.addingCategoriesState,
-                    enter = expandVertically(
-                        animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing)
-                    ),
-                    exit = shrinkVertically(
-                        animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing)
-                    ),
-                    modifier = Modifier.align(Alignment.BottomCenter)
-                ) {
-                    NewNameTextField(
-                        placeholder = stringResource(R.string.category_placeholder)
-                    ) { name ->
-                        viewModel.addCategory(name)
-                        viewModel.addingCategoriesState = false
+                ListState.Empty -> EmptyList(
+                    text = when {
+                        !viewModel.isEditing.value -> stringResource(R.string.empty_categories_list_viewing)
+                        viewModel.isSearch -> {
+                            when {
+                                viewModel.query.value.isBlank() -> stringResource(R.string.empty_search_query)
+                                else -> stringResource(R.string.empty_search_results)
+                            }
+                        }
+
+                        else -> stringResource(R.string.empty_categories_list_editing)
+                    },
+                    icon = Icons.Rounded.DataArray,
+                    iconModifier = Modifier.scale(2.5f),
+                    modifier = Modifier
+                        .padding(bottom = bottomPadding)
+                        .align(Alignment.Center)
+                        .fillMaxSize()
+                )
+
+                ListState.Stable -> CategoriesList(
+                    lazyListState = lazyListState,
+                    viewModel = viewModel,
+                    bottomPadding = with(LocalDensity.current) {
+                        (bottomPadding + fabOffsetPx.floatValue.toDp()).animate()
                     }
-                }
+                )
+            }
+        }
+
+
+        AnimatedVisibility(
+            visible = viewModel.addingCategoriesState,
+            enter = expandVertically(
+                animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing),
+                expandFrom = Alignment.Bottom
+            ),
+            exit = shrinkVertically(
+                animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing),
+                shrinkTowards = Alignment.Bottom
+            ),
+            modifier = Modifier.align(Alignment.BottomCenter)
+        ) {
+            NewNameTextField(
+                placeholder = stringResource(R.string.category_placeholder)
+            ) { name ->
+                viewModel.addCategory(name)
+                viewModel.addingCategoriesState = false
             }
         }
     }

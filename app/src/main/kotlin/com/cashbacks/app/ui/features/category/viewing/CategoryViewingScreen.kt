@@ -213,14 +213,12 @@ internal fun CategoryViewingScreen(
         },
         contentWindowInsets = WindowInsets.ime.only(WindowInsetsSides.Bottom),
         modifier = Modifier.fillMaxSize()
-    ) { contentPadding ->
+    ) {
         Crossfade(
             targetState = viewModel.state.value,
             label = "loading anim",
             animationSpec = tween(durationMillis = 100, easing = LinearEasing),
-            modifier = Modifier
-                .padding(contentPadding)
-                .fillMaxSize()
+            modifier = Modifier.fillMaxSize()
         ) { state ->
             when (state) {
                 ViewModelState.Loading -> LoadingInBox()

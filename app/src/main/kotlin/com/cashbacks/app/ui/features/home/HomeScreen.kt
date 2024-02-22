@@ -171,7 +171,7 @@ internal fun HomeScreen(
                 navController = navController,
                 startDestination = HomeDestination.Categories.route,
                 modifier = Modifier
-                    .zIndex(1f)
+                    .zIndex(1.1f)
                     .imePadding()
                     .fillMaxSize(),
             ) {
@@ -271,7 +271,7 @@ internal fun HomeScreen(
                     .graphicsLayer {
                         bottomPaddingDp.floatValue = size.height.toDp().value
                     }
-                    .zIndex(2f)
+                    .zIndex(1.2f)
                     .align(Alignment.BottomCenter)
                     .fillMaxWidth()
             )

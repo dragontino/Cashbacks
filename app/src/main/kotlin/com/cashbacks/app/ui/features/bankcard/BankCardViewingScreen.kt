@@ -201,12 +201,12 @@ fun BankCardViewingScreen(
                         )
                     }
                 }
-            ) { contentPadding ->
+            ) {
                 ScreenContent(
                     bankCard = viewModel.bankCard.value,
                     onCopy = onCopy,
                     scrollState = scrollState,
-                    modifier = Modifier.padding(contentPadding)
+                    modifier = Modifier.fillMaxSize()
                 )
             }
         }

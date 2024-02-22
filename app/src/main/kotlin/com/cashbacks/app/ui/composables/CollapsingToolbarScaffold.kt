@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.ime
@@ -55,7 +54,7 @@ fun CollapsingToolbarScaffold(
     ),
     snackbarHost: @Composable (() -> Unit) = {},
     contentWindowInsets: WindowInsets = CollapsingToolbarScaffoldDefaults.contentWindowInsets,
-    content: @Composable ((PaddingValues) -> Unit),
+    content: @Composable (() -> Unit),
 ) {
     val nestedScrollConnection = remember {
         object : NestedScrollConnection {
@@ -102,7 +101,6 @@ fun CollapsingToolbarScaffold(
                 .padding(contentPadding)
                 .nestedScroll(nestedScrollConnection)
         ) {
-
             val backgroundModifier = when {
                 topBarContainerColor.isUnspecified -> Modifier
                 else -> Modifier.background(
@@ -116,7 +114,7 @@ fun CollapsingToolbarScaffold(
                 modifier = Modifier
                     .then(backgroundModifier)
                     .offset { IntOffset(x = 0, y = topBarState.heightOffset.roundToInt()) }
-                    .zIndex(2f)
+                    .zIndex(3f)
                     .onGloballyPositioned {
                         topBarState.heightOffsetLimit = -it.size.height.toFloat()
                     }
@@ -133,9 +131,9 @@ fun CollapsingToolbarScaffold(
                             y = (topBarState.contentOffset - topBarState.heightOffsetLimit).roundToInt()
                         )
                     }
-                    .zIndex(1f)
+                    .zIndex(2f)
             ) {
-                content(contentPadding)
+                content()
             }
         }
     }

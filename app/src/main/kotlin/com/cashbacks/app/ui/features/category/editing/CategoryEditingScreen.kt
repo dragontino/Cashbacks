@@ -378,11 +378,10 @@ private fun CategoryInfoScreenContent(
         },
         contentWindowInsets = WindowInsets.ime.only(WindowInsetsSides.Bottom),
         modifier = Modifier.fillMaxSize()
-    ) { contentPadding ->
+    ) {
         Column(
             modifier = Modifier
                 .background(MaterialTheme.colorScheme.surface.animate())
-                .padding(contentPadding)
                 .fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
