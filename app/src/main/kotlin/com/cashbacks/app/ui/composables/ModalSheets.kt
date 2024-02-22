@@ -8,6 +8,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
@@ -19,8 +20,8 @@ import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.systemBarsIgnoringVisibility
 import androidx.compose.foundation.layout.tappableElement
-import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
@@ -157,16 +158,12 @@ private fun NavHeader(
 }
 
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun ColumnScope.BottomSheetContent(
     header: Header = Header(),
     contentWindowInsets: WindowInsets =
-        WindowInsets
-            .tappableElement.only(WindowInsetsSides.Bottom)
-            .union(
-                WindowInsets.statusBars.only(WindowInsetsSides.Top)
-            ),
+        WindowInsets.systemBarsIgnoringVisibility.only(WindowInsetsSides.Vertical),
     bodyContent: @Composable (ColumnScope.() -> Unit),
 ) {
     val configuration = LocalConfiguration.current
