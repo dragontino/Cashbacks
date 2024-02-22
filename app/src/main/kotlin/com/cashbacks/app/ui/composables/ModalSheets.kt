@@ -187,6 +187,7 @@ fun ColumnScope.BottomSheetContent(
         modifier = Modifier
             .then(scrollModifier)
             .align(Alignment.CenterHorizontally)
+            .windowInsetsPadding(contentWindowInsets.only(WindowInsetsSides.Vertical))
             .onGloballyPositioned {
                 with(density) {
                     topInsetsPadding = when {
@@ -206,27 +207,24 @@ fun ColumnScope.BottomSheetContent(
                 BottomSheetDefaults.DragHandle()
             }
         } else {
-            Spacer(modifier = Modifier.padding(top = topInsetsPadding))
-            BottomSheetHeader(header)
-            Spacer(modifier = Modifier.size(8.dp))
+            BottomSheetHeader(
+                header = header,
+                modifier = Modifier.padding(top = topInsetsPadding, bottom = 8.dp)
+            )
         }
-
         bodyContent()
-        Spacer(
-            modifier = Modifier
-                .windowInsetsPadding(
-                    contentWindowInsets.only(WindowInsetsSides.Bottom)
-                )
-                .size(8.dp),
-        )
     }
 }
 
 
 @Composable
-private fun ColumnScope.BottomSheetHeader(header: Header) {
+private fun ColumnScope.BottomSheetHeader(
+    header: Header,
+    modifier: Modifier = Modifier
+) {
     Column(
         modifier = Modifier
+            .then(modifier)
             .padding(top = 16.dp)
             .align(Alignment.Start)
             .fillMaxWidth()

@@ -1,5 +1,6 @@
 package com.cashbacks.app.ui.features.cashback
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
@@ -54,6 +55,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -89,6 +91,7 @@ fun CashbackScreen(
 ) {
     val snackbarHostState = remember(::SnackbarHostState)
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
 
     val showSnackbar = remember {
         fun (message: String) {
@@ -143,8 +146,9 @@ fun CashbackScreen(
         DialogType.Save -> {
             ConfirmExitWithSaveDataDialog(
                 onConfirm = {
-                    viewModel.saveCashback()
-                    viewModel.navigateTo(null)
+                    viewModel.saveInfo(context).let {
+                        if (it) viewModel.navigateTo(null)
+                    }
                 },
                 onDismiss = { viewModel.navigateTo(null) },
                 onClose = viewModel::closeDialog
@@ -168,6 +172,9 @@ fun CashbackScreen(
     }
 
 
+    BackHandler(enabled = viewModel.cashback.value.haveChanges) {
+        viewModel.openDialog(DialogType.Save)
+    }
 }
 
 
@@ -177,6 +184,9 @@ private fun CashbackContent(
     viewModel: CashbackViewModel,
     snackbarHostState: SnackbarHostState
 ) {
+    val scrollState = rememberScrollState()
+    val context = LocalContext.current
+
     CollapsingToolbarScaffold(
         topBar = {
             CenterAlignedTopAppBar(
@@ -226,8 +236,9 @@ private fun CashbackContent(
 
                     IconButton(
                         onClick = {
-                            viewModel.saveCashback()
-                            viewModel.navigateTo(null)
+                            viewModel.saveInfo(context).let {
+                                if (it) viewModel.navigateTo(null)
+                            }
                         }
                     ) {
                         Icon(
@@ -238,13 +249,14 @@ private fun CashbackContent(
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary.animate(),
+                    containerColor = Color.Transparent,
                     titleContentColor = MaterialTheme.colorScheme.onPrimary.animate(),
                     navigationIconContentColor = MaterialTheme.colorScheme.onPrimary.animate(),
                     actionIconContentColor = MaterialTheme.colorScheme.onPrimary.animate()
                 )
             )
         },
+        contentState = scrollState,
         snackbarHost = {
             SnackbarHost(hostState = snackbarHostState) {
                 Snackbar(
@@ -262,7 +274,7 @@ private fun CashbackContent(
             modifier = Modifier
                 .padding(contentPadding)
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(scrollState)
                 .padding(vertical = 16.dp)
         ) {
             ExposedDropdownMenuBox(
@@ -276,6 +288,9 @@ private fun CashbackContent(
                     label = stringResource(R.string.bank_card),
                     enabled = false,
                     textStyle = MaterialTheme.typography.bodyMedium,
+                    error = viewModel.showErrors
+                            && viewModel.cashback.value.bankCardErrorMessage.value.isNotBlank(),
+                    errorMessage = viewModel.cashback.value.bankCardErrorMessage.value,
                     leadingIcon = {
                         viewModel.cashback.value.bankCard?.paymentSystem?.let {
                             PaymentSystemMapper.PaymentSystemImage(
@@ -319,6 +334,10 @@ private fun CashbackContent(
                                             property = ::bankCard,
                                             newValue = it
                                         )
+
+                                        if (viewModel.showErrors) {
+                                            updateBankCardError(context)
+                                        }
                                     }
                                     viewModel.showBankCardsSelection = false
                                 },
@@ -341,8 +360,15 @@ private fun CashbackContent(
                 onTextChange = {
                     with(viewModel.cashback.value) {
                         updateValue(::amount, it)
+
+                        if (viewModel.showErrors) {
+                            updateAmountError(context)
+                        }
                     }
                 },
+                error = viewModel.showErrors
+                        && viewModel.cashback.value.amountErrorMessage.value.isNotBlank(),
+                errorMessage = viewModel.cashback.value.amountErrorMessage.value,
                 label = stringResource(R.string.amount),
                 keyboardType = KeyboardType.Number
             )

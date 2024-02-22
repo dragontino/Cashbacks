@@ -151,3 +151,25 @@ fun Context.getActivity(): ComponentActivity? = when (this) {
 
 
 val Color.reversed get() = copy(red = 1 - red, green = 1 - green, blue = 1 - blue)
+
+data class ColorPair(val firstColor: Color, val secondColor: Color) {
+    infix fun ratio(ratio: Float): Color {
+        val secondColorRatio = 1 - ratio
+
+        fun calculateComponent(getComponent: Color.() -> Float): Float {
+            val first = firstColor.getComponent() * ratio
+            val second = secondColor.getComponent() * secondColorRatio
+            return first + second
+        }
+
+        return Color(
+            alpha = calculateComponent { alpha },
+            red = calculateComponent { red },
+            green = calculateComponent { green },
+            blue = calculateComponent { blue }
+        )
+    }
+}
+
+infix fun Color.mix(otherColor: Color) =
+    ColorPair(firstColor = this, secondColor = otherColor)

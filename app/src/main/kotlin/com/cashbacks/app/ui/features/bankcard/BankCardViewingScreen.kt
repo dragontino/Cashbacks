@@ -3,6 +3,7 @@ package com.cashbacks.app.ui.features.bankcard
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -39,11 +40,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.cashbacks.app.R
 import com.cashbacks.app.ui.composables.BankCardCompose
@@ -66,6 +69,7 @@ fun BankCardViewingScreen(
     navigateToBankCard: (args: BankCardArgs) -> Unit,
     popBackStack: () -> Unit
 ) {
+    val scrollState = rememberScrollState()
     val snackbarState = remember(::SnackbarHostState)
     val scope = rememberCoroutineScope()
 
@@ -179,13 +183,14 @@ fun BankCardViewingScreen(
                             }
                         },
                         colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                            containerColor = MaterialTheme.colorScheme.primary.animate(),
+                            containerColor = Color.Transparent,
                             navigationIconContentColor = MaterialTheme.colorScheme.onPrimary.animate(),
                             titleContentColor = MaterialTheme.colorScheme.onPrimary.animate(),
                             actionIconContentColor = MaterialTheme.colorScheme.onPrimary.animate()
                         )
                     )
                 },
+                contentState = scrollState,
                 snackbarHost = {
                     SnackbarHost(snackbarState) {
                         Snackbar(
@@ -200,6 +205,7 @@ fun BankCardViewingScreen(
                 ScreenContent(
                     bankCard = viewModel.bankCard.value,
                     onCopy = onCopy,
+                    scrollState = scrollState,
                     modifier = Modifier.padding(contentPadding)
                 )
             }
@@ -213,7 +219,8 @@ fun BankCardViewingScreen(
 private fun ScreenContent(
     bankCard: BankCard,
     onCopy: (String) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    scrollState: ScrollState = rememberScrollState()
 ) {
     Column(
         verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -221,7 +228,7 @@ private fun ScreenContent(
         modifier = Modifier
             .then(modifier)
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
+            .verticalScroll(scrollState)
             .padding(16.dp)
     ) {
         BankCardCompose(
@@ -290,4 +297,14 @@ private fun ScreenContent(
             }
         )
     }
+}
+
+
+@Preview
+@Composable
+private fun ScreenContentPreview() {
+    ScreenContent(
+        bankCard = BankCard(number = "4444555566667777"),
+        onCopy = {}
+    )
 }

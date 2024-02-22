@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
@@ -52,6 +53,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -86,6 +88,7 @@ fun ShopScreen(
     popBackStack: () -> Unit,
     navigateToCashback: (args: CashbackArgs) -> Unit
 ) {
+    val lazyListState = rememberLazyListState()
     val snackbarHostState = remember(::SnackbarHostState)
     val scope = rememberCoroutineScope()
     
@@ -213,13 +216,14 @@ fun ShopScreen(
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary.animate(),
+                    containerColor = Color.Transparent,
                     titleContentColor = MaterialTheme.colorScheme.onPrimary.animate(),
                     navigationIconContentColor = MaterialTheme.colorScheme.onPrimary.animate(),
                     actionIconContentColor = MaterialTheme.colorScheme.onPrimary.animate()
                 )
             )
         },
+        contentState = lazyListState,
         snackbarHost = {
             SnackbarHost(snackbarHostState) {
                 Snackbar(
@@ -277,7 +281,7 @@ fun ShopScreen(
         ) { state ->
             when (state) {
                 ViewModelState.Loading -> LoadingInBox()
-                else -> ShopScreenContent(viewModel)
+                else -> ShopScreenContent(viewModel, lazyListState)
             }
         }
     }
@@ -286,9 +290,10 @@ fun ShopScreen(
 
 
 @Composable
-private fun ShopScreenContent(viewModel: ShopViewModel) {
-    val listState = rememberLazyListState()
-
+private fun ShopScreenContent(
+    viewModel: ShopViewModel,
+    state: LazyListState
+) {
     Column(
         modifier = Modifier
             .imePadding()
@@ -324,10 +329,11 @@ private fun ShopScreenContent(viewModel: ShopViewModel) {
 
                 else -> {
                     LazyColumn(
-                        state = listState,
+                        state = state,
                         contentPadding = PaddingValues(16.dp),
                         verticalArrangement = Arrangement.spacedBy(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.fillMaxSize()
                     ) {
                         itemsIndexed(cashbacks) { index, cashback ->
                             CashbackComposable(

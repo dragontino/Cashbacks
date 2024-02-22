@@ -164,6 +164,7 @@ internal fun CategoryViewingScreen(
                 )
             )
         },
+        topBarScrollEnabled = false,
         floatingActionButtons = {
             Crossfade(
                 targetState = pagerState.currentPage,
@@ -249,7 +250,7 @@ private fun CategoryViewerContent(
         PrimaryTabsLayout(
             pagerState = pagerState,
             pages = tabPages
-        ) { page ->
+        ) { _, page ->
             ListContentTabPage(
                 items = when (page) {
                     CategoryFeature.TabItem.Shops -> viewModel.shopsLiveData.observeAsState().value

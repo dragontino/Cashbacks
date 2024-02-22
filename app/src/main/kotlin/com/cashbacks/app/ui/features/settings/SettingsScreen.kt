@@ -260,7 +260,7 @@ private fun SettingsContent(viewModel: SettingsViewModel) {
             contentColor = MaterialTheme.colorScheme.onSurface.animate(),
             dragHandle = null,
             windowInsets = WindowInsets(0),
-            tonalElevation = 50.dp
+            tonalElevation = 40.dp
         ) {
             ThemeSheetContent(
                 currentDesign = viewModel.settings.value.colorDesign,

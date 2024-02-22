@@ -17,7 +17,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.tappableElement
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material3.CardDefaults
@@ -29,6 +31,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableFloatStateOf
@@ -37,6 +40,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
@@ -52,6 +56,7 @@ import com.cashbacks.app.ui.composables.CollapsingToolbarScaffold
 import com.cashbacks.app.ui.composables.EmptyList
 import com.cashbacks.app.ui.features.bankcard.BankCardArgs
 import com.cashbacks.app.ui.features.home.HomeTopAppBar
+import com.cashbacks.app.ui.features.home.HomeTopAppBarState
 import com.cashbacks.app.ui.managment.ListState
 import com.cashbacks.app.ui.managment.ScreenEvents
 import com.cashbacks.app.ui.theme.CashbacksTheme
@@ -72,6 +77,9 @@ internal fun CardsScreen(
     modifier: Modifier = Modifier
 ) {
     val scope = rememberCoroutineScope()
+
+    val topBarState = rememberTopAppBarState()
+    val lazyListState = rememberLazyListState()
     val snackbarHostState = remember(::SnackbarHostState)
 
     val showSnackbar = remember {
@@ -103,6 +111,12 @@ internal fun CardsScreen(
                 searchPlaceholder = stringResource(R.string.search_cards_placeholder),
                 onNavigationIconClick = openDrawer
             )
+        },
+        topBarState = topBarState,
+        contentState = lazyListState,
+        topBarContainerColor = when (viewModel.appBarState) {
+            HomeTopAppBarState.Search -> Color.Unspecified
+            HomeTopAppBarState.TopBar -> MaterialTheme.colorScheme.primary
         },
         floatingActionButtons = {
             AnimatedVisibility(visible = !viewModel.isSearch) {
@@ -158,6 +172,7 @@ internal fun CardsScreen(
                 )
                 ListState.Stable -> CardsContentScreen(
                     cards = viewModel.cards,
+                    state = lazyListState,
                     navigateToCard = { viewModel.navigateTo(it) },
                     showSnackbar = viewModel::showSnackbar,
                     bottomPadding = bottomPadding + fabPaddingDp.floatValue.dp
@@ -172,6 +187,7 @@ internal fun CardsScreen(
 @Composable
 private fun CardsContentScreen(
     cards: List<BankCard>,
+    state: LazyListState,
     navigateToCard: (args: BankCardArgs) -> Unit,
     showSnackbar: (String) -> Unit,
     bottomPadding: Dp
@@ -181,6 +197,7 @@ private fun CardsContentScreen(
 
 
     LazyColumn(
+        state = state,
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -241,6 +258,7 @@ private fun CardsContentScreenPreview() {
             cards = listOf(
                 BankCard(id = 0, number = "4422222211113333")
             ),
+            state = rememberLazyListState(),
             navigateToCard = {},
             showSnackbar = {},
             bottomPadding = 40.dp

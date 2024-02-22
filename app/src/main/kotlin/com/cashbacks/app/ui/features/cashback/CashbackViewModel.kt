@@ -1,5 +1,6 @@
 package com.cashbacks.app.ui.features.cashback
 
+import android.content.Context
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -42,6 +43,9 @@ class CashbackViewModel @AssistedInject constructor(
 
     var showBankCardsSelection by mutableStateOf(false)
 
+    var showErrors by mutableStateOf(false)
+        private set
+
 
     init {
         viewModelScope.launch {
@@ -61,9 +65,20 @@ class CashbackViewModel @AssistedInject constructor(
     }
 
 
-    fun saveCashback() {
-        if (cashback.value.bankCard == null) return
+    fun saveInfo(context: Context): Boolean {
+        showErrors = true
+        cashback.value.updateErrors(context)
+        return if (!cashback.value.haveErrors) {
+            saveCashback()
+            true
+        } else {
+            cashback.value.errorMessage?.let(::showSnackbar)
+            false
+        }
+    }
 
+
+    private fun saveCashback() {
         viewModelScope.launch {
             _state.value = ViewModelState.Loading
             delay(300)

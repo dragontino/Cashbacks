@@ -54,7 +54,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -150,10 +151,11 @@ internal fun CategoriesScreen(
         )
     }
 
-    val fabPaddingDp = rememberSaveable { mutableFloatStateOf(0f) }
+    val fabOffsetPx = rememberSaveable { mutableFloatStateOf(0f) }
 
 
     CollapsingToolbarScaffold(
+        contentState = lazyListState,
         topBar = {
             HomeTopAppBar(
                 title = title,
@@ -164,6 +166,10 @@ internal fun CategoriesScreen(
                 searchPlaceholder = stringResource(R.string.search_categories_placeholder),
                 onNavigationIconClick = openDrawer
             )
+        },
+        topBarContainerColor = when (viewModel.appBarState) {
+            HomeTopAppBarState.Search -> Color.Unspecified
+            HomeTopAppBarState.TopBar -> MaterialTheme.colorScheme.primary
         },
         snackbarHost = {
             SnackbarHost(snackbarHostState) {
@@ -211,9 +217,7 @@ internal fun CategoriesScreen(
         },
         contentWindowInsets = WindowInsets.ime.only(WindowInsetsSides.Bottom),
         fabModifier = Modifier
-            .graphicsLayer {
-                fabPaddingDp.floatValue = size.height.toDp().value
-            }
+            .onGloballyPositioned { fabOffsetPx.floatValue = it.size.height.toFloat() }
             .windowInsetsPadding(WindowInsets.tappableElement.only(WindowInsetsSides.End))
             .padding(bottom = bottomPadding),
         modifier = Modifier
@@ -258,7 +262,9 @@ internal fun CategoriesScreen(
                     ListState.Stable -> CategoriesList(
                         lazyListState = lazyListState,
                         viewModel = viewModel,
-                        bottomPadding = (bottomPadding + fabPaddingDp.floatValue.dp).animate()
+                        bottomPadding = with(LocalDensity.current) {
+                            (bottomPadding + fabOffsetPx.floatValue.toDp()).animate()
+                        }
                     )
                 }
 
@@ -296,7 +302,8 @@ private fun CategoriesList(
         state = lazyListState,
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.fillMaxSize()
     ) {
         itemsIndexed(viewModel.categories) { index, category ->
             CategoryComposable(

@@ -69,6 +69,7 @@ import com.cashbacks.app.ui.navigation.exitScreenTransition
 import com.cashbacks.app.util.AnimationDefaults
 import com.cashbacks.app.util.animate
 import com.cashbacks.app.util.keyboardAsState
+import com.cashbacks.app.util.mix
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -195,14 +196,10 @@ private fun SearchBar(
     }
 
     val activeBackgroundColor = MaterialTheme.colorScheme.surface
-    val inactiveBackgroundColor = MaterialTheme.colorScheme.background.copy(alpha = .7f)
+    val inactiveBackgroundColor = MaterialTheme.colorScheme.background.copy(alpha = .6f)
     val animatedColor = remember {
         derivedStateOf {
-            mixColors(
-                firstColor = activeBackgroundColor,
-                secondColor = inactiveBackgroundColor,
-                ratio = animationProgress.value
-            )
+            activeBackgroundColor mix inactiveBackgroundColor ratio animationProgress.value
         }
     }
 
@@ -327,7 +324,7 @@ private fun TopBar(
             }
         },
         colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-            containerColor = MaterialTheme.colorScheme.primary.animate(),
+            containerColor = Color.Transparent,
             navigationIconContentColor = MaterialTheme.colorScheme.onPrimary.animate(),
             titleContentColor = MaterialTheme.colorScheme.onPrimary.animate(),
             actionIconContentColor = MaterialTheme.colorScheme.onPrimary.animate()
@@ -349,21 +346,4 @@ private class AnimatedPaddingValues(
     override fun calculateRightPadding(layoutDirection: LayoutDirection): Dp =
         horizontalPadding.value * (1 - animationProgress.value)
 
-}
-
-
-private fun mixColors(firstColor: Color, secondColor: Color, ratio: Float): Color {
-    val secondColorRatio = 1 - ratio
-
-    fun calculateComponent(getComponent: Color.() -> Float): Float {
-        val first = firstColor.getComponent() * ratio
-        val second = secondColor.getComponent() * secondColorRatio
-        return first + second
-    }
-
-    return Color(
-        red = calculateComponent { red },
-        green = calculateComponent { green },
-        blue = calculateComponent { blue }
-    )
 }

@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -60,6 +61,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -242,8 +244,13 @@ private fun CategoryInfoScreenContent(
     val fabPaddingDp = rememberSaveable { mutableFloatStateOf(0f) }
 
     val pagerState = rememberPagerState { tabItems.size }
+    val listStates = Array(2) { rememberLazyListState() }
+
     val currentScreen = remember(pagerState.currentPage) {
         derivedStateOf { tabItems[pagerState.currentPage] }
+    }
+    val currentListState = remember(pagerState.currentPage) {
+        listStates[pagerState.currentPage]
     }
 
     CollapsingToolbarScaffold(
@@ -299,13 +306,14 @@ private fun CategoryInfoScreenContent(
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary.animate(),
+                    containerColor = Color.Transparent,
                     titleContentColor = MaterialTheme.colorScheme.onPrimary.animate(),
                     navigationIconContentColor = MaterialTheme.colorScheme.onPrimary.animate(),
                     actionIconContentColor = MaterialTheme.colorScheme.onPrimary.animate()
                 )
             )
         },
+        contentState = currentListState,
         floatingActionButtons = {
             AnimatedVisibility(
                 visible = currentScreen.value == CategoryFeature.TabItem.Shops
@@ -399,12 +407,13 @@ private fun CategoryInfoScreenContent(
                     .background(MaterialTheme.colorScheme.background.animate())
                     .padding(top = 8.dp)
                     .clip(ModalSheetDefaults.BottomSheetShape)
-            ) { page ->
+            ) { pageIndex, page ->
                 ListContentTabPage(
                     items = when (page) {
                         CategoryFeature.TabItem.Shops -> viewModel.shopsLiveData.observeAsState().value
                         CategoryFeature.TabItem.Cashbacks -> viewModel.cashbacksLiveData.observeAsState().value
                     },
+                    state = listStates[pageIndex],
                     placeholderText = when (page) {
                         CategoryFeature.TabItem.Shops -> stringResource(R.string.empty_shops_list_editing)
                         CategoryFeature.TabItem.Cashbacks -> stringResource(R.string.empty_cashbacks_list)

@@ -4,6 +4,7 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -45,6 +46,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -73,6 +75,7 @@ fun BankCardEditingScreen(
     viewModel: BankCardEditingViewModel,
     popBackStack: () -> Unit
 ) {
+    val scrollState = rememberScrollState()
     val snackbarState = remember(::SnackbarHostState)
     val scope = rememberCoroutineScope()
     var dialogType: DialogType? by rememberSaveable { mutableStateOf(null) }
@@ -156,13 +159,14 @@ fun BankCardEditingScreen(
                                 }
                             },
                             colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                                containerColor = MaterialTheme.colorScheme.primary.animate(),
+                                containerColor = Color.Transparent,
                                 navigationIconContentColor = MaterialTheme.colorScheme.onPrimary.animate(),
                                 titleContentColor = MaterialTheme.colorScheme.onPrimary.animate(),
                                 actionIconContentColor = MaterialTheme.colorScheme.onPrimary.animate()
                             )
                         )
                     },
+                    contentState = scrollState,
                     snackbarHost = {
                         SnackbarHost(snackbarState) {
                             Snackbar(
@@ -175,6 +179,7 @@ fun BankCardEditingScreen(
                 ) { contentPadding ->
                     BankCardEditingContent(
                         viewModel = viewModel,
+                        state = scrollState,
                         modifier = Modifier.padding(contentPadding)
                     )
                 }
@@ -188,6 +193,7 @@ fun BankCardEditingScreen(
 @Composable
 private fun BankCardEditingContent(
     viewModel: BankCardEditingViewModel,
+    state: ScrollState,
     modifier: Modifier = Modifier,
 ) {
     val bankCard = viewModel.bankCard.value
@@ -197,7 +203,7 @@ private fun BankCardEditingContent(
         modifier = modifier
             .background(MaterialTheme.colorScheme.background.animate())
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
+            .verticalScroll(state)
             .padding(16.dp)
     )
     {

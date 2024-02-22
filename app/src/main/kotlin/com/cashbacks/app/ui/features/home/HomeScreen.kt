@@ -19,11 +19,11 @@ import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.Payments
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.Store
+import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalNavigationDrawer
-import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Text
@@ -287,7 +287,7 @@ private fun BottomBar(
     onClickToDestination: (HomeDestination) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    NavigationBar(
+    BottomAppBar(
         containerColor = MaterialTheme.colorScheme.background
             .copy(alpha = .6f)
             .animate(),

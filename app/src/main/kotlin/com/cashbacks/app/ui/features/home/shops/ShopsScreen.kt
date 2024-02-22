@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.tappableElement
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
@@ -30,6 +31,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -42,6 +44,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
@@ -53,6 +56,7 @@ import com.cashbacks.app.ui.composables.ConfirmDeletionDialog
 import com.cashbacks.app.ui.composables.EmptyList
 import com.cashbacks.app.ui.composables.ShopComposable
 import com.cashbacks.app.ui.features.home.HomeTopAppBar
+import com.cashbacks.app.ui.features.home.HomeTopAppBarState
 import com.cashbacks.app.ui.features.shop.ShopArgs
 import com.cashbacks.app.ui.managment.DialogType
 import com.cashbacks.app.ui.managment.ListState
@@ -82,6 +86,8 @@ fun ShopsScreen(
         }
     }
 
+    val topAppBarState = rememberTopAppBarState()
+    val lazyListState = rememberLazyListState()
     val snackbarHostState = remember(::SnackbarHostState)
     val scope = rememberCoroutineScope()
     val keyboardState = keyboardAsState()
@@ -128,6 +134,12 @@ fun ShopsScreen(
                 searchPlaceholder = stringResource(R.string.search_shops_placeholder),
                 onNavigationIconClick = openDrawer
             )
+        },
+        topBarState = topAppBarState,
+        contentState = lazyListState,
+        topBarContainerColor = when (viewModel.appBarState) {
+            HomeTopAppBarState.Search -> Color.Unspecified
+            HomeTopAppBarState.TopBar -> MaterialTheme.colorScheme.primary
         },
         snackbarHost = {
             SnackbarHost(snackbarHostState) {
@@ -196,6 +208,7 @@ fun ShopsScreen(
                 )
                 ListState.Stable -> ShopsList(
                     viewModel = viewModel,
+                    state = lazyListState,
                     bottomPadding = (bottomPadding + fabPaddingDp.floatValue.dp).animate()
                 )
             }
@@ -208,14 +221,15 @@ fun ShopsScreen(
 @Composable
 private fun ShopsList(
     viewModel: ShopsViewModel,
+    state: LazyListState,
     bottomPadding: Dp
 ) {
-    val state = rememberLazyListState()
     LazyColumn(
         state = state,
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.fillMaxSize()
     ) {
         itemsIndexed(viewModel.shops) { index, (category, shop) ->
             ShopComposable(

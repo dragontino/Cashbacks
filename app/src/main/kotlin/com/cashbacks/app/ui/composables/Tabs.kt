@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
@@ -56,9 +57,9 @@ internal fun <T : AppBarItem> PrimaryTabsLayout(
     tabRowColor: Color = MaterialTheme.colorScheme.primary,
     scrollEnabled: Boolean = true,
     pagerState: PagerState = rememberPagerState(pageCount = pages::size),
-    content: @Composable ((page: T) -> Unit)
+    contentIndexed: @Composable ((index: Int, page: T) -> Unit)
 ) {
-    TabsLayout(pages.toList(), isPrimary = true, modifier, tabRowColor, scrollEnabled, pagerState, content)
+    TabsLayout(pages.toList(), isPrimary = true, modifier, tabRowColor, scrollEnabled, pagerState, contentIndexed)
 }
 
 
@@ -70,9 +71,9 @@ internal fun <T : AppBarItem> SecondaryTabsLayout(
     tabRowColor: Color = Color.Transparent,
     scrollEnabled: Boolean = true,
     pagerState: PagerState = rememberPagerState(pageCount = pages::size),
-    content: @Composable ((page: T) -> Unit)
+    contentIndexed: @Composable ((index: Int, page: T) -> Unit)
 ) {
-    TabsLayout(pages.toList(), isPrimary = false, modifier, tabRowColor, scrollEnabled, pagerState, content)
+    TabsLayout(pages.toList(), isPrimary = false, modifier, tabRowColor, scrollEnabled, pagerState, contentIndexed)
 }
 
 
@@ -85,7 +86,7 @@ private fun <T : AppBarItem> TabsLayout(
     tabRowColor: Color = if (isPrimary) MaterialTheme.colorScheme.primary else Color.Transparent,
     scrollEnabled: Boolean = true,
     pagerState: PagerState = rememberPagerState { pages.size },
-    content: @Composable ((page: T) -> Unit)
+    contentIndexed: @Composable ((index: Int, page: T) -> Unit)
 ) {
 
     val scope = rememberCoroutineScope()
@@ -169,7 +170,7 @@ private fun <T : AppBarItem> TabsLayout(
             pageSpacing = 8.dp,
             userScrollEnabled = scrollEnabled,
             modifier = Modifier.fillMaxWidth(),
-            pageContent = { page -> content(pages[page]) }
+            pageContent = { page -> contentIndexed(page, pages[page]) }
         )
     }
 }
@@ -180,12 +181,11 @@ fun <T> ListContentTabPage(
     items: List<T>?,
     placeholderText: String,
     modifier: Modifier = Modifier,
+    state: LazyListState = rememberLazyListState(),
     contentPadding: PaddingValues = PaddingValues(16.dp),
     bottomSpacing: Dp = 0.dp,
     itemComposable: @Composable ((index: Int, item: T) -> Unit)
 ) {
-    val lazyListState = rememberLazyListState()
-
     Crossfade(
         targetState = items,
         label = "tabItems",
@@ -206,7 +206,7 @@ fun <T> ListContentTabPage(
             )
             else -> {
                 LazyColumn(
-                    state = lazyListState,
+                    state = state,
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     contentPadding = contentPadding,
