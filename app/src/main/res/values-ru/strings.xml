@@ -100,4 +100,6 @@
     <string name="settings_not_found_exception">Не удалось найти сохраненных настроек в базе данных!</string>
     <string name="deletion_exception">Не удалось удалить %1$s «%2$s»</string>
     <string name="expired_cashbacks_deletion_failture">Не удалось удалить просроченные кешбэки</string>
+    <string name="incorrect_cashback_amount">Некорректное значение! Используйте точку в качестве разделителя в числе</string>
+    <string name="bank_card_not_selected">Вы не выбрали банковскую карту!</string>
 </resources>

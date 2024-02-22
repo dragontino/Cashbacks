@@ -112,4 +112,6 @@
     <string name="settings_not_found_exception">Failed to find saved settings in database!</string>
     <string name="deletion_exception">Failed to delete %1$s «%2$s»</string>
     <string name="expired_cashbacks_deletion_failture">Failed to delete expired cashbacks</string>
+    <string name="incorrect_cashback_amount">Incorrect amount! Use a dot as a separator in a number</string>
+    <string name="bank_card_not_selected">You did not select a bank card!</string>
 </resources>
