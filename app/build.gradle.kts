@@ -5,8 +5,8 @@ plugins {
 }
 
 val versionName by extra("1.7.0")
-val versionDate by extra("21/02/2024")
-val debugVersionExt by extra("beta27")
+val versionDate by extra("22/02/2024")
+val debugVersionExt by extra("beta31")
 
 android {
     namespace = "com.cashbacks.app"
