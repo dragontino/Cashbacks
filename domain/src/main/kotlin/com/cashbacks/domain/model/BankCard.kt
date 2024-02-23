@@ -9,7 +9,11 @@ interface BasicInfoBankCard {
     val hiddenLastDigitsOfNumber get() = "${getHidden(4)} $lastFourDigitsOfNumber"
 
     val lastFourDigitsOfNumber get() = with(number) {
-        slice(length - 4 ..< length)
+        when {
+            length < 4 -> this
+            else -> slice(length - 4 ..< length)
+        }
+
     }
 
     val hiddenNumber get() = with(number) {
@@ -47,6 +51,6 @@ data class BankCard(
     val comment: String = "",
 ) : BasicInfoBankCard {
     override fun toString(): String {
-        return "$name $hiddenLastDigitsOfNumber $validityPeriod"
+        return "$name $hiddenLastDigitsOfNumber"
     }
 }
