@@ -9,6 +9,7 @@ import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import com.cashbacks.domain.model.BankCard
 import com.cashbacks.domain.model.PaymentSystem
+import kotlin.math.abs
 
 class ComposableBankCard(
     val id: Long = 0,
@@ -49,11 +50,29 @@ class ComposableBankCard(
     override val updatedProperties: SnapshotStateMap<String, Pair<String, String>> = mutableStateMapOf()
 
     fun updateNumber(newNumber: TextFieldValue) {
-        val newText = when (newNumber.text.length) {
-            5, 10, 15 -> buildString {
-                append(newNumber.text.substring(0..<newNumber.text.length - 1))
-                append(" ")
-                append(newNumber.text.last())
+        if (newNumber.text.length > number.text.length && !newNumber.text.last().isDigit()) {
+            return
+        }
+
+        println("new length = ${newNumber.text.length}, old length = ${number.text.length}")
+        val newText = if (abs(newNumber.text.length - number.text.length) > 1) {
+            BankCardMapper.addSpacesToCardNumber(newNumber.text)
+        } else when (newNumber.text.length) {
+            4, 9, 14 -> {
+                if (newNumber.text.length < number.text.length) {
+                    with(newNumber.text) { substring(0..<lastIndex) }
+                } else buildString {
+                    append(newNumber.text, " ")
+                }
+            }
+            5, 10, 15 -> {
+                if (newNumber.text.length < number.text.length) {
+                    with(newNumber.text) { substring(0..<lastIndex) }
+                } else buildString {
+                    append(newNumber.text.substring(0..<newNumber.text.lastIndex))
+                    append(" ")
+                    append(newNumber.text.last())
+                }
             }
             20 -> number.text
             else -> newNumber.text
