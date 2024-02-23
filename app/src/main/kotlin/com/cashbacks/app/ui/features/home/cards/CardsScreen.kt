@@ -46,6 +46,9 @@ import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -203,7 +206,7 @@ private fun CardsContentScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.fillMaxSize()
     ) {
-        items(cards) {
+        items(cards) { bankCard ->
             ElevatedCard(
                 colors = CardDefaults.elevatedCardColors(
                     containerColor = MaterialTheme.colorScheme.surface.animate(),
@@ -213,9 +216,20 @@ private fun CardsContentScreen(
                 shape = MaterialTheme.shapes.small,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = bankCard.name,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .padding(vertical = 16.dp)
+                        .fillMaxWidth()
+                )
+
                 BankCardCompose(
-                    bankCard = it,
+                    bankCard = bankCard,
                     onCopy = remember {
                         {
                             clipboardManager.setText(AnnotatedString(it))
@@ -231,7 +245,7 @@ private fun CardsContentScreen(
 
                 TextButton(
                     onClick = {
-                        navigateToCard(BankCardArgs(id = it.id, isEditing = false))
+                        navigateToCard(BankCardArgs(id = bankCard.id, isEditing = false))
                     },
                     shape = MaterialTheme.shapes.medium,
                     modifier = Modifier
