@@ -14,7 +14,7 @@ android {
 
     defaultConfig {
         applicationId = "com.cashbacks.app"
-        minSdk = 28
+        minSdk = 24
         targetSdk = 34
         versionCode = this@Build_gradle.versionName[0].toString().toInt()
         versionName = this@Build_gradle.versionName
