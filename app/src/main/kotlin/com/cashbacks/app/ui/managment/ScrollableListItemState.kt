@@ -23,6 +23,15 @@ class ScrollableListItemState(
 
     val isSwiped = derivedStateOf { contentOffset.floatValue != maxOffset }
 
+    /**
+     * Определяет, можно ли скроллить
+     * @param delta направление скролла. Значение < 0 означает сколл влево, значение > 0 — вправо
+     */
+    fun canSwipe(delta: Float): Boolean {
+        return delta < 0 && contentOffset.floatValue > minOffset.floatValue
+                || delta > 0 && contentOffset.floatValue < 0f
+    }
+
     suspend fun onScroll(delta: Float) {
         contentOffset.floatValue = (contentOffset.floatValue + delta).coerceIn(
             minimumValue = this.minOffset.floatValue,
@@ -43,11 +52,11 @@ class ScrollableListItemState(
         }
     }
 
-    suspend fun swipeToLeft() {
+    private suspend fun swipeToLeft() {
         animateOffset(minOffset.floatValue)
     }
 
-    suspend fun swipeToRight() {
+    private suspend fun swipeToRight() {
         animateOffset(maxOffset)
     }
 

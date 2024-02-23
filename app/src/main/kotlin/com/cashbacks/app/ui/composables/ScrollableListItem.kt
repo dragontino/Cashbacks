@@ -76,8 +76,12 @@ fun ScrollableListItem(
 ) {
     val scope = rememberCoroutineScope()
     val scrollableState = rememberScrollableState { delta ->
-        scope.launch { state.onScroll(delta) }
-        return@rememberScrollableState delta
+        if (state.canSwipe(delta)) {
+            scope.launch { state.onScroll(delta) }
+            return@rememberScrollableState delta
+        } else {
+            return@rememberScrollableState 0f
+        }
     }
 
     CompositionLocalProvider(LocalContentColor provides contentColor) {
