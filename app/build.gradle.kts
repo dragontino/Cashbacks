@@ -4,8 +4,8 @@ plugins {
     id("com.google.devtools.ksp")
 }
 
-val versionName by extra("1.7.0")
-val versionDate by extra("22/02/2024")
+val versionName by extra("1.7.1")
+val versionDate by extra("23/02/2024")
 val debugVersionExt by extra("beta31")
 
 android {
@@ -43,6 +43,7 @@ android {
         }
     }
     compileOptions {
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
     }
@@ -67,6 +68,8 @@ dependencies {
     implementation(project(":data"))
     implementation(project(":domain"))
     implementation("org.jetbrains.kotlin:kotlin-reflect:1.9.22")
+
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
 
     implementation("androidx.core:core-ktx:1.12.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
