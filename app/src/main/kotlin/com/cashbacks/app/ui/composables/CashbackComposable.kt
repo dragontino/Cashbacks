@@ -96,7 +96,9 @@ fun CashbackComposable(
                     Text(
                         text = parentName,
                         style = MaterialTheme.typography.bodyMedium,
-                        textAlign = TextAlign.Center
+                        textAlign = TextAlign.Center,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
             }
@@ -152,20 +154,18 @@ fun CashbackComposable(
                     PaymentSystemMapper.PaymentSystemImage(
                         paymentSystem = it,
                         drawBackground = false,
-                        maxWidth = 40.dp
+                        maxWidth = 30.dp
                     )
                 }
                 Text(
                     text = cashback.bankCard.name,
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.bodySmall,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
                     text = cashback.bankCard.hiddenLastDigitsOfNumber,
-                    style = MaterialTheme.typography.bodyMedium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    style = MaterialTheme.typography.bodySmall,
                 )
             }
 

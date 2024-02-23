@@ -29,7 +29,7 @@ fun BasicInfoCashback(cashback: Cashback) {
             modifier = Modifier.align(Alignment.CenterHorizontally)
         )
         Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(5.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             cashback.bankCard.paymentSystem?.let {
