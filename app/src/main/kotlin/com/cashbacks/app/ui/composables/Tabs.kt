@@ -45,7 +45,6 @@ import androidx.compose.ui.unit.dp
 import com.cashbacks.app.ui.navigation.AppBarItem
 import com.cashbacks.app.util.LoadingInBox
 import com.cashbacks.app.util.animate
-import com.cashbacks.app.util.reversed
 import kotlinx.coroutines.launch
 
 
@@ -104,8 +103,12 @@ private fun <T : AppBarItem> TabsLayout(
     }
 
     val selectedTabColor = when {
-        isPrimary -> contentColorFor(tabRowColor).reversed
+        isPrimary -> Color.White
         else -> MaterialTheme.colorScheme.primary
+    }
+    val unselectedTabColor = when {
+        isPrimary -> Color.Black
+        else -> MaterialTheme.colorScheme.onBackground
     }
 
 
@@ -126,7 +129,7 @@ private fun <T : AppBarItem> TabsLayout(
                             selectedTabIndex.value,
                             matchContentSize = false
                         ),
-                        color = MaterialTheme.colorScheme.primaryContainer.animate()
+                        color = MaterialTheme.colorScheme.onBackground.animate()
                     )
                     else -> TabRowDefaults.SecondaryIndicator(
                         modifier = Modifier.tabIndicatorOffset(
@@ -160,7 +163,7 @@ private fun <T : AppBarItem> TabsLayout(
                     },
                     enabled = scrollEnabled || selectedTabIndex.value == index,
                     selectedContentColor = selectedTabColor.animate(),
-                    unselectedContentColor = contentColorFor(tabRowColor).animate()
+                    unselectedContentColor = unselectedTabColor.animate()
                 )
             }
         }
