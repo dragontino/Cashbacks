@@ -30,7 +30,7 @@ import androidx.compose.material.icons.rounded.Clear
 import androidx.compose.material.icons.rounded.DataArray
 import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.Edit
-import androidx.compose.material.icons.rounded.EditOff
+import androidx.compose.material.icons.rounded.Save
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -258,7 +258,7 @@ fun ShopScreen(
             AnimatedVisibility(visible = !keyboardIsVisibleState.value) {
                 BasicFloatingActionButton(
                     icon = when {
-                        viewModel.isEditing.value -> Icons.Rounded.EditOff
+                        viewModel.isEditing.value -> Icons.Rounded.Save
                         else -> Icons.Rounded.Edit
                     },
                     onClick = {

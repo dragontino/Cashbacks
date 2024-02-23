@@ -32,7 +32,7 @@ import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.ArrowBackIosNew
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.DeleteOutline
-import androidx.compose.material.icons.rounded.EditOff
+import androidx.compose.material.icons.rounded.Save
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -336,7 +336,7 @@ private fun CategoryInfoScreenContent(
             AnimatedVisibility(visible = !keyboardIsVisibleState.value) {
                 when (currentScreen.value) {
                     CategoryFeature.TabItem.Shops -> {
-                        BasicFloatingActionButton(icon = Icons.Rounded.EditOff) {
+                        BasicFloatingActionButton(icon = Icons.Rounded.Save) {
                             viewModel.onItemClick {
                                 viewModel.save()
                                 viewModel.navigateTo(
