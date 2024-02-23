@@ -234,7 +234,11 @@ internal fun CategoryEditingScreen(
 
 
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+@OptIn(
+    ExperimentalMaterial3Api::class,
+    ExperimentalFoundationApi::class,
+    ExperimentalLayoutApi::class,
+)
 @Composable
 private fun CategoryInfoScreenContent(
     viewModel: CategoryEditingViewModel,
@@ -242,6 +246,7 @@ private fun CategoryInfoScreenContent(
     snackbarState: SnackbarHostState
 ) {
     val fabPaddingDp = rememberSaveable { mutableFloatStateOf(0f) }
+    val keyboardIsVisibleState = keyboardAsState()
 
     val pagerState = rememberPagerState { tabItems.size }
     val listStates = Array(2) { rememberLazyListState() }
@@ -317,7 +322,7 @@ private fun CategoryInfoScreenContent(
         floatingActionButtons = {
             AnimatedVisibility(
                 visible = currentScreen.value == CategoryFeature.TabItem.Shops
-                        && !viewModel.addingShopState.value,
+                        && !keyboardIsVisibleState.value,
                 enter = floatingActionButtonEnterAnimation(),
                 exit = floatingActionButtonExitAnimation()
             ) {
@@ -328,12 +333,8 @@ private fun CategoryInfoScreenContent(
                 }
             }
 
-            Crossfade(
-                targetState = currentScreen.value,
-                label = "fab anim",
-                animationSpec = tween(durationMillis = 100, easing = LinearEasing)
-            ) { screen ->
-                when (screen) {
+            AnimatedVisibility(visible = !keyboardIsVisibleState.value) {
+                when (currentScreen.value) {
                     CategoryFeature.TabItem.Shops -> {
                         BasicFloatingActionButton(icon = Icons.Rounded.EditOff) {
                             viewModel.onItemClick {
@@ -347,6 +348,7 @@ private fun CategoryInfoScreenContent(
                             }
                         }
                     }
+
                     CategoryFeature.TabItem.Cashbacks -> {
                         CashbackFAB(expanded = !pagerState.isScrollInProgress) {
                             viewModel.onItemClick {
@@ -498,6 +500,6 @@ fun CashbackFAB(expanded: Boolean, onAdd: () -> Unit) {
         expanded = expanded,
         onClick = onAdd,
         containerColor = MaterialTheme.colorScheme.primaryContainer.animate(),
-        contentColor = MaterialTheme.colorScheme.onPrimaryContainer.animate()
+        contentColor = MaterialTheme.colorScheme.onPrimaryContainer.animate(),
     )
 }

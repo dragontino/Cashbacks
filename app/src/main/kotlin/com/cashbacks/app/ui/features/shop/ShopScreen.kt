@@ -7,6 +7,7 @@ import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -77,11 +78,12 @@ import com.cashbacks.app.util.LoadingInBox
 import com.cashbacks.app.util.animate
 import com.cashbacks.app.util.floatingActionButtonEnterAnimation
 import com.cashbacks.app.util.floatingActionButtonExitAnimation
+import com.cashbacks.app.util.keyboardAsState
 import com.cashbacks.domain.model.Cashback
 import com.cashbacks.domain.model.Shop
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun ShopScreen(
     viewModel: ShopViewModel,
@@ -91,6 +93,7 @@ fun ShopScreen(
     val lazyListState = rememberLazyListState()
     val snackbarHostState = remember(::SnackbarHostState)
     val scope = rememberCoroutineScope()
+    val keyboardIsVisibleState = keyboardAsState()
     
     DisposableEffectWithLifecycle(
         onDestroy = {
@@ -235,7 +238,7 @@ fun ShopScreen(
         },
         floatingActionButtons = {
             AnimatedVisibility(
-                visible = viewModel.isEditing.value,
+                visible = viewModel.isEditing.value && !keyboardIsVisibleState.value,
                 enter = floatingActionButtonEnterAnimation(),
                 exit = floatingActionButtonExitAnimation()
             ) {
@@ -252,24 +255,29 @@ fun ShopScreen(
                 )
             }
 
-            BasicFloatingActionButton(
-                icon = when {
-                    viewModel.isEditing.value -> Icons.Rounded.EditOff
-                    else -> Icons.Rounded.Edit
-                },
-                onClick = {
-                    when {
-                        viewModel.isEditing.value -> viewModel.save()
-                        else -> viewModel.edit()
+            AnimatedVisibility(visible = !keyboardIsVisibleState.value) {
+                BasicFloatingActionButton(
+                    icon = when {
+                        viewModel.isEditing.value -> Icons.Rounded.EditOff
+                        else -> Icons.Rounded.Edit
+                    },
+                    onClick = {
+                        when {
+                            viewModel.isEditing.value -> viewModel.save()
+                            else -> viewModel.edit()
+                        }
                     }
-                }
-            )
+                )
+            }
+
         },
         contentWindowInsets = WindowInsets.ime.only(WindowInsetsSides.Bottom),
         fabModifier = Modifier
             .graphicsLayer { viewModel.fabPaddingDp.floatValue = size.height.toDp().value }
             .windowInsetsPadding(CollapsingToolbarScaffoldDefaults.contentWindowInsets),
-        modifier = Modifier.imePadding().fillMaxSize()
+        modifier = Modifier
+            .imePadding()
+            .fillMaxSize()
     ) {
         Crossfade(
             targetState = viewModel.state.value,
