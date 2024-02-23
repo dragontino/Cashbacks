@@ -162,7 +162,6 @@ fun ShopScreen(
         else -> {}
     }
 
-
     CollapsingToolbarScaffold(
         topBar = {
             CenterAlignedTopAppBar(
@@ -179,7 +178,7 @@ fun ShopScreen(
                         label = "is changed anim"
                     ) { isChanged ->
                         IconButton(
-                            onClick = { 
+                            onClick = {
                                 when {
                                     isChanged -> viewModel.openDialog(DialogType.Save)
                                     else -> popBackStack()
@@ -269,7 +268,8 @@ fun ShopScreen(
         contentWindowInsets = WindowInsets.ime.only(WindowInsetsSides.Bottom),
         fabModifier = Modifier
             .graphicsLayer { viewModel.fabPaddingDp.floatValue = size.height.toDp().value }
-            .windowInsetsPadding(CollapsingToolbarScaffoldDefaults.contentWindowInsets)
+            .windowInsetsPadding(CollapsingToolbarScaffoldDefaults.contentWindowInsets),
+        modifier = Modifier.imePadding().fillMaxSize()
     ) {
         Crossfade(
             targetState = viewModel.state.value,
@@ -293,9 +293,7 @@ private fun ShopScreenContent(
     state: LazyListState
 ) {
     Column(
-        modifier = Modifier
-            .imePadding()
-            .fillMaxSize()
+        modifier = Modifier.fillMaxSize()
     ) {
         if (viewModel.isEditing.value) {
             EditableTextField(
