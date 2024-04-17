@@ -1,6 +1,6 @@
 package com.cashbacks.domain.repository
 
-import com.cashbacks.domain.model.Category
+import com.cashbacks.domain.model.CategoryShop
 import com.cashbacks.domain.model.Shop
 import kotlinx.coroutines.flow.Flow
 
@@ -17,9 +17,9 @@ interface ShopRepository {
 
     fun fetchShopsWithCashbackFromCategory(categoryId: Long): Flow<List<Shop>>
 
-    fun fetchAllShopsWithCategories(): Flow<List<Pair<Category, Shop>>>
+    fun fetchAllShops(): Flow<List<CategoryShop>>
 
-    fun fetchShopsWithCategoriesAndCashbacks(): Flow<List<Pair<Category, Shop>>>
+    fun fetchShopsWithCashbacks(): Flow<List<CategoryShop>>
 
-    suspend fun searchShops(query: String, cashbacksRequired: Boolean): List<Pair<Category, Shop>>
+    suspend fun searchShops(query: String, cashbacksRequired: Boolean): List<CategoryShop>
 }

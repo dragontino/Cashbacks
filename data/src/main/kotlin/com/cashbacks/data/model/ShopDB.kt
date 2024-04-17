@@ -5,6 +5,7 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import com.cashbacks.domain.model.CategoryShop
 import com.cashbacks.domain.model.Shop
 
 @Entity(
@@ -55,6 +56,10 @@ data class ShopWithCategoryNameAndCashbackDB(
     @Embedded(prefix = "cashback_")
     val maxCashback: BasicCashbackDB?
 ) {
-    fun mapToShopCategoryPair() =
-        category.mapToCategory() to Shop(id, name, maxCashback?.mapToCashback())
+    fun mapToCategoryShop() = CategoryShop(
+        id = id,
+        parentCategory = category.mapToCategory(),
+        name = name,
+        maxCashback = maxCashback?.mapToCashback()
+    )
 }

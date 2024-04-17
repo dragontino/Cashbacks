@@ -12,6 +12,7 @@ import com.cashbacks.app.ui.managment.ListState
 import com.cashbacks.app.viewmodel.EventsViewModel
 import com.cashbacks.domain.model.AppExceptionMessage
 import com.cashbacks.domain.model.Cashback
+import com.cashbacks.domain.model.CashbackWithParent
 import com.cashbacks.domain.usecase.cashbacks.DeleteCashbacksUseCase
 import com.cashbacks.domain.usecase.cashbacks.FetchCashbacksUseCase
 import com.cashbacks.domain.usecase.cashbacks.SearchCashbacksUseCase
@@ -30,9 +31,8 @@ class CashbacksViewModel @Inject constructor(
     private val _state = mutableStateOf(ListState.Loading)
     val state = derivedStateOf { _state.value }
 
-    private val allCashbacks =
-        mutableStateOf(listOf<Pair<Pair<String, String>, Cashback>>())
-    var cashbacks by mutableStateOf(listOf<Pair<Pair<String, String>, Cashback>>())
+    private val allCashbacks = mutableStateOf(listOf<CashbackWithParent>())
+    var cashbacks by mutableStateOf(listOf<CashbackWithParent>())
         private set
 
     var selectedCashbackIndex: Int? by mutableStateOf(null)

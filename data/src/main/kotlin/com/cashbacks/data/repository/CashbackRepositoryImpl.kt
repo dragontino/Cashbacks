@@ -1,9 +1,10 @@
 package com.cashbacks.data.repository
 
 import com.cashbacks.data.model.CashbackDB
-import com.cashbacks.data.model.CashbackWithParentAndBankCardDB
+import com.cashbacks.data.model.ParentCashbackWithBankCardDB
 import com.cashbacks.data.room.dao.CashbacksDao
 import com.cashbacks.domain.model.Cashback
+import com.cashbacks.domain.model.CashbackWithParent
 import com.cashbacks.domain.model.DeletionException
 import com.cashbacks.domain.model.InsertionException
 import com.cashbacks.domain.repository.CashbackRepository
@@ -103,15 +104,15 @@ class CashbackRepositoryImpl(private val dao: CashbacksDao) : CashbackRepository
     }
 
 
-    override fun fetchAllCashbacks(): Flow<List<Pair<Pair<String, String>, Cashback>>> {
+    override fun fetchAllCashbacks(): Flow<List<CashbackWithParent>> {
         return dao.fetchAllCashbacks().map {
-            it.map(CashbackWithParentAndBankCardDB::mapToCashbackPair)
+            it.map(ParentCashbackWithBankCardDB::mapToCashback)
         }
     }
 
 
-    override suspend fun searchCashbacks(query: String): List<Pair<Pair<String, String>, Cashback>> {
-        return dao.searchCashbacks(query).map { it.mapToCashbackPair() }
+    override suspend fun searchCashbacks(query: String): List<CashbackWithParent> {
+        return dao.searchCashbacks(query).map { it.mapToCashback() }
     }
 
 

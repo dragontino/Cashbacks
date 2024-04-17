@@ -8,6 +8,9 @@ import androidx.room.PrimaryKey
 import com.cashbacks.domain.model.BankCard
 import com.cashbacks.domain.model.BasicBankCard
 import com.cashbacks.domain.model.Cashback
+import com.cashbacks.domain.model.CashbackWithParent
+import com.cashbacks.domain.model.CategoryCashback
+import com.cashbacks.domain.model.ShopCashback
 
 @Entity(
     tableName = "Cashbacks",
@@ -95,24 +98,53 @@ data class CashbackWithBankCardDB(
 }
 
 
-data class CashbackWithParentAndBankCardDB(
+
+sealed class ParentCashbackWithBankCardDB(
     val id: Long,
-    val parentType: String,
-    val parentName: String,
     @Embedded(prefix = "card_")
     val bankCard: BasicBankCard,
     val amount: Double,
     val expirationDate: String?,
-    val comment: String
+    val comment: String,
 ) {
-    fun mapToCashbackPair(): Pair<Pair<String, String>, Cashback> {
-        val cashback = Cashback(
+    abstract fun mapToCashback(): CashbackWithParent
+
+    class Category(
+        id: Long,
+        @Embedded(prefix = "category_")
+        val categoryDB: CategoryDB,
+        bankCard: BasicBankCard,
+        amount: Double,
+        expirationDate: String?,
+        comment: String
+    ) : ParentCashbackWithBankCardDB(id, bankCard, amount, expirationDate, comment) {
+        override fun mapToCashback() = CategoryCashback(
             id = id,
-            amount = if (amount < 0) "" else amount.toString(),
+            parentCategory = categoryDB.mapToCategory(),
             bankCard = bankCard,
             expirationDate = expirationDate,
+            amount = if (amount < 0) "" else amount.toString(),
             comment = comment
         )
-        return parentType to parentName to cashback
+    }
+
+
+    class Shop(
+        id: Long,
+        @Embedded(prefix = "shop_")
+        val shop: ShopDB,
+        bankCard: BasicBankCard,
+        amount: Double,
+        expirationDate: String?,
+        comment: String
+    ) : ParentCashbackWithBankCardDB(id, bankCard, amount, expirationDate, comment) {
+        override fun mapToCashback() = ShopCashback(
+            id = id,
+            parentShop = shop.mapToShop(),
+            bankCard = bankCard,
+            expirationDate = expirationDate,
+            amount = if (amount < 0) "" else amount.toString(),
+            comment = comment
+        )
     }
 }

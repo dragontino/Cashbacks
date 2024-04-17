@@ -1,6 +1,7 @@
 package com.cashbacks.domain.usecase.cashbacks
 
 import com.cashbacks.domain.model.Cashback
+import com.cashbacks.domain.model.CashbackWithParent
 import com.cashbacks.domain.repository.CashbackRepository
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
@@ -18,7 +19,7 @@ class FetchCashbacksUseCase(
         return repository.fetchCashbacksFromShop(shopId).flowOn(dispatcher)
     }
 
-    fun fetchAllCashbacks(): Flow<List<Pair<Pair<String, String>, Cashback>>> {
+    fun fetchAllCashbacks(): Flow<List<CashbackWithParent>> {
         return repository.fetchAllCashbacks().flowOn(dispatcher)
     }
 }

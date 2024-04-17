@@ -229,10 +229,9 @@ private fun ShopsList(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.fillMaxSize()
     ) {
-        itemsIndexed(viewModel.shops) { index, (category, shop) ->
+        itemsIndexed(viewModel.shops) { index, shop ->
             ShopComposable(
-                shop = shop,
-                category = category,
+                categoryShop = shop,
                 isEditing = viewModel.isEditing.value,
                 isSwiped = viewModel.selectedShopIndex == index,
                 onSwipe = { isSwiped ->
@@ -260,7 +259,7 @@ private fun ShopsList(
                 onDelete = {
                     viewModel.onItemClick {
                         viewModel.selectedShopIndex = -1
-                        viewModel.openDialog(DialogType.ConfirmDeletion(shop))
+                        viewModel.openDialog(DialogType.ConfirmDeletion(shop.asShop()))
                     }
                 }
             )

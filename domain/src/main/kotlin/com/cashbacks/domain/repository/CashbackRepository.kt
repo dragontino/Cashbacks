@@ -1,6 +1,7 @@
 package com.cashbacks.domain.repository
 
 import com.cashbacks.domain.model.Cashback
+import com.cashbacks.domain.model.CashbackWithParent
 import kotlinx.coroutines.flow.Flow
 
 interface CashbackRepository {
@@ -20,9 +21,9 @@ interface CashbackRepository {
 
     fun fetchCashbacksFromShop(shopId: Long): Flow<List<Cashback>>
 
-    fun fetchAllCashbacks(): Flow<List<Pair<Pair<String, String>, Cashback>>>
+    fun fetchAllCashbacks(): Flow<List<CashbackWithParent>>
 
     suspend fun getAllCashbacks(): List<Cashback>
 
-    suspend fun searchCashbacks(query: String): List<Pair<Pair<String, String>, Cashback>>
+    suspend fun searchCashbacks(query: String): List<CashbackWithParent>
 }

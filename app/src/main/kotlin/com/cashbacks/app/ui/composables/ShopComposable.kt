@@ -15,7 +15,32 @@ import com.cashbacks.app.R
 import com.cashbacks.app.ui.managment.rememberScrollableListItemState
 import com.cashbacks.app.util.animate
 import com.cashbacks.domain.model.Category
+import com.cashbacks.domain.model.CategoryShop
 import com.cashbacks.domain.model.Shop
+
+
+@Composable
+internal fun ShopComposable(
+    categoryShop: CategoryShop,
+    onClick: () -> Unit,
+    isEditing: Boolean = false,
+    isSwiped: Boolean = false,
+    onSwipe: suspend (isSwiped: Boolean) -> Unit = {},
+    onEdit: () -> Unit = {},
+    onDelete: () -> Unit = {}
+) {
+    ShopComposable(
+        shop = categoryShop.asShop(),
+        category = categoryShop.parentCategory,
+        onClick = onClick,
+        isEditing = isEditing,
+        isSwiped = isSwiped,
+        onSwipe = onSwipe,
+        onEdit = onEdit,
+        onDelete = onDelete
+    )
+}
+
 
 @Composable
 internal fun ShopComposable(
@@ -99,7 +124,12 @@ internal fun ShopComposable(
 @Composable
 private fun ShopComposablePreview() {
     ShopComposable(
-        shop = Shop(id = 0, name = "Test shop", maxCashback = null),
+        categoryShop = CategoryShop(
+            id = 0,
+            name = "Test shop",
+            maxCashback = null,
+            parentCategory = Category(name = "Test category")
+        ),
         onClick = {},
         isEditing = true
     )

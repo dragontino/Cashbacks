@@ -5,3 +5,13 @@ data class Shop(
     val name: String,
     val maxCashback: Cashback?
 )
+
+
+data class CategoryShop(
+    val id: Long,
+    val parentCategory: Category,
+    val name: String,
+    val maxCashback: Cashback?
+) {
+    fun asShop() = Shop(id, name, maxCashback)
+}

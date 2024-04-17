@@ -2,7 +2,7 @@ package com.cashbacks.data.repository
 
 import com.cashbacks.data.model.ShopDB
 import com.cashbacks.data.room.dao.ShopsDao
-import com.cashbacks.domain.model.Category
+import com.cashbacks.domain.model.CategoryShop
 import com.cashbacks.domain.model.DeletionException
 import com.cashbacks.domain.model.EntryAlreadyExistsException
 import com.cashbacks.domain.model.InsertionException
@@ -80,25 +80,25 @@ class ShopRepositoryImpl(private val dao: ShopsDao) : ShopRepository {
         }
     }
 
-    override fun fetchAllShopsWithCategories(): Flow<List<Pair<Category, Shop>>> {
+    override fun fetchAllShops(): Flow<List<CategoryShop>> {
         return dao.fetchAllShops().mapLatest { list ->
-            list.map { it.mapToShopCategoryPair() }
+            list.map { it.mapToCategoryShop() }
         }
     }
 
-    override fun fetchShopsWithCategoriesAndCashbacks(): Flow<List<Pair<Category, Shop>>> {
+    override fun fetchShopsWithCashbacks(): Flow<List<CategoryShop>> {
         return dao.fetchShopsWithCashback().mapLatest { list ->
-            list.map { it.mapToShopCategoryPair() }
+            list.map { it.mapToCategoryShop() }
         }
     }
 
     override suspend fun searchShops(
         query: String,
         cashbacksRequired: Boolean
-    ): List<Pair<Category, Shop>> {
+    ): List<CategoryShop> {
         return when {
             cashbacksRequired -> dao.searchShopsWithCashback(query)
             else -> dao.searchAllShops(query)
-        }.map { it.mapToShopCategoryPair() }
+        }.map { it.mapToCategoryShop() }
     }
 }

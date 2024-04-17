@@ -11,7 +11,7 @@ import com.cashbacks.app.ui.features.home.Search
 import com.cashbacks.app.ui.managment.ListState
 import com.cashbacks.app.viewmodel.EventsViewModel
 import com.cashbacks.domain.model.AppExceptionMessage
-import com.cashbacks.domain.model.Category
+import com.cashbacks.domain.model.CategoryShop
 import com.cashbacks.domain.model.Shop
 import com.cashbacks.domain.usecase.shops.DeleteShopUseCase
 import com.cashbacks.domain.usecase.shops.FetchAllShopsUseCase
@@ -34,9 +34,9 @@ class ShopsViewModel @Inject constructor(
 
     val isEditing = mutableStateOf(false)
 
-    private val allShops = mutableStateOf(listOf<Pair<Category, Shop>>())
-    private val shopsWithCashback = mutableStateOf(listOf<Pair<Category, Shop>>())
-    var shops by mutableStateOf(listOf<Pair<Category, Shop>>())
+    private val allShops = mutableStateOf(listOf<CategoryShop>())
+    private val shopsWithCashback = mutableStateOf(listOf<CategoryShop>())
+    var shops by mutableStateOf(listOf<CategoryShop>())
         private set
 
     var selectedShopIndex by mutableStateOf<Int?>(null)

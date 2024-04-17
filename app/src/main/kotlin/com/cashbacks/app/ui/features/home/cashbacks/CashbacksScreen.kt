@@ -38,6 +38,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -56,8 +57,6 @@ import com.cashbacks.app.util.LoadingInBox
 import com.cashbacks.app.util.animate
 import com.cashbacks.app.util.reversed
 import com.cashbacks.domain.model.Cashback
-import com.cashbacks.domain.model.Category
-import com.cashbacks.domain.model.Shop
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -184,6 +183,8 @@ private fun CashbacksList(
     state: LazyListState,
     bottomPadding: Dp
 ) {
+    val context = LocalContext.current
+
     LazyColumn(
         state = state,
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp),
@@ -191,15 +192,11 @@ private fun CashbacksList(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.fillMaxSize()
     ) {
-        itemsIndexed(viewModel.cashbacks) { index, (parent, cashback) ->
+        itemsIndexed(viewModel.cashbacks) { index, cashbackWithParent ->
             CashbackComposable(
-                cashback = cashback,
-                parentType = when (parent.first) {
-                    Category::class.simpleName -> stringResource(R.string.category_title)
-                    Shop::class.simpleName -> stringResource(R.string.shop)
-                    else -> null
-                },
-                parentName = parent.second,
+                cashback = cashbackWithParent.asCashback(),
+                parentType = cashbackWithParent.getParentType(context.resources),
+                parentName = cashbackWithParent.parentName,
                 isSwiped = viewModel.selectedCashbackIndex == index,
                 onSwipe = { isSwiped ->
                     viewModel.selectedCashbackIndex = when {
@@ -209,12 +206,14 @@ private fun CashbacksList(
                 },
                 onClick = {
                     viewModel.onItemClick {
-                        viewModel.navigateTo(CashbackArgs.Existing(cashback.id))
+                        viewModel.navigateTo(CashbackArgs.Existing(cashbackWithParent.id))
                     }
                 },
                 onDelete = {
                     viewModel.onItemClick {
-                        viewModel.openDialog(DialogType.ConfirmDeletion(cashback))
+                        viewModel.openDialog(
+                            DialogType.ConfirmDeletion(cashbackWithParent.asCashback())
+                        )
                     }
                 }
             )

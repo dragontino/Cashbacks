@@ -8,7 +8,7 @@ import androidx.room.TypeConverters
 import com.cashbacks.data.model.BasicCashbackDB
 import com.cashbacks.data.model.CashbackDB
 import com.cashbacks.data.model.CashbackWithBankCardDB
-import com.cashbacks.data.model.CashbackWithParentAndBankCardDB
+import com.cashbacks.data.model.ParentCashbackWithBankCardDB
 import com.cashbacks.data.room.PaymentSystemConverter
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
@@ -92,8 +92,8 @@ interface CashbacksDao {
     @Query(
         """
             SELECT cash.id, cash.amount, cash.expirationDate, cash.comment,
-                   "Category" AS parentType,
-                   cat.name AS parentName,
+                   cat.id AS category_id, 
+                   cat.name AS category_name,
                    card.id AS card_id,
                    card.name AS card_name,
                    card.number AS card_number,
@@ -104,28 +104,29 @@ interface CashbacksDao {
             WHERE cash.categoryId IS NOT NULL
         """
     )
-    fun fetchAllCashbacksFromCategories(): Flow<List<CashbackWithParentAndBankCardDB>>
+    fun fetchAllCashbacksFromCategories(): Flow<List<ParentCashbackWithBankCardDB.Category>>
 
 
     @Query(
         """
             SELECT cash.id, cash.amount, cash.expirationDate, cash.comment,
-                   "Shop" AS parentType,
-                   s.name AS parentName,
+                   s.id AS shop_id,
+                   s.categoryId AS shop_categoryId,
+                   s.name AS shop_name,
                    card.id AS card_id,
                    card.name AS card_name,
                    card.number AS card_number,
                    card.paymentSystem AS card_paymentSystem
             FROM Cashbacks AS cash
-            INNER JOIN (SELECT id, name FROM Shops) AS s ON cash.shopId = s.id
+            INNER JOIN (SELECT * FROM Shops) AS s ON cash.shopId = s.id
             INNER JOIN (SELECT * FROM Cards) AS card ON card.id = cash.bankCardId
             WHERE cash.shopId IS NOT NULL
         """
     )
-    fun fetchAllCashbacksFromShops(): Flow<List<CashbackWithParentAndBankCardDB>>
+    fun fetchAllCashbacksFromShops(): Flow<List<ParentCashbackWithBankCardDB.Shop>>
 
 
-    fun fetchAllCashbacks(): Flow<List<CashbackWithParentAndBankCardDB>> {
+    fun fetchAllCashbacks(): Flow<List<ParentCashbackWithBankCardDB>> {
         val cashbacksFromCategories = fetchAllCashbacksFromCategories()
         val cashbacksFromShops = fetchAllCashbacksFromShops()
         return cashbacksFromCategories.combine(cashbacksFromShops) { cashbacksCategory, cashbacksShop ->
@@ -137,8 +138,8 @@ interface CashbacksDao {
     @Query(
         """
             SELECT cash.id, cash.amount, cash.expirationDate, cash.comment,
-                   "Category" AS parentType,
-                   cat.name AS parentName,
+                   cat.id AS category_id,
+                   cat.name AS category_name,
                    card.id AS card_id,
                    card.name AS card_name,
                    card.number AS card_number,
@@ -148,41 +149,42 @@ interface CashbacksDao {
             INNER JOIN (SELECT * FROM Cards) AS card ON card.id = cash.bankCardId
             WHERE cash.categoryId IS NOT NULL
             AND (
-                amount LIKE '%' || :query || '%' OR parentName LIKE '%' || :query || '%' 
+                amount LIKE '%' || :query || '%' OR category_name LIKE '%' || :query || '%' 
                 OR expirationDate LIKE '%' || :query || '%' OR cash.comment LIKE '%' || :query || '%'
                 OR card_name LIKE '%' || :query || '%' OR card_number LIKE '%' || :query || '%'
                 OR card_paymentSystem LIKE '%' || :query || '%'
             )
         """
     )
-    suspend fun searchCashbacksInCategories(query: String): List<CashbackWithParentAndBankCardDB>
+    suspend fun searchCashbacksInCategories(query: String): List<ParentCashbackWithBankCardDB.Category>
 
 
     @Query(
         """
             SELECT cash.id, cash.amount, cash.expirationDate, cash.comment,
-                   "Shop" AS parentType,
-                   s.name AS parentName,
+                   s.id AS shop_id,
+                   s.categoryId AS shop_categoryId,
+                   s.name AS shop_name,
                    card.id AS card_id,
                    card.name AS card_name,
                    card.number AS card_number,
                    card.paymentSystem AS card_paymentSystem
             FROM Cashbacks AS cash
-            INNER JOIN (SELECT id, name FROM Shops) AS s ON cash.shopId = s.id
+            INNER JOIN (SELECT * FROM Shops) AS s ON cash.shopId = s.id
             INNER JOIN (SELECT * FROM Cards) AS card ON card.id = cash.bankCardId
             WHERE cash.shopId IS NOT NULL
             AND (
-                amount LIKE '%' || :query || '%' OR parentName LIKE '%' || :query || '%' 
+                amount LIKE '%' || :query || '%' OR shop_name LIKE '%' || :query || '%' 
                 OR expirationDate LIKE '%' || :query || '%' OR cash.comment LIKE '%' || :query || '%'
                 OR card_name LIKE '%' || :query || '%' OR card_number LIKE '%' || :query || '%'
                 OR card_paymentSystem LIKE '%' || :query || '%'
             )
         """
     )
-    suspend fun searchCashbacksInShops(query: String): List<CashbackWithParentAndBankCardDB>
+    suspend fun searchCashbacksInShops(query: String): List<ParentCashbackWithBankCardDB.Shop>
 
 
-    suspend fun searchCashbacks(query: String): List<CashbackWithParentAndBankCardDB> {
+    suspend fun searchCashbacks(query: String): List<ParentCashbackWithBankCardDB> {
         return searchCashbacksInCategories(query) + searchCashbacksInShops(query)
     }
 
