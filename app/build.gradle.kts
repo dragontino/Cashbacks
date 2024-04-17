@@ -4,9 +4,9 @@ plugins {
     id("com.google.devtools.ksp")
 }
 
-val versionName by extra("1.7.3")
+val versionName by extra("1.7.5")
 val versionDate by extra("17/04/2024")
-val debugVersionExt by extra("beta10")
+val debugVersionExt by extra("beta5")
 
 android {
     namespace = "com.cashbacks.app"
@@ -14,7 +14,7 @@ android {
 
     defaultConfig {
         applicationId = "com.cashbacks.app"
-        minSdk = 24
+        minSdk = 26
         targetSdk = 34
         versionCode = this@Build_gradle.versionName[0].toString().toInt()
         versionName = this@Build_gradle.versionName
