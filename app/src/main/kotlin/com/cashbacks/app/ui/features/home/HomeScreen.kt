@@ -48,7 +48,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.cashbacks.app.R
+import com.cashbacks.domain.R
 import com.cashbacks.app.ui.composables.ModalNavigationDrawerContent
 import com.cashbacks.app.ui.composables.ModalSheetDefaults
 import com.cashbacks.app.ui.composables.ModalSheetItems.IconTextItem

@@ -53,7 +53,6 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import com.cashbacks.app.R
 import com.cashbacks.app.model.PaymentSystemMapper
 import com.cashbacks.app.model.PaymentSystemMapper.title
 import com.cashbacks.app.ui.composables.CollapsingToolbarScaffold
@@ -66,6 +65,7 @@ import com.cashbacks.app.ui.managment.ViewModelState
 import com.cashbacks.app.ui.theme.DarkerGray
 import com.cashbacks.app.util.LoadingInBox
 import com.cashbacks.app.util.animate
+import com.cashbacks.domain.R
 import com.cashbacks.domain.model.PaymentSystem
 import kotlinx.coroutines.launch
 

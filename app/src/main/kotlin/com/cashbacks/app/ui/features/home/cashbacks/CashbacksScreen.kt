@@ -42,7 +42,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.cashbacks.app.R
 import com.cashbacks.app.ui.composables.CashbackComposable
 import com.cashbacks.app.ui.composables.CollapsingToolbarScaffold
 import com.cashbacks.app.ui.composables.ConfirmDeletionDialog
@@ -56,6 +55,7 @@ import com.cashbacks.app.ui.managment.ScreenEvents
 import com.cashbacks.app.util.LoadingInBox
 import com.cashbacks.app.util.animate
 import com.cashbacks.app.util.reversed
+import com.cashbacks.domain.R
 import com.cashbacks.domain.model.Cashback
 import kotlinx.coroutines.launch
 

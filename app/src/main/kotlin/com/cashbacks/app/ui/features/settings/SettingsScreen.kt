@@ -64,7 +64,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.cashbacks.app.R
 import com.cashbacks.app.model.ColorDesignMapper.icon
 import com.cashbacks.app.model.ColorDesignMapper.title
 import com.cashbacks.app.ui.composables.BottomSheetContent
@@ -75,6 +74,7 @@ import com.cashbacks.app.ui.managment.ScreenEvents
 import com.cashbacks.app.ui.managment.ViewModelState
 import com.cashbacks.app.util.LoadingInBox
 import com.cashbacks.app.util.animate
+import com.cashbacks.domain.R
 import com.cashbacks.domain.model.ColorDesign
 import com.cashbacks.domain.model.Settings
 import kotlinx.coroutines.delay

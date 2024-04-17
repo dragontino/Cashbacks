@@ -24,10 +24,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.cashbacks.app.R
 import com.cashbacks.app.model.PaymentSystemMapper
 import com.cashbacks.app.ui.managment.rememberScrollableListItemState
 import com.cashbacks.app.util.animate
+import com.cashbacks.domain.R
 import com.cashbacks.domain.model.BasicBankCard
 import com.cashbacks.domain.model.Cashback
 import com.cashbacks.domain.model.PaymentSystem

@@ -7,7 +7,7 @@ import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateMap
-import com.cashbacks.app.R
+import com.cashbacks.domain.R
 import com.cashbacks.domain.model.BankCard
 import com.cashbacks.domain.model.BasicBankCard
 import com.cashbacks.domain.model.Cashback

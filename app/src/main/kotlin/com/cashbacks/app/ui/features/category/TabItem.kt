@@ -4,7 +4,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Store
 import androidx.compose.material.icons.rounded.Store
 import androidx.compose.ui.res.painterResource
-import com.cashbacks.app.R
+import com.cashbacks.domain.R
 import com.cashbacks.app.ui.navigation.AppBarIcon
 import com.cashbacks.app.ui.navigation.AppBarItem
 import com.cashbacks.app.ui.navigation.asAppBarIcon

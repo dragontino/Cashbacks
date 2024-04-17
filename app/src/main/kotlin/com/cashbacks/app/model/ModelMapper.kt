@@ -21,18 +21,12 @@ import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.cashbacks.app.R
+import com.cashbacks.domain.R
 import com.cashbacks.domain.model.ColorDesign
 import com.cashbacks.domain.model.PaymentSystem
 
 data object ColorDesignMapper {
-    val ColorDesign.title: String
-    @Composable
-    get() = when (this) {
-        ColorDesign.Light -> stringResource(R.string.light_theme)
-        ColorDesign.Dark -> stringResource(R.string.dark_theme)
-        ColorDesign.System -> stringResource(R.string.system_theme)
-    }
+    val ColorDesign.title: String @Composable get() = stringResource(this.titleRes)
 
     val ColorDesign.icon get() = when (this) {
         ColorDesign.Light -> Icons.Outlined.LightMode

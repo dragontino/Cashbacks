@@ -39,11 +39,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
-import com.cashbacks.app.R
 import com.cashbacks.app.model.BankCardMapper
 import com.cashbacks.app.model.PaymentSystemMapper
 import com.cashbacks.app.ui.theme.BackgroundDark
 import com.cashbacks.app.util.animate
+import com.cashbacks.domain.R
 import com.cashbacks.domain.model.BankCard
 import com.cashbacks.domain.model.PaymentSystem
 

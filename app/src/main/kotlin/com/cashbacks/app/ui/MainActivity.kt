@@ -23,7 +23,7 @@ import androidx.compose.ui.zIndex
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
-import com.cashbacks.app.R
+import com.cashbacks.domain.R
 import com.cashbacks.app.app.App
 import com.cashbacks.app.model.ColorDesignMapper.isDark
 import com.cashbacks.app.ui.features.home.HomeFeature

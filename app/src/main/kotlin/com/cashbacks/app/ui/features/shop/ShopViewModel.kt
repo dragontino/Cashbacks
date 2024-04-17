@@ -8,7 +8,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
-import com.cashbacks.app.R
+import com.cashbacks.domain.R
 import com.cashbacks.app.model.ComposableShop
 import com.cashbacks.app.ui.managment.ViewModelState
 import com.cashbacks.app.viewmodel.EventsViewModel

@@ -11,7 +11,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
-import com.cashbacks.app.R
+import com.cashbacks.domain.R
 import com.cashbacks.app.ui.managment.rememberScrollableListItemState
 import com.cashbacks.app.util.animate
 import com.cashbacks.domain.model.Category

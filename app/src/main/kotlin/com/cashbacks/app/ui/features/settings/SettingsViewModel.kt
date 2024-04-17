@@ -5,11 +5,11 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.viewModelScope
-import com.cashbacks.app.R
 import com.cashbacks.app.model.ColorDesignMapper.isDark
 import com.cashbacks.app.model.ColorDesignMapper.title
 import com.cashbacks.app.ui.managment.ViewModelState
 import com.cashbacks.app.viewmodel.EventsViewModel
+import com.cashbacks.domain.R
 import com.cashbacks.domain.model.ColorDesign
 import com.cashbacks.domain.model.Settings
 import com.cashbacks.domain.usecase.settings.SettingsUseCase
