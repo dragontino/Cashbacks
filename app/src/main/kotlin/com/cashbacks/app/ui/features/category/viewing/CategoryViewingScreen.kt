@@ -74,7 +74,7 @@ import kotlinx.coroutines.launch
 @Composable
 internal fun CategoryViewingScreen(
     viewModel: CategoryViewingViewModel,
-    tabItems: List<CategoryFeature.TabItem>,
+    startTab: TabItem,
     navigateToCategory: (args: CategoryArgs) -> Unit,
     navigateToShop: (args: ShopArgs) -> Unit,
     navigateToCashback: (args: CashbackArgs) -> Unit,
@@ -82,9 +82,14 @@ internal fun CategoryViewingScreen(
 ) {
     BackHandler(onBack = popBackStack)
 
-    val pagerState = rememberPagerState { tabItems.size }
+    val tabItems = TabItem.entries
+    val pagerState = rememberPagerState(initialPage = tabItems.indexOf(startTab)) { tabItems.size }
     val snackbarState = remember(::SnackbarHostState)
     val scope = rememberCoroutineScope()
+
+    val currentScreen = remember(pagerState.currentPage) {
+        derivedStateOf { tabItems[pagerState.currentPage] }
+    }
 
     val showSnackbar = remember {
         fun(message: String) {
@@ -234,7 +239,7 @@ internal fun CategoryViewingScreen(
 private fun CategoryViewerContent(
     viewModel: CategoryViewingViewModel,
     pagerState: PagerState,
-    tabPages: List<CategoryFeature.TabItem>,
+    tabPages: List<TabItem>,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -251,12 +256,12 @@ private fun CategoryViewerContent(
         ) { _, page ->
             ListContentTabPage(
                 items = when (page) {
-                    CategoryFeature.TabItem.Shops -> viewModel.shopsLiveData.observeAsState().value
-                    CategoryFeature.TabItem.Cashbacks -> viewModel.cashbacksLiveData.observeAsState().value
+                    TabItem.Shops -> viewModel.shopsLiveData.observeAsState().value
+                    TabItem.Cashbacks -> viewModel.cashbacksLiveData.observeAsState().value
                 },
                 placeholderText = when (page) {
-                    CategoryFeature.TabItem.Shops -> stringResource(R.string.empty_shops_list_viewing)
-                    CategoryFeature.TabItem.Cashbacks -> stringResource(R.string.empty_cashbacks_list)
+                    TabItem.Shops -> stringResource(R.string.empty_shops_list_viewing)
+                    TabItem.Cashbacks -> stringResource(R.string.empty_cashbacks_list)
                 },
                 bottomSpacing = viewModel.fabPaddingDp.floatValue.dp,
                 modifier = Modifier.padding(8.dp)

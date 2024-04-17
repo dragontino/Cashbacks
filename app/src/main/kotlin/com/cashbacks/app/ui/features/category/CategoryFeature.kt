@@ -4,13 +4,9 @@ import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Store
-import androidx.compose.material.icons.rounded.Store
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -20,16 +16,12 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
 import androidx.navigation.navArgument
-import com.cashbacks.app.R
 import com.cashbacks.app.app.App
 import com.cashbacks.app.ui.features.category.editing.CategoryEditingScreen
 import com.cashbacks.app.ui.features.category.viewing.CategoryViewingScreen
 import com.cashbacks.app.ui.features.home.HomeFeature
-import com.cashbacks.app.ui.navigation.AppBarIcon
-import com.cashbacks.app.ui.navigation.AppBarItem
 import com.cashbacks.app.ui.navigation.Feature
 import com.cashbacks.app.ui.navigation.FeatureApi
-import com.cashbacks.app.ui.navigation.asAppBarIcon
 import com.cashbacks.app.ui.navigation.enterScreenTransition
 import com.cashbacks.app.ui.navigation.exitScreenTransition
 
@@ -41,50 +33,32 @@ class CategoryFeature(private val application: App) : FeatureApi {
         override val args = Args
 
         override val baseRoute: String = buildString {
-            append(Root)
+            append(ROOT)
             append(type[0].uppercase())
             append(type.substring(1..<type.length))
         }
 
-        fun createUrl(id: Long): String {
-            return "$baseRoute/$id"
+        fun createUrl(id: Long, startTab: TabItem): String {
+            return "$baseRoute/$id/$startTab"
         }
 
         object Args : Feature.Args {
-            const val Id = "id"
-            override fun toStringArray() = arrayOf(Id)
+            const val ID = "id"
+            const val START_TAB = "start"
+            override fun toStringArray() = arrayOf(ID, START_TAB)
         }
 
         companion object {
-            const val Root = "category"
+            const val ROOT = "category"
         }
     }
 
-    fun createDestinationRoute(categoryArgs: CategoryArgs): String {
+    internal fun createDestinationRoute(categoryArgs: CategoryArgs): String {
         val route = when {
             categoryArgs.isEditing -> Category.Editing
             else -> Category.Viewing
         }
-        return route.createUrl(categoryArgs.id)
-    }
-
-
-    internal sealed class TabItem : AppBarItem {
-        data object Shops : TabItem() {
-            override val tabTitleRes = R.string.shops
-            override val selectedIcon: AppBarIcon = Icons.Rounded.Store.asAppBarIcon()
-            override val unselectedIcon: AppBarIcon = Icons.Outlined.Store.asAppBarIcon()
-        }
-
-        data object Cashbacks : TabItem() {
-            override val tabTitleRes: Int = R.string.cashbacks
-            override val selectedIcon = AppBarIcon {
-                painterResource(R.drawable.cashback_filled)
-            }
-            override val unselectedIcon = AppBarIcon {
-                painterResource(R.drawable.cashback_outlined)
-            }
-        }
+        return route.createUrl(categoryArgs.id, categoryArgs.startTab)
     }
 
 
@@ -94,7 +68,7 @@ class CategoryFeature(private val application: App) : FeatureApi {
         modifier: Modifier
     ) {
         navGraphBuilder.navigation(
-            route = Category.Root,
+            route = Category.ROOT,
             startDestination = Category.Viewing.destinationRoute,
             enterTransition = {
                 when (initialState.destination.route) {
@@ -157,18 +131,21 @@ class CategoryFeature(private val application: App) : FeatureApi {
             composable(
                 route = Category.Viewing.destinationRoute,
                 arguments = listOf(
-                    navArgument(Category.Args.Id) {
+                    navArgument(Category.Args.ID) {
                         type = NavType.LongType
+                    },
+                    navArgument(Category.Args.START_TAB) {
+                        type = NavType.StringType
                     }
                 )
-            ) {
+            ) { backStackEntry ->
 
                 val vmFactory = remember {
                     object : ViewModelProvider.Factory {
                         @Suppress("UNCHECKED_CAST")
                         override fun <T : ViewModel> create(modelClass: Class<T>): T {
                             return application.appComponent.categoryViewerViewModel().create(
-                                categoryId = it.arguments?.getLong(Category.Args.Id) ?: 0
+                                categoryId = backStackEntry.arguments?.getLong(Category.Args.ID) ?: 0
                             ) as T
                         }
                     }
@@ -176,7 +153,10 @@ class CategoryFeature(private val application: App) : FeatureApi {
 
                 CategoryViewingScreen(
                     viewModel = viewModel(factory = vmFactory),
-                    tabItems = listOf(TabItem.Shops, TabItem.Cashbacks),
+                    startTab = backStackEntry.arguments
+                        ?.getString(Category.Args.START_TAB)
+                        ?.let(TabItem::valueOf)
+                        ?: TabItem.Shops,
                     navigateToCategory = {
                         val route = createDestinationRoute(it)
                         navController.navigate(route) {
@@ -207,17 +187,20 @@ class CategoryFeature(private val application: App) : FeatureApi {
             composable(
                 route = Category.Editing.destinationRoute,
                 arguments = listOf(
-                    navArgument(Category.Args.Id) {
+                    navArgument(Category.Args.ID) {
                         type = NavType.LongType
+                    },
+                    navArgument(Category.Args.START_TAB) {
+                        type = NavType.StringType
                     }
                 )
-            ) {
+            ) { backStackEntry ->
                 val vmFactory = remember {
                     object : ViewModelProvider.Factory {
                         @Suppress("UNCHECKED_CAST")
                         override fun <T : ViewModel> create(modelClass: Class<T>): T {
                             return application.appComponent.categoryEditorViewModel().create(
-                                categoryId = it.arguments?.getLong(Category.Args.Id) ?: 0
+                                categoryId = backStackEntry.arguments?.getLong(Category.Args.ID) ?: 0
                             ) as T
                         }
                     }
@@ -225,7 +208,10 @@ class CategoryFeature(private val application: App) : FeatureApi {
 
                 CategoryEditingScreen(
                     viewModel = viewModel(factory = vmFactory),
-                    tabItems = listOf(TabItem.Shops, TabItem.Cashbacks),
+                    startTab = backStackEntry.arguments
+                        ?.getString(Category.Args.START_TAB)
+                        ?.let(TabItem::valueOf)
+                        ?: TabItem.Shops,
                     navigateToCategory = {
                         val route = createDestinationRoute(it)
                         val homeRoute = HomeFeature.Home.destinationRoute

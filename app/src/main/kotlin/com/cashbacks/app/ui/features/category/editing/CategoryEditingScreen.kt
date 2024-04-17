@@ -103,7 +103,7 @@ import kotlinx.coroutines.launch
 @Composable
 internal fun CategoryEditingScreen(
     viewModel: CategoryEditingViewModel,
-    tabItems: List<CategoryFeature.TabItem>,
+    startTab: TabItem,
     navigateToCategory: (args: CategoryArgs) -> Unit,
     navigateToShop: (args: ShopArgs) -> Unit,
     navigateToCashback: (args: CashbackArgs) -> Unit,
@@ -207,7 +207,7 @@ internal fun CategoryEditingScreen(
             )
             else -> CategoryInfoScreenContent(
                 viewModel = viewModel,
-                tabItems = tabItems,
+                startTab = startTab,
                 snackbarState = snackbarState,
             )
         }
@@ -242,13 +242,14 @@ internal fun CategoryEditingScreen(
 @Composable
 private fun CategoryInfoScreenContent(
     viewModel: CategoryEditingViewModel,
-    tabItems: List<CategoryFeature.TabItem>,
+    startTab: TabItem,
     snackbarState: SnackbarHostState
 ) {
     val fabPaddingDp = rememberSaveable { mutableFloatStateOf(0f) }
     val keyboardIsVisibleState = keyboardAsState()
 
-    val pagerState = rememberPagerState { tabItems.size }
+    val tabItems = TabItem.entries
+    val pagerState = rememberPagerState(initialPage = tabItems.indexOf(startTab)) { tabItems.size }
     val listStates = Array(2) { rememberLazyListState() }
 
     val currentScreen = remember(pagerState.currentPage) {
@@ -411,13 +412,13 @@ private fun CategoryInfoScreenContent(
             ) { pageIndex, page ->
                 ListContentTabPage(
                     items = when (page) {
-                        CategoryFeature.TabItem.Shops -> viewModel.shopsLiveData.observeAsState().value
-                        CategoryFeature.TabItem.Cashbacks -> viewModel.cashbacksLiveData.observeAsState().value
+                        TabItem.Shops -> viewModel.shopsLiveData.observeAsState().value
+                        TabItem.Cashbacks -> viewModel.cashbacksLiveData.observeAsState().value
                     },
                     state = listStates[pageIndex],
                     placeholderText = when (page) {
-                        CategoryFeature.TabItem.Shops -> stringResource(R.string.empty_shops_list_editing)
-                        CategoryFeature.TabItem.Cashbacks -> stringResource(R.string.empty_cashbacks_list)
+                        TabItem.Shops -> stringResource(R.string.empty_shops_list_editing)
+                        TabItem.Cashbacks -> stringResource(R.string.empty_cashbacks_list)
                     },
                     bottomSpacing = fabPaddingDp.floatValue.dp.animate()
                 ) { index, item ->
