@@ -5,6 +5,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
 import com.cashbacks.app.ui.features.category.CategoryViewModel
 import com.cashbacks.app.ui.managment.ViewModelState
@@ -31,8 +32,6 @@ class CategoryViewingViewModel @AssistedInject constructor(
     exceptionMessage: AppExceptionMessage,
     @Assisted categoryId: Long
 ) : CategoryViewModel<Category>(
-    fetchShopsFromCategoryUseCase = fetchShopsFromCategoryUseCase,
-    fetchCashbacksUseCase = fetchCashbacksUseCase,
     deleteShopUseCase = deleteShopUseCase,
     deleteCashbacksUseCase = deleteCashbacksUseCase,
     exceptionMessage = exceptionMessage,
@@ -41,6 +40,14 @@ class CategoryViewingViewModel @AssistedInject constructor(
 ) {
     private val _category = mutableStateOf(Category())
     override val category = derivedStateOf { _category.value }
+
+    val shopsLiveData = fetchShopsFromCategoryUseCase
+        .fetchShopsWithCashbackFromCategory(categoryId)
+        .asLiveData()
+
+    val cashbacksLiveData = fetchCashbacksUseCase
+        .fetchCashbacksFromCategory(categoryId)
+        .asLiveData()
 
     var selectedShopIndex: Int? by mutableStateOf(null)
 

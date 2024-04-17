@@ -4,6 +4,7 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
 import com.cashbacks.app.model.ComposableCategory
 import com.cashbacks.app.ui.features.category.CategoryViewModel
@@ -37,8 +38,6 @@ class CategoryEditingViewModel @AssistedInject constructor(
     exceptionMessage: AppExceptionMessage,
     @Assisted categoryId: Long,
 ) : CategoryViewModel<ComposableCategory>(
-    fetchShopsFromCategoryUseCase = fetchShopsFromCategoryUseCase,
-    fetchCashbacksUseCase = fetchCashbacksUseCase,
     deleteShopUseCase = deleteShopUseCase,
     deleteCashbacksUseCase = deleteCashbacksUseCase,
     exceptionMessage = exceptionMessage,
@@ -47,6 +46,14 @@ class CategoryEditingViewModel @AssistedInject constructor(
 ) {
     private val _category = mutableStateOf(ComposableCategory())
     override val category = derivedStateOf { _category.value }
+
+    val shopsLiveData = fetchShopsFromCategoryUseCase
+        .fetchAllShopsFromCategory(categoryId)
+        .asLiveData()
+
+    val cashbacksLiveData = fetchCashbacksUseCase
+        .fetchCashbacksFromCategory(categoryId)
+        .asLiveData()
 
     val addingShopState = mutableStateOf(false)
 
