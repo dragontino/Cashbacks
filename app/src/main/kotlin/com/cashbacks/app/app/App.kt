@@ -2,7 +2,7 @@ package com.cashbacks.app.app
 
 import android.app.Application
 import com.cashbacks.app.BuildConfig
-import com.cashbacks.app.R
+import com.cashbacks.domain.R
 import com.cashbacks.app.di.AppComponent
 import com.cashbacks.app.di.DaggerAppComponent
 import com.cashbacks.app.di.modules.AppModule

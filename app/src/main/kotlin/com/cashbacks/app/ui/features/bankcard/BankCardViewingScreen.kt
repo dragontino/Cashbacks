@@ -4,6 +4,7 @@ import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ScrollState
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -53,9 +54,11 @@ import com.cashbacks.app.ui.composables.CollapsingToolbarScaffold
 import com.cashbacks.app.ui.composables.ConfirmDeletionDialog
 import com.cashbacks.app.ui.composables.DataTextField
 import com.cashbacks.app.ui.composables.EditableTextFieldDefaults
+import com.cashbacks.app.ui.composables.OnLifecycleEvent
 import com.cashbacks.app.ui.managment.DialogType
 import com.cashbacks.app.ui.managment.ScreenEvents
 import com.cashbacks.app.ui.managment.ViewModelState
+import com.cashbacks.app.ui.theme.CashbacksTheme
 import com.cashbacks.app.util.LoadingInBox
 import com.cashbacks.app.util.animate
 import com.cashbacks.domain.R
@@ -119,10 +122,7 @@ fun BankCardViewingScreen(
         else -> {}
     }
 
-
-    LaunchedEffect(Unit) {
-        viewModel.refreshCard()
-    }
+    OnLifecycleEvent(onStart = viewModel::refreshCard)
 
 
     Crossfade(
@@ -284,18 +284,20 @@ private fun ScreenContent(
 
         HorizontalDivider()
 
-        DataTextField(
-            text = bankCard.comment,
-            heading = stringResource(R.string.comment),
-            trailingActions = {
-                IconButton(onClick = { onCopy(bankCard.comment) }) {
-                    Icon(
-                        imageVector = Icons.Outlined.ContentCopy,
-                        contentDescription = "copy card comment"
-                    )
+        if (bankCard.comment.isNotBlank()) {
+            DataTextField(
+                text = bankCard.comment,
+                heading = stringResource(R.string.comment),
+                trailingActions = {
+                    IconButton(onClick = { onCopy(bankCard.comment) }) {
+                        Icon(
+                            imageVector = Icons.Outlined.ContentCopy,
+                            contentDescription = "copy card comment"
+                        )
+                    }
                 }
-            }
-        )
+            )
+        }
     }
 }
 
@@ -303,8 +305,12 @@ private fun ScreenContent(
 @Preview
 @Composable
 private fun ScreenContentPreview() {
-    ScreenContent(
-        bankCard = BankCard(number = "4444555566667777"),
-        onCopy = {}
-    )
+    CashbacksTheme(isDarkTheme = false) {
+        Column(modifier = Modifier.background(MaterialTheme.colorScheme.background)) {
+            ScreenContent(
+                bankCard = BankCard(number = "4444555566667777"),
+                onCopy = {}
+            )
+        }
+    }
 }

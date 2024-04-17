@@ -28,13 +28,15 @@ class BankCardViewingViewModel @AssistedInject constructor(
     val bankCard = derivedStateOf { _bankCard.value }
 
 
-    suspend fun refreshCard() {
-        _state.value = ViewModelState.Loading
-        delay(AnimationDefaults.ScreenDelayMillis + 40L)
-        getBankCardUseCase
-            .getBankCardById(cardId)
-            ?.let { _bankCard.value = it }
-        _state.value = ViewModelState.Viewing
+    fun refreshCard() {
+        viewModelScope.launch {
+            _state.value = ViewModelState.Loading
+            delay(AnimationDefaults.ScreenDelayMillis + 40L)
+            getBankCardUseCase
+                .getBankCardById(cardId)
+                ?.let { _bankCard.value = it }
+            _state.value = ViewModelState.Viewing
+        }
     }
 
 
