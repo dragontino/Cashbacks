@@ -1,11 +1,11 @@
 package com.cashbacks.app.viewmodel
 
-import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.StateFlow
 
 typealias OnClick = () -> Unit
 
 interface DebounceOnClick {
-    val debounceOnClick: SharedFlow<OnClick>
+    val debounceOnClick: StateFlow<OnClick?>
 
     fun onItemClick(onClick: OnClick)
 }

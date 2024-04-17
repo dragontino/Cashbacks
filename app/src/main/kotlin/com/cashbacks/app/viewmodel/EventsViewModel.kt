@@ -6,8 +6,10 @@ import com.cashbacks.app.ui.managment.DialogType
 import com.cashbacks.app.ui.managment.ScreenEvents
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -18,13 +20,13 @@ abstract class EventsViewModel : ViewModel(), EventsFlow, DebounceOnClick {
     private val _eventsFlow = MutableSharedFlow<ScreenEvents>()
     override val eventsFlow: SharedFlow<ScreenEvents> = _eventsFlow.asSharedFlow()
 
-    private val _debounceOnClick = MutableSharedFlow<OnClick>()
-    final override val debounceOnClick = _debounceOnClick.asSharedFlow()
+    private val _debounceOnClick: MutableStateFlow<OnClick?> = MutableStateFlow(null)
+    final override val debounceOnClick = _debounceOnClick.asStateFlow()
 
     init {
         debounceOnClick
             .debounce(50)
-            .onEach { it.invoke() }
+            .onEach { it?.invoke() }
             .launchIn(viewModelScope)
     }
 
