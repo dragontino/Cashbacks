@@ -17,13 +17,13 @@ class UpdateCategoryUseCase(
     suspend fun updateCategory(
         category: Category,
         exceptionMessage: (Throwable) -> Unit
-    ) {
-        withContext(dispatcher) {
-            categoryRepository
-                .updateCategory(category)
-                .exceptionOrNull()
-                ?.also { Log.e(TAG, it.message, it) }
-                ?.let(exceptionMessage)
-        }
+    ): Result<Unit> = withContext(dispatcher) {
+        val result = categoryRepository.updateCategory(category)
+
+        result.exceptionOrNull()
+            ?.also { Log.e(TAG, it.message, it) }
+            ?.let(exceptionMessage)
+
+        return@withContext result
     }
 }

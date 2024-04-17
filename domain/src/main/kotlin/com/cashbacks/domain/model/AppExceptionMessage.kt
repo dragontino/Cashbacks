@@ -5,6 +5,7 @@ interface AppExceptionMessage {
 
     fun getMessage(throwable: Throwable): String? = when (throwable) {
         is AppException -> getMessage(throwable)
+        is Exception -> throwable.localizedMessage
         else -> null
     }
 }

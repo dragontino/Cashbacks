@@ -15,7 +15,7 @@ interface CategoriesDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun addCategory(category: CategoryDB): Long
 
-    @Update(entity = CategoryDB::class, onConflict = OnConflictStrategy.IGNORE)
+    @Update(entity = CategoryDB::class, onConflict = OnConflictStrategy.REPLACE)
     suspend fun updateCategory(category: CategoryDB)
 
     @Delete
