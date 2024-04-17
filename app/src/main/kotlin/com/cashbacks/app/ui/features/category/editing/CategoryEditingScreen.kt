@@ -35,7 +35,6 @@ import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.Save
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -192,7 +191,6 @@ internal fun CategoryEditingScreen(
                         viewModel.navigateTo(null)
                     }
                 },
-                onDismiss = { viewModel.navigateTo(null) },
                 onClose = viewModel::closeDialog
             )
         }
@@ -328,44 +326,37 @@ private fun CategoryInfoScreenContent(
         contentState = currentListState,
         floatingActionButtons = {
             AnimatedVisibility(
-                visible = currentScreen.value == CategoryFeature.TabItem.Shops
-                        && !keyboardIsVisibleState.value,
+                visible = !keyboardIsVisibleState.value,
                 enter = floatingActionButtonEnterAnimation(),
                 exit = floatingActionButtonExitAnimation()
             ) {
                 BasicFloatingActionButton(icon = Icons.Rounded.Add) {
                     viewModel.onItemClick {
-                        viewModel.addingShopState.value = true
+                        when (currentScreen.value) {
+                            TabItem.Cashbacks -> viewModel.navigateTo(
+                                args = CashbackArgs.New.Category(
+                                    cashbackId = null,
+                                    categoryId = viewModel.categoryId
+                                )
+                            )
+
+                            TabItem.Shops -> viewModel.addingShopState.value = true
+                        }
                     }
                 }
             }
 
             AnimatedVisibility(visible = !keyboardIsVisibleState.value) {
-                when (currentScreen.value) {
-                    CategoryFeature.TabItem.Shops -> {
-                        BasicFloatingActionButton(icon = Icons.Rounded.Save) {
-                            viewModel.onItemClick {
-                                viewModel.save()
-                                viewModel.navigateTo(
-                                    args = CategoryArgs(
-                                        id = viewModel.categoryId,
-                                        isEditing = false
-                                    )
+                BasicFloatingActionButton(icon = Icons.Rounded.Save) {
+                    viewModel.onItemClick {
+                        viewModel.save {
+                            viewModel.navigateTo(
+                                args = CategoryArgs(
+                                    id = viewModel.categoryId,
+                                    isEditing = false,
+                                    startTab = currentScreen.value
                                 )
-                            }
-                        }
-                    }
-
-                    CategoryFeature.TabItem.Cashbacks -> {
-                        CashbackFAB(expanded = !pagerState.isScrollInProgress) {
-                            viewModel.onItemClick {
-                                viewModel.navigateTo(
-                                    args = CashbackArgs.New.Category(
-                                        cashbackId = null,
-                                        categoryId = viewModel.categoryId
-                                    )
-                                )
-                            }
+                            )
                         }
                     }
                 }
@@ -486,27 +477,4 @@ private fun CategoryInfoScreenContent(
             }
         }
     }
-}
-
-
-@Composable
-fun CashbackFAB(expanded: Boolean, onAdd: () -> Unit) {
-    ExtendedFloatingActionButton(
-        text = {
-            Text(
-                text = stringResource(R.string.add_cashback),
-                style = MaterialTheme.typography.bodyMedium
-            )
-        },
-        icon = {
-            Icon(
-                imageVector = Icons.Rounded.Add,
-                contentDescription = "add cashback"
-            )
-        },
-        expanded = expanded,
-        onClick = onAdd,
-        containerColor = MaterialTheme.colorScheme.primaryContainer.animate(),
-        contentColor = MaterialTheme.colorScheme.onPrimaryContainer.animate(),
-    )
 }

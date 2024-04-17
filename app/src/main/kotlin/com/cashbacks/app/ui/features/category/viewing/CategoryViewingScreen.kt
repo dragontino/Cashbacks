@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.ArrowBackIosNew
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -33,6 +32,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
@@ -174,36 +174,20 @@ internal fun CategoryViewingScreen(
         },
         topBarScrollEnabled = false,
         floatingActionButtons = {
-            Crossfade(
-                targetState = pagerState.currentPage,
-                label = "fab anim",
-                animationSpec = tween(durationMillis = 200, easing = LinearEasing)
-            ) { pageIndex ->
-                BasicFloatingActionButton(
-                    icon = when (tabItems[pageIndex]) {
-                        CategoryFeature.TabItem.Cashbacks -> Icons.Rounded.Add
-                        CategoryFeature.TabItem.Shops -> Icons.Rounded.Edit
-                    },
-                    onClick = {
-                        viewModel.onItemClick {
-                            when (tabItems[pageIndex]) {
-                                CategoryFeature.TabItem.Cashbacks -> viewModel.navigateTo(
-                                    args = CashbackArgs.New.Category(
-                                        cashbackId = null,
-                                        categoryId = viewModel.categoryId
-                                    )
-                                )
-                                CategoryFeature.TabItem.Shops -> viewModel.navigateTo(
-                                    args = CategoryArgs(
-                                        id = viewModel.categoryId,
-                                        isEditing = true
-                                    )
-                                )
-                            }
-                        }
+            BasicFloatingActionButton(
+                icon = Icons.Rounded.Edit,
+                onClick = {
+                    viewModel.onItemClick {
+                        viewModel.navigateTo(
+                            args = CategoryArgs(
+                                id = viewModel.categoryId,
+                                isEditing = true,
+                                startTab = currentScreen.value
+                            )
+                        )
                     }
-                )
-            }
+                }
+            )
         },
         fabModifier = Modifier
             .graphicsLayer { viewModel.fabPaddingDp.floatValue = size.height.toDp().value }
