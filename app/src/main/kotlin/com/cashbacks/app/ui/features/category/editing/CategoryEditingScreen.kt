@@ -74,16 +74,16 @@ import com.cashbacks.app.ui.composables.CollapsingToolbarScaffold
 import com.cashbacks.app.ui.composables.CollapsingToolbarScaffoldDefaults
 import com.cashbacks.app.ui.composables.ConfirmDeletionDialog
 import com.cashbacks.app.ui.composables.ConfirmExitWithSaveDataDialog
-import com.cashbacks.app.ui.composables.DisposableEffectWithLifecycle
 import com.cashbacks.app.ui.composables.EditableTextField
 import com.cashbacks.app.ui.composables.ListContentTabPage
 import com.cashbacks.app.ui.composables.ModalSheetDefaults
 import com.cashbacks.app.ui.composables.NewNameTextField
+import com.cashbacks.app.ui.composables.OnLifecycleEvent
 import com.cashbacks.app.ui.composables.SecondaryTabsLayout
 import com.cashbacks.app.ui.composables.ShopComposable
 import com.cashbacks.app.ui.features.cashback.CashbackArgs
 import com.cashbacks.app.ui.features.category.CategoryArgs
-import com.cashbacks.app.ui.features.category.CategoryFeature
+import com.cashbacks.app.ui.features.category.TabItem
 import com.cashbacks.app.ui.features.shop.ShopArgs
 import com.cashbacks.app.ui.managment.DialogType
 import com.cashbacks.app.ui.managment.ScreenEvents
@@ -116,7 +116,7 @@ internal fun CategoryEditingScreen(
         }
     }
 
-    DisposableEffectWithLifecycle(onDestroy = viewModel::save)
+    OnLifecycleEvent(onDestroy = viewModel::save)
 
     val snackbarState = remember(::SnackbarHostState)
     val scope = rememberCoroutineScope()
@@ -183,8 +183,14 @@ internal fun CategoryEditingScreen(
         DialogType.Save -> {
             ConfirmExitWithSaveDataDialog(
                 onConfirm = {
-                    viewModel.save()
-                    viewModel.navigateTo(null)
+                    viewModel.onItemClick {
+                        viewModel.save { viewModel.navigateTo(null) }
+                    }
+                },
+                onDismiss = {
+                    viewModel.onItemClick {
+                        viewModel.navigateTo(null)
+                    }
                 },
                 onDismiss = { viewModel.navigateTo(null) },
                 onClose = viewModel::closeDialog

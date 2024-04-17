@@ -5,15 +5,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
+import com.cashbacks.app.ui.features.category.CategoryViewModel
 import com.cashbacks.app.ui.managment.ViewModelState
 import com.cashbacks.app.util.AnimationDefaults
-import com.cashbacks.app.viewmodel.EventsViewModel
 import com.cashbacks.domain.model.AppExceptionMessage
-import com.cashbacks.domain.model.Cashback
 import com.cashbacks.domain.model.Category
-import com.cashbacks.domain.model.Shop
 import com.cashbacks.domain.usecase.cashbacks.DeleteCashbacksUseCase
 import com.cashbacks.domain.usecase.cashbacks.FetchCashbacksUseCase
 import com.cashbacks.domain.usecase.categories.GetCategoryUseCase
@@ -29,78 +26,43 @@ class CategoryViewingViewModel @AssistedInject constructor(
     private val getCategoryUseCase: GetCategoryUseCase,
     fetchShopsFromCategoryUseCase: FetchShopsFromCategoryUseCase,
     fetchCashbacksUseCase: FetchCashbacksUseCase,
-    private val deleteShopUseCase: DeleteShopUseCase,
-    private val deleteCashbacksUseCase: DeleteCashbacksUseCase,
-    private val exceptionMessage: AppExceptionMessage,
-    @Assisted val categoryId: Long
-    ) : EventsViewModel() {
-
-    private val _state = mutableStateOf(ViewModelState.Loading)
-    val state = derivedStateOf { _state.value }
-
+    deleteShopUseCase: DeleteShopUseCase,
+    deleteCashbacksUseCase: DeleteCashbacksUseCase,
+    exceptionMessage: AppExceptionMessage,
+    @Assisted categoryId: Long
+) : CategoryViewModel<Category>(
+    fetchShopsFromCategoryUseCase = fetchShopsFromCategoryUseCase,
+    fetchCashbacksUseCase = fetchCashbacksUseCase,
+    deleteShopUseCase = deleteShopUseCase,
+    deleteCashbacksUseCase = deleteCashbacksUseCase,
+    exceptionMessage = exceptionMessage,
+    categoryId = categoryId,
+    defaultVMState = ViewModelState.Viewing
+) {
     private val _category = mutableStateOf(Category())
-    val category = derivedStateOf { _category.value }
-
-    val shopsLiveData = fetchShopsFromCategoryUseCase
-        .fetchShopsWithCashbackFromCategory(categoryId)
-        .asLiveData()
-
-    val cashbacksLiveData = fetchCashbacksUseCase
-        .fetchCashbacksFromCategory(categoryId)
-        .asLiveData()
-
-    private val categoryJob = viewModelScope.launch {
-        delay(AnimationDefaults.ScreenDelayMillis + 40L)
-        getCategoryUseCase
-            .getCategoryById(categoryId)
-            .getOrNull()
-            ?.let { _category.value = it }
-    }
-
-
-    init {
-        viewModelScope.launch {
-            delay(AnimationDefaults.ScreenDelayMillis + 40L)
-            _state.value = ViewModelState.Editing
-        }
-    }
+    override val category = derivedStateOf { _category.value }
 
     var selectedShopIndex: Int? by mutableStateOf(null)
-    var selectedCashbackIndex: Int? by mutableStateOf(null)
 
+    var selectedCashbackIndex: Int? by mutableStateOf(null)
     val fabPaddingDp = mutableFloatStateOf(0f)
 
-    override fun onCleared() {
-        categoryJob.cancel()
-        super.onCleared()
-    }
 
-
-    fun deleteShop(shop: Shop) {
+    fun onScreenLoading() {
         viewModelScope.launch {
-            _state.value = ViewModelState.Loading
-            delay(100)
-            deleteShopUseCase.deleteShop(shop)
-                .exceptionOrNull()
-                ?.let(exceptionMessage::getMessage)
-                ?.let(::showSnackbar)
-            delay(100)
-            _state.value = ViewModelState.Viewing
+            innerState.value = ViewModelState.Loading
+            loadCategoryFromDatabase()
+            delay(AnimationDefaults.ScreenDelayMillis.toLong())
+            innerState.value = defaultVMState
         }
     }
 
-
-    fun deleteCashback(cashback: Cashback) {
-        viewModelScope.launch {
-            _state.value = ViewModelState.Loading
-            delay(100)
-            deleteCashbacksUseCase.deleteCashback(cashback)
-                .exceptionOrNull()
-                ?.let(exceptionMessage::getMessage)
-                ?.let(::showSnackbar)
-            delay(100)
-            _state.value = ViewModelState.Editing
-        }
+    private suspend fun loadCategoryFromDatabase() {
+        val result = getCategoryUseCase.getCategoryById(categoryId)
+        result.getOrNull()?.let { _category.value = it }
+        result.exceptionOrNull()
+            ?.let(exceptionMessage::getMessage)
+            ?.let(::showSnackbar)
     }
 
 

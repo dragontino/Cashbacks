@@ -54,11 +54,12 @@ import com.cashbacks.app.ui.composables.CollapsingToolbarScaffold
 import com.cashbacks.app.ui.composables.CollapsingToolbarScaffoldDefaults
 import com.cashbacks.app.ui.composables.ConfirmDeletionDialog
 import com.cashbacks.app.ui.composables.ListContentTabPage
+import com.cashbacks.app.ui.composables.OnLifecycleEvent
 import com.cashbacks.app.ui.composables.PrimaryTabsLayout
 import com.cashbacks.app.ui.composables.ShopComposable
 import com.cashbacks.app.ui.features.cashback.CashbackArgs
 import com.cashbacks.app.ui.features.category.CategoryArgs
-import com.cashbacks.app.ui.features.category.CategoryFeature
+import com.cashbacks.app.ui.features.category.TabItem
 import com.cashbacks.app.ui.features.shop.ShopArgs
 import com.cashbacks.app.ui.managment.DialogType
 import com.cashbacks.app.ui.managment.ScreenEvents
@@ -96,6 +97,8 @@ internal fun CategoryViewingScreen(
             scope.launch { if (message.isNotBlank()) snackbarState.showSnackbar(message) }
         }
     }
+
+    OnLifecycleEvent(onStart = viewModel::onScreenLoading)
 
     var dialogType: DialogType? by rememberSaveable { mutableStateOf(null) }
     LaunchedEffect(key1 = true) {
