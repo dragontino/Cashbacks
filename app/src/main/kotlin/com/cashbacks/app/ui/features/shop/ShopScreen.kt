@@ -67,7 +67,7 @@ import com.cashbacks.app.ui.composables.CollapsingToolbarScaffold
 import com.cashbacks.app.ui.composables.CollapsingToolbarScaffoldDefaults
 import com.cashbacks.app.ui.composables.ConfirmDeletionDialog
 import com.cashbacks.app.ui.composables.ConfirmExitWithSaveDataDialog
-import com.cashbacks.app.ui.composables.DisposableEffectWithLifecycle
+import com.cashbacks.app.ui.composables.OnLifecycleEvent
 import com.cashbacks.app.ui.composables.EditableTextField
 import com.cashbacks.app.ui.composables.EmptyList
 import com.cashbacks.app.ui.features.cashback.CashbackArgs
@@ -95,7 +95,7 @@ fun ShopScreen(
     val scope = rememberCoroutineScope()
     val keyboardIsVisibleState = keyboardAsState()
     
-    DisposableEffectWithLifecycle(
+    OnLifecycleEvent(
         onDestroy = {
             if (viewModel.state.value == ViewModelState.Editing) {
                 scope.launch { viewModel.saveShop() }

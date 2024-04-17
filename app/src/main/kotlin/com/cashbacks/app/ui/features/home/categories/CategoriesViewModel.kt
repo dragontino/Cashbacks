@@ -17,6 +17,7 @@ import com.cashbacks.domain.usecase.categories.DeleteCategoryUseCase
 import com.cashbacks.domain.usecase.categories.FetchCategoriesUseCase
 import com.cashbacks.domain.usecase.categories.SearchCategoriesUseCase
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.cancellable
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -54,10 +55,12 @@ class CategoriesViewModel @Inject constructor(
     init {
         fetchCategoriesUseCase.fetchAllCategories()
             .onEach { allCategories.value = it }
+            .cancellable()
             .launchIn(viewModelScope)
 
         fetchCategoriesUseCase.fetchCategoriesWithCashback()
             .onEach { categoriesWithCashback.value = it }
+            .cancellable()
             .launchIn(viewModelScope)
 
         snapshotFlow {

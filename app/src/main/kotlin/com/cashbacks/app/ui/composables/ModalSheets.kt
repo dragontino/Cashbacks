@@ -192,7 +192,6 @@ fun ColumnScope.BottomSheetContent(
                         else -> 0.dp
                     }
                 }
-                it.size.height
             }
     ) {
         if (header.isEmpty()) {
