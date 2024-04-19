@@ -31,7 +31,7 @@ class BankCardViewingViewModel @AssistedInject constructor(
     fun refreshCard() {
         viewModelScope.launch {
             _state.value = ViewModelState.Loading
-            delay(AnimationDefaults.ScreenDelayMillis + 40L)
+            delay(AnimationDefaults.SCREEN_DELAY_MILLIS + 40L)
             getBankCardUseCase
                 .getBankCardById(cardId)
                 ?.let { _bankCard.value = it }

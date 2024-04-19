@@ -64,7 +64,7 @@ class CategoryEditingViewModel @AssistedInject constructor(
 
     init {
         viewModelScope.launch {
-            delay(AnimationDefaults.ScreenDelayMillis + 40L)
+            delay(AnimationDefaults.SCREEN_DELAY_MILLIS + 40L)
             val result = getCategoryUseCase.getCategoryById(categoryId)
             result.exceptionOrNull()
                 ?.let(exceptionMessage::getMessage)

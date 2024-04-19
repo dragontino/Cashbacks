@@ -12,7 +12,7 @@ import kotlin.math.roundToInt
 
 fun enterScreenTransition(
     expandFrom: Alignment.Horizontal,
-    animationTime: Int = AnimationDefaults.ScreenDelayMillis,
+    animationTime: Int = AnimationDefaults.SCREEN_DELAY_MILLIS,
     delayTimePercent: Float = .05f,
 ): EnterTransition {
     val delayMillis = (animationTime * delayTimePercent).roundToInt()
@@ -31,7 +31,7 @@ fun enterScreenTransition(
 
 fun exitScreenTransition(
     shrinkTowards: Alignment.Horizontal,
-    animationTime: Int = AnimationDefaults.ScreenDelayMillis,
+    animationTime: Int = AnimationDefaults.SCREEN_DELAY_MILLIS,
     delayTimePercent: Float = .2f
 ): ExitTransition {
     val delayMillis = (animationTime * delayTimePercent).roundToInt()

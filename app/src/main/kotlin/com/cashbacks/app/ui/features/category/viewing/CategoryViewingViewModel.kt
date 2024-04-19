@@ -59,7 +59,7 @@ class CategoryViewingViewModel @AssistedInject constructor(
         viewModelScope.launch {
             innerState.value = ViewModelState.Loading
             loadCategoryFromDatabase()
-            delay(AnimationDefaults.ScreenDelayMillis.toLong())
+            delay(AnimationDefaults.SCREEN_DELAY_MILLIS.toLong())
             innerState.value = defaultVMState
         }
     }

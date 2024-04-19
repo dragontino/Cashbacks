@@ -33,7 +33,7 @@ class BankCardEditingViewModel @AssistedInject constructor(
     var showPaymentSystemSelection by mutableStateOf(false)
 
     private val bankCardJob = viewModelScope.launch {
-        delay(AnimationDefaults.ScreenDelayMillis + 40L)
+        delay(AnimationDefaults.SCREEN_DELAY_MILLIS + 40L)
         if (bankCardId != null) {
             getBankCardUseCase.getBankCardById(bankCardId)
                 ?.let { _bankCard.value = ComposableBankCard(it) }

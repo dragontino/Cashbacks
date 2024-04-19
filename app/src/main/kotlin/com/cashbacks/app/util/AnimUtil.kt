@@ -8,7 +8,7 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 
 object AnimationDefaults {
-    const val ScreenDelayMillis: Int = 650
+    const val SCREEN_DELAY_MILLIS: Int = 650
 }
 
 fun floatingActionButtonEnterAnimation(durationMillis: Int = 500) = slideInVertically(

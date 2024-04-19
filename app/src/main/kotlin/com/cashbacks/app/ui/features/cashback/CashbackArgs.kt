@@ -6,14 +6,14 @@ sealed class CashbackArgs(
     val parentId: Long?
 ) {
     object New {
-        class Category(cashbackId: Long?, categoryId: Long) : CashbackArgs(
-            cashbackId = cashbackId,
+        class Category(categoryId: Long) : CashbackArgs(
+            cashbackId = null,
             parentName = com.cashbacks.domain.model.Category::class.simpleName!!,
             parentId = categoryId
         )
 
-        class Shop(cashbackId: Long?, shopId: Long) : CashbackArgs(
-            cashbackId = cashbackId,
+        class Shop(shopId: Long) : CashbackArgs(
+            cashbackId = null,
             parentName = com.cashbacks.domain.model.Shop::class.simpleName!!,
             parentId = shopId
         )

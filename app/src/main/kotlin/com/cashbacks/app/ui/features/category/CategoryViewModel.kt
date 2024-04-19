@@ -29,7 +29,7 @@ abstract class CategoryViewModel <T : Any> internal constructor(
 
     init {
         viewModelScope.launch {
-            delay(AnimationDefaults.ScreenDelayMillis + 40L)
+            delay(AnimationDefaults.SCREEN_DELAY_MILLIS + 40L)
         }
     }
 

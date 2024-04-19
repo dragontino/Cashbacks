@@ -206,7 +206,7 @@ private fun SearchBar(
 
     val keyboardState = keyboardAsState()
     LaunchedEffect(Unit) {
-        delay(AnimationDefaults.ScreenDelayMillis + 100L)
+        delay(AnimationDefaults.SCREEN_DELAY_MILLIS + 100L)
         focusRequester.requestFocus()
         delay(700)
         snapshotFlow { keyboardState.value }.collect { isKeyboardVisible ->
