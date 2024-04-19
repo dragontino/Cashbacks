@@ -20,9 +20,9 @@ import com.cashbacks.app.ui.navigation.exitScreenTransition
 class ShopFeature(private val application: App) : FeatureApi {
     object Shop : Feature {
         object Args : Feature.Args {
-            const val ShopId = "shopId"
-            const val IsEditing = "isEditing"
-            override fun toStringArray() = arrayOf(ShopId, IsEditing)
+            const val SHOP_ID = "shopId"
+            const val IS_EDITING = "isEditing"
+            override fun toStringArray() = arrayOf(SHOP_ID, IS_EDITING)
 
         }
 
@@ -45,10 +45,11 @@ class ShopFeature(private val application: App) : FeatureApi {
             popEnterTransition = { enterScreenTransition(expandFrom = Alignment.Start) },
             popExitTransition = { exitScreenTransition(shrinkTowards = Alignment.End) },
             arguments = listOf(
-                navArgument(Shop.Args.ShopId) {
-                    type = NavType.LongType
+                navArgument(Shop.Args.SHOP_ID) {
+                    type = NavType.StringType
+                    nullable = true
                 },
-                navArgument(Shop.Args.IsEditing) {
+                navArgument(Shop.Args.IS_EDITING) {
                     type = NavType.BoolType
                 }
             )
@@ -59,8 +60,8 @@ class ShopFeature(private val application: App) : FeatureApi {
                     override fun <T : ViewModel> create(modelClass: Class<T>): T {
                         return application.appComponent.shopViewModel().create(
                             application = application,
-                            shopId = it.arguments?.getLong(Shop.Args.ShopId) ?: 0,
-                            isEditing = it.arguments?.getBoolean(Shop.Args.IsEditing) ?: false
+                            shopId = it.arguments?.getString(Shop.Args.SHOP_ID)?.toLongOrNull(),
+                            isEditing = it.arguments?.getBoolean(Shop.Args.IS_EDITING) ?: false
                         ) as T
                     }
                 }

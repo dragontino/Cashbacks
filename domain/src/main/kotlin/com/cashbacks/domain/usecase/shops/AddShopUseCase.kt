@@ -12,7 +12,7 @@ class AddShopUseCase(
     suspend fun addShopToCategory(
         categoryId: Long,
         shop: Shop,
-    ): Result<Unit> {
+    ): Result<Long> {
         return withContext(dispatcher) {
             repository.addShopToCategory(categoryId, shop)
         }

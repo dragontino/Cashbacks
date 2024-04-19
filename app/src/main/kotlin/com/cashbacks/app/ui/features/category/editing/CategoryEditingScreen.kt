@@ -334,10 +334,7 @@ private fun CategoryInfoScreenContent(
                     viewModel.onItemClick {
                         when (currentScreen.value) {
                             TabItem.Cashbacks -> viewModel.navigateTo(
-                                args = CashbackArgs.New.Category(
-                                    cashbackId = null,
-                                    categoryId = viewModel.categoryId
-                                )
+                                args = CashbackArgs.New.Category(viewModel.categoryId)
                             )
 
                             TabItem.Shops -> viewModel.addingShopState.value = true
@@ -415,7 +412,7 @@ private fun CategoryInfoScreenContent(
                     state = listStates[pageIndex],
                     placeholderText = when (page) {
                         TabItem.Shops -> stringResource(R.string.empty_shops_list_editing)
-                        TabItem.Cashbacks -> stringResource(R.string.empty_cashbacks_list)
+                        TabItem.Cashbacks -> stringResource(R.string.empty_cashbacks_list_editing)
                     },
                     bottomSpacing = fabPaddingDp.floatValue.dp.animate()
                 ) { index, item ->
@@ -435,10 +432,7 @@ private fun CategoryInfoScreenContent(
                                 viewModel.onItemClick {
                                     viewModel.selectedShopIndex = -1
                                     viewModel.navigateTo(
-                                        args = ShopArgs(
-                                            shopId = item.id,
-                                            isEditing = true
-                                        )
+                                        args = ShopArgs.Existing(id = item.id, isEditing = true)
                                     )
                                 }
                             },

@@ -1,5 +1,7 @@
 package com.cashbacks.domain.usecase.shops
 
+import android.util.Log
+import com.cashbacks.domain.model.CategoryShop
 import com.cashbacks.domain.model.Shop
 import com.cashbacks.domain.repository.ShopRepository
 import kotlinx.coroutines.CoroutineDispatcher
@@ -9,20 +11,19 @@ class EditShopUseCase(
     private val repository: ShopRepository,
     private val dispatcher: CoroutineDispatcher
 ) {
-    suspend fun updateShop(
-        shop: Shop,
-        errorMessage: (String) -> Unit
-    ) {
+    private companion object {
+        const val TAG = "EditShopUseCase"
+    }
+
+    suspend fun updateShop(shop: Shop): Result<Unit> {
         return withContext(dispatcher) {
-            repository
-                .updateShop(shop)
-                .exceptionOrNull()
-                ?.message
-                ?.let(errorMessage)
+            val result = repository.updateShop(shop)
+            result.exceptionOrNull()?.let { Log.e(TAG, it.localizedMessage, it) }
+            return@withContext result
         }
     }
 
-    suspend fun getShopById(id: Long): Result<Shop> {
+    suspend fun getShopById(id: Long): Result<CategoryShop> {
         return withContext(dispatcher) {
             repository.getShopById(id)
         }

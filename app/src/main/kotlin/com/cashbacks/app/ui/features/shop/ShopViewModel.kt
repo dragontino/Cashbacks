@@ -1,21 +1,28 @@
 package com.cashbacks.app.ui.features.shop
 
 import android.app.Application
+import android.content.Context
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.LiveData
 import androidx.lifecycle.asLiveData
+import androidx.lifecycle.liveData
 import androidx.lifecycle.viewModelScope
-import com.cashbacks.domain.R
 import com.cashbacks.app.model.ComposableShop
 import com.cashbacks.app.ui.managment.ViewModelState
 import com.cashbacks.app.viewmodel.EventsViewModel
+import com.cashbacks.domain.R
 import com.cashbacks.domain.model.AppExceptionMessage
 import com.cashbacks.domain.model.Cashback
+import com.cashbacks.domain.model.Category
+import com.cashbacks.domain.model.CategoryNotSelectedException
 import com.cashbacks.domain.usecase.cashbacks.DeleteCashbacksUseCase
 import com.cashbacks.domain.usecase.cashbacks.FetchCashbacksUseCase
+import com.cashbacks.domain.usecase.categories.FetchCategoriesUseCase
+import com.cashbacks.domain.usecase.shops.AddShopUseCase
 import com.cashbacks.domain.usecase.shops.DeleteShopUseCase
 import com.cashbacks.domain.usecase.shops.EditShopUseCase
 import dagger.assisted.Assisted
@@ -26,55 +33,71 @@ import kotlinx.coroutines.launch
 
 class ShopViewModel @AssistedInject constructor(
     fetchCashbacksUseCase: FetchCashbacksUseCase,
+    private val fetchCategoriesUseCase: FetchCategoriesUseCase,
+    private val addShopUseCase: AddShopUseCase,
     private val editShopUseCase: EditShopUseCase,
     private val deleteShopUseCase: DeleteShopUseCase,
     private val deleteCashbacksUseCase: DeleteCashbacksUseCase,
     private val exceptionMessage: AppExceptionMessage,
-    @Assisted val shopId: Long,
+    @Assisted shopId: Long?,
     @Assisted isEditing: Boolean,
     @Assisted application: Application,
 ) : EventsViewModel() {
+    var shopId: Long? = shopId
+        private set
 
-    private val _state = mutableStateOf(ViewModelState.Viewing)
+    private val _state = mutableStateOf(ViewModelState.Loading)
     val state = derivedStateOf { _state.value }
 
     private val _shop = mutableStateOf(ComposableShop())
     val shop = derivedStateOf { _shop.value }
+
+    var showCategoriesSelection by mutableStateOf(false)
 
     private val defaultTitle = application.getString(R.string.shop)
 
     var title by mutableStateOf(defaultTitle)
         private set
 
-    private val shopJob = viewModelScope.launch {
-        delay(250)
-        editShopUseCase
-            .getShopById(shopId)
-            .getOrNull()
-            ?.let {
-                _shop.value = ComposableShop(it)
-                if (!isEditing) {
-                    title = it.name
-                }
-            }
-        _state.value = if (isEditing) ViewModelState.Editing else ViewModelState.Viewing
-    }
-
-    val cashbacksLiveData = fetchCashbacksUseCase
-        .fetchCashbacksFromShop(shopId)
-        .asLiveData()
+    val cashbacksLiveData = shopId
+        ?.let {
+            fetchCashbacksUseCase.fetchCashbacksFromShop(it).asLiveData()
+        }
+        ?: liveData { emit(emptyList()) }
 
     val isLoading = derivedStateOf { state.value == ViewModelState.Loading }
     val isEditing = derivedStateOf { state.value == ViewModelState.Editing }
-
     var selectedCashbackIndex: Int? by mutableStateOf(null)
+
+    var showErrors by mutableStateOf(false)
 
     val fabPaddingDp = mutableFloatStateOf(0f)
 
-    override fun onCleared() {
-        shopJob.cancel()
-        super.onCleared()
+    init {
+        viewModelScope.launch {
+            delay(250)
+            if (shopId != null) {
+                editShopUseCase
+                    .getShopById(shopId)
+                    .getOrNull()
+                    ?.let {
+                        _shop.value = ComposableShop(it)
+                        if (!isEditing) {
+                            title = it.name
+                        }
+                    }
+            }
+            _state.value = when {
+                isEditing || shopId == null -> ViewModelState.Editing
+                else -> ViewModelState.Viewing
+            }
+        }
     }
+
+    fun getAllCategories(): LiveData<List<Category>> {
+        return fetchCategoriesUseCase.fetchAllCategories().asLiveData(timeoutInMs = 200)
+    }
+
 
     fun edit() {
         viewModelScope.launch {
@@ -86,39 +109,58 @@ class ShopViewModel @AssistedInject constructor(
     }
 
 
-    fun save() {
+    fun save(context: Context, onSuccess: () -> Unit = {}) {
+        showErrors = true
+        shop.value.updateErrors(context)
+
+        if (shop.value.haveErrors) {
+            shop.value.errorMessage?.let(::showSnackbar)
+            return
+        }
+
         viewModelScope.launch {
             _state.value = ViewModelState.Loading
             delay(300)
-            saveShop()
+            val result = saveShop()
             _state.value = ViewModelState.Viewing
             title = shop.value.name
+            result.exceptionOrNull()?.let(exceptionMessage::getMessage)?.let(::showSnackbar)
+            if (result.isSuccess) onSuccess()
         }
     }
 
 
-    suspend fun saveShop() {
+    suspend fun saveShop(): Result<Unit> {
         val shop = shop.value
-        if (shop.isChanged) {
-            editShopUseCase.updateShop(
-                shop = shop.mapToShop(),
-                errorMessage = ::showSnackbar
-            )
+        val categoryId =
+            shop.parentCategory?.id ?: return Result.failure(CategoryNotSelectedException)
+
+        if (!shop.haveChanges) return Result.success(Unit)
+
+        return when (shopId) {
+            null -> addShop(categoryId)
+            else -> editShopUseCase.updateShop(shop.mapToShop())
         }
     }
 
 
-    fun deleteShop() {
+    private suspend fun addShop(categoryId: Long): Result<Unit> {
+        val resultId = addShopUseCase.addShopToCategory(categoryId, shop.value.mapToShop())
+        resultId.getOrNull()?.let { shopId = it }
+        return resultId.map {}
+    }
+
+
+    fun deleteShop(onSuccess: () -> Unit = {}) {
         viewModelScope.launch {
             val currentState = _state.value
             _state.value = ViewModelState.Loading
-            delay(100)
-            deleteShopUseCase.deleteShop(shop = shop.value.mapToShop())
-                .exceptionOrNull()
-                ?.let(exceptionMessage::getMessage)
-                ?.let(::showSnackbar)
+            delay(200)
+            val result = deleteShopUseCase.deleteShop(shop = shop.value.mapToShop())
+            result.exceptionOrNull()?.let(exceptionMessage::getMessage)?.let(::showSnackbar)
             delay(100)
             _state.value = currentState
+            if (result.isSuccess) onSuccess()
         }
     }
 
@@ -141,7 +183,7 @@ class ShopViewModel @AssistedInject constructor(
     @AssistedFactory
     interface Factory {
         fun create(
-            @Assisted shopId: Long,
+            @Assisted shopId: Long?,
             isEditing: Boolean,
             application: Application
         ): ShopViewModel

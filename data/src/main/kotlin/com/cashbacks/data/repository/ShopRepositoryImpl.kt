@@ -14,7 +14,7 @@ import kotlinx.coroutines.flow.mapLatest
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ShopRepositoryImpl(private val dao: ShopsDao) : ShopRepository {
-    override suspend fun addShopToCategory(categoryId: Long, shop: Shop): Result<Unit> {
+    override suspend fun addShopToCategory(categoryId: Long, shop: Shop): Result<Long> {
         if (!checkShopNameForUniqueness(shop.name)) {
             return Result.failure(EntryAlreadyExistsException)
         }
@@ -25,7 +25,7 @@ class ShopRepositoryImpl(private val dao: ShopsDao) : ShopRepository {
                 id < 0 -> Result.failure(
                     InsertionException("Не удалось добавить магазин ${shop.name} в базу данных")
                 )
-                else -> Result.success(Unit)
+                else -> Result.success(id)
             }
         }
     }
@@ -50,7 +50,7 @@ class ShopRepositoryImpl(private val dao: ShopsDao) : ShopRepository {
     override suspend fun deleteShop(shop: Shop): Result<Unit> {
         return dao.deleteShopById(shop.id).let { deletedCount ->
             when {
-                deletedCount < 0 -> Result.failure(
+                deletedCount <= 0 -> Result.failure(
                     DeletionException(
                         type = Shop::class,
                         name = shop.name
@@ -61,10 +61,10 @@ class ShopRepositoryImpl(private val dao: ShopsDao) : ShopRepository {
         }
     }
 
-    override suspend fun getShopById(id: Long): Result<Shop> {
+    override suspend fun getShopById(id: Long): Result<CategoryShop> {
         return dao
             .getShopById(id)
-            ?.let { Result.success(it.mapToShop()) }
+            ?.let { Result.success(it.mapToCategoryShop()) }
             ?: Result.failure(Exception())
     }
 

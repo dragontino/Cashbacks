@@ -4,8 +4,8 @@ import android.content.res.Resources
 import com.cashbacks.domain.R
 import kotlin.reflect.KClass
 
-sealed class AppException(override val message: String? = null) : Exception(message) {
-    protected fun readResolve(): Any = SettingsNotFoundException
+sealed class AppException : Exception() {
+    protected fun readResolve(): Any = Exception()
 
     abstract fun getMessage(resources: Resources): String
 }
@@ -22,7 +22,7 @@ data object EntryAlreadyExistsException : AppException() {
     }
 }
 
-data class InsertionException(override val message: String? = null) : AppException(message) {
+data class InsertionException(override val message: String? = null) : AppException() {
     // TODO: 17.04.2024 доделать сообщения
     override fun getMessage(resources: Resources): String {
         return message ?: ""
@@ -43,6 +43,12 @@ data class DeletionException(val type: KClass<*>, val name: String) : AppExcepti
 
 data object ExpiredCashbacksDeletionException : AppException() {
     override fun getMessage(resources: Resources): String {
-        return resources.getString(R.string.expired_cashbacks_deletion_failture)
+        return resources.getString(R.string.expired_cashbacks_deletion_failure)
+    }
+}
+
+data object CategoryNotSelectedException : AppException() {
+    override fun getMessage(resources: Resources): String {
+        return resources.getString(R.string.category_not_selected)
     }
 }

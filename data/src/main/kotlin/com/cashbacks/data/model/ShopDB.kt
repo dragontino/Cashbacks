@@ -48,7 +48,7 @@ data class ShopWithMaxCashbackDB(
 }
 
 
-data class ShopWithCategoryNameAndCashbackDB(
+data class CategoryShopDB(
     val id: Long,
     val name: String,
     @Embedded(prefix = "category_")

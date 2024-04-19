@@ -409,7 +409,7 @@ private fun <T> EditableTextField(
             },
             leadingIcon = leadingIcon,
             trailingIcon = {
-                if (error && enabled) {
+                if (error) {
                     IconButton(
                         onClick = { showSupportingText = !showSupportingText },
                         colors = IconButtonDefaults.iconButtonColors(

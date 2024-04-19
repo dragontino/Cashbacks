@@ -47,7 +47,6 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.cashbacks.domain.R
 import com.cashbacks.app.ui.composables.BasicFloatingActionButton
 import com.cashbacks.app.ui.composables.CashbackComposable
 import com.cashbacks.app.ui.composables.CollapsingToolbarScaffold
@@ -67,6 +66,7 @@ import com.cashbacks.app.ui.managment.ViewModelState
 import com.cashbacks.app.util.Loading
 import com.cashbacks.app.util.LoadingInBox
 import com.cashbacks.app.util.animate
+import com.cashbacks.domain.R
 import com.cashbacks.domain.model.Cashback
 import com.cashbacks.domain.model.Shop
 import kotlinx.coroutines.launch
@@ -248,7 +248,7 @@ private fun CategoryViewerContent(
                 },
                 placeholderText = when (page) {
                     TabItem.Shops -> stringResource(R.string.empty_shops_list_viewing)
-                    TabItem.Cashbacks -> stringResource(R.string.empty_cashbacks_list)
+                    TabItem.Cashbacks -> stringResource(R.string.empty_cashbacks_list_editing)
                 },
                 bottomSpacing = viewModel.fabPaddingDp.floatValue.dp,
                 modifier = Modifier.padding(8.dp)
@@ -268,7 +268,7 @@ private fun CategoryViewerContent(
                             viewModel.onItemClick {
                                 viewModel.selectedShopIndex = -1
                                 viewModel.navigateTo(
-                                    args = ShopArgs(shopId = item.id, isEditing = false)
+                                    args = ShopArgs.Existing(item.id, isEditing = false)
                                 )
                             }
                         },
@@ -276,7 +276,7 @@ private fun CategoryViewerContent(
                             viewModel.onItemClick {
                                 viewModel.selectedShopIndex = -1
                                 viewModel.navigateTo(
-                                    args = ShopArgs(shopId = item.id, isEditing = true)
+                                    args = ShopArgs.Existing(item.id, isEditing = true)
                                 )
                             }
                         },

@@ -23,6 +23,7 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.DataArray
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.EditOff
@@ -62,6 +63,8 @@ import com.cashbacks.app.ui.managment.ListState
 import com.cashbacks.app.ui.managment.ScreenEvents
 import com.cashbacks.app.util.LoadingInBox
 import com.cashbacks.app.util.animate
+import com.cashbacks.app.util.floatingActionButtonEnterAnimation
+import com.cashbacks.app.util.floatingActionButtonExitAnimation
 import com.cashbacks.app.util.keyboardAsState
 import com.cashbacks.app.util.reversed
 import com.cashbacks.domain.R
@@ -152,6 +155,16 @@ fun ShopsScreen(
             }
         },
         floatingActionButtons = {
+            AnimatedVisibility(
+                visible = viewModel.isEditing.value && !keyboardState.value,
+                enter = floatingActionButtonEnterAnimation(),
+                exit = floatingActionButtonExitAnimation()
+            ) {
+                BasicFloatingActionButton(icon = Icons.Rounded.Add) {
+                    viewModel.navigateTo(ShopArgs.New)
+                }
+            }
+
             AnimatedVisibility(visible = !keyboardState.value) {
                 BasicFloatingActionButton(
                     icon = when {
@@ -196,7 +209,7 @@ fun ShopsScreen(
                                 else -> stringResource(R.string.empty_search_results)
                             }
                         }
-                        else -> stringResource(R.string.empty_shops)
+                        else -> stringResource(R.string.empty_shops_list_editing)
                     },
                     icon = Icons.Rounded.DataArray,
                     iconModifier = Modifier.scale(2.5f),
@@ -244,7 +257,7 @@ private fun ShopsList(
                     viewModel.onItemClick {
                         viewModel.selectedShopIndex = -1
                         viewModel.navigateTo(
-                            ShopArgs(shopId = shop.id, isEditing = false)
+                            ShopArgs.Existing(shop.id, isEditing = false)
                         )
                     }
                 },
@@ -252,7 +265,7 @@ private fun ShopsList(
                     viewModel.onItemClick {
                         viewModel.selectedShopIndex = -1
                         viewModel.navigateTo(
-                            ShopArgs(shopId = shop.id, isEditing = true)
+                            ShopArgs.Existing(shop.id, isEditing = true)
                         )
                     }
                 },
