@@ -28,9 +28,9 @@ data class Cashback(
 
 
 
-abstract class CashbackWithParent(
+sealed class CashbackWithOwner(
     override val id: Long,
-    val parentName: String,
+    val ownerName: String,
     override val bankCard: BasicInfoBankCard,
     override val amount: String,
     override val expirationDate: String?,
@@ -44,14 +44,14 @@ abstract class CashbackWithParent(
 
 class ShopCashback(
     id: Long,
-    parentShop: Shop,
+    val shop: Shop,
     bankCard: BasicInfoBankCard,
     amount: String,
     expirationDate: String?,
     comment: String
-) : CashbackWithParent(
+) : CashbackWithOwner(
     id = id,
-    parentName = parentShop.name,
+    ownerName = shop.name,
     bankCard = bankCard,
     amount = amount,
     expirationDate = expirationDate,
@@ -65,14 +65,14 @@ class ShopCashback(
 
 class CategoryCashback(
     id: Long,
-    parentCategory: Category,
+    val category: Category,
     bankCard: BasicInfoBankCard,
     amount: String,
     expirationDate: String?,
     comment: String
-) : CashbackWithParent(
+) : CashbackWithOwner(
     id = id,
-    parentName = parentCategory.name,
+    ownerName = category.name,
     bankCard = bankCard,
     amount = amount,
     expirationDate = expirationDate,

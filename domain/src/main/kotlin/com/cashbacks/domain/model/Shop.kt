@@ -1,17 +1,23 @@
 package com.cashbacks.domain.model
 
-data class Shop(
-    val id: Long,
-    val name: String,
+sealed interface ShopInterface {
+    val id: Long
+    val name: String
     val maxCashback: Cashback?
-)
+}
+
+data class Shop(
+    override val id: Long,
+    override val name: String,
+    override val maxCashback: Cashback?
+) : ShopInterface
 
 
 data class CategoryShop(
-    val id: Long,
+    override val id: Long,
     val parentCategory: Category,
-    val name: String,
-    val maxCashback: Cashback?
-) {
+    override val name: String,
+    override val maxCashback: Cashback?
+) : ShopInterface {
     fun asShop() = Shop(id, name, maxCashback)
 }

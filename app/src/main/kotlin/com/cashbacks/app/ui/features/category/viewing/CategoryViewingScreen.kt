@@ -300,7 +300,12 @@ private fun CategoryViewerContent(
                         onClick = {
                             viewModel.onItemClick {
                                 viewModel.selectedCashbackIndex = -1
-                                viewModel.navigateTo(CashbackArgs.Existing(item.id))
+                                viewModel.navigateTo(
+                                    args = CashbackArgs.Category.Existing(
+                                        cashbackId = item.id,
+                                        categoryId = viewModel.categoryId!!
+                                    )
+                                )
                             }
                         },
                         onDelete = {

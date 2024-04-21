@@ -16,15 +16,16 @@ import com.cashbacks.app.ui.navigation.Feature
 import com.cashbacks.app.ui.navigation.FeatureApi
 import com.cashbacks.app.ui.navigation.enterScreenTransition
 import com.cashbacks.app.ui.navigation.exitScreenTransition
+import com.cashbacks.app.util.getEnum
 
 class CashbackFeature(private val application: App) : FeatureApi {
     private object Cashback : Feature {
         object Args : Feature.Args {
-            const val ParentName = "parentName"
-            const val ParentId = "parentId"
-            const val CashbackId = "cashbackId"
+            const val OWNER_TYPE = "parentType"
+            const val OWNER_ID = "parentId"
+            const val CASHBACK_ID = "cashbackId"
 
-            override fun toStringArray() = arrayOf(ParentName, ParentId, CashbackId)
+            override fun toStringArray() = arrayOf(OWNER_TYPE, OWNER_ID, CASHBACK_ID)
         }
 
 
@@ -33,8 +34,9 @@ class CashbackFeature(private val application: App) : FeatureApi {
     }
 
     fun createDestinationRoute(args: CashbackArgs): String {
-        return "${Cashback.baseRoute}/${args.parentName}/${args.parentId}/${args.cashbackId}"
+        return "${Cashback.baseRoute}/${args.ownerType}/${args.ownerId}/${args.cashbackId}"
     }
+
 
     override fun registerGraph(
         navGraphBuilder: NavGraphBuilder,
@@ -48,18 +50,17 @@ class CashbackFeature(private val application: App) : FeatureApi {
             popEnterTransition = { enterScreenTransition(Alignment.Start) },
             popExitTransition = { exitScreenTransition(Alignment.End) },
             arguments = listOf(
-                navArgument(Cashback.Args.CashbackId) {
+                navArgument(Cashback.Args.OWNER_TYPE) {
+                    type = NavType.EnumType(CashbackOwner::class.java)
+                },
+                navArgument(Cashback.Args.OWNER_ID) {
                     type = NavType.StringType
                     nullable = true
                 },
-                navArgument(Cashback.Args.ParentId) {
+                navArgument(Cashback.Args.CASHBACK_ID) {
                     type = NavType.StringType
                     nullable = true
-                },
-                navArgument(Cashback.Args.ParentName) {
-                    type = NavType.StringType
-                    nullable = true
-                },
+                }
             )
         ) {
             val vmFactory = remember {
@@ -67,9 +68,9 @@ class CashbackFeature(private val application: App) : FeatureApi {
                     @Suppress("UNCHECKED_CAST")
                     override fun <T : ViewModel> create(modelClass: Class<T>): T {
                         return application.appComponent.cashbackViewModel().create(
-                            id = it.arguments?.getString(Cashback.Args.CashbackId)?.toLong(),
-                            parentId = it.arguments?.getString(Cashback.Args.ParentId)?.toLong(),
-                            parentName = it.arguments?.getString(Cashback.Args.ParentName)
+                            id = it.arguments?.getString(Cashback.Args.CASHBACK_ID)?.toLong(),
+                            ownerType = it.arguments.getEnum(Cashback.Args.OWNER_TYPE, CashbackOwner.Category),
+                            ownerId = it.arguments?.getString(Cashback.Args.OWNER_ID)?.toLongOrNull()
                         ) as T
                     }
                 }
@@ -77,6 +78,24 @@ class CashbackFeature(private val application: App) : FeatureApi {
 
             CashbackScreen(
                 viewModel = viewModel(factory = vmFactory),
+                navigateToCategory = {
+                    val route = application.appComponent
+                        .categoryFeature()
+                        .createDestinationRoute(it)
+                    navController.navigate(route) {
+                        popUpTo(Cashback.destinationRoute)
+                        launchSingleTop = true
+                    }
+                },
+                navigateToShop = {
+                    val route = application.appComponent
+                        .shopFeature()
+                        .createDestinationRoute(it)
+                    navController.navigate(route) {
+                        popUpTo(Cashback.destinationRoute)
+                        launchSingleTop = true
+                    }
+                },
                 navigateToCard = {
                     val route = application.appComponent
                         .bankCardFeature()

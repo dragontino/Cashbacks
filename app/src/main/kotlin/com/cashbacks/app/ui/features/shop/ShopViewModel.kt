@@ -1,7 +1,7 @@
 package com.cashbacks.app.ui.features.shop
 
 import android.app.Application
-import android.content.Context
+import android.content.res.Resources
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -12,6 +12,7 @@ import androidx.lifecycle.asLiveData
 import androidx.lifecycle.liveData
 import androidx.lifecycle.viewModelScope
 import com.cashbacks.app.model.ComposableShop
+import com.cashbacks.app.ui.features.cashback.CashbackArgs
 import com.cashbacks.app.ui.managment.ViewModelState
 import com.cashbacks.app.viewmodel.EventsViewModel
 import com.cashbacks.domain.R
@@ -21,6 +22,7 @@ import com.cashbacks.domain.model.Category
 import com.cashbacks.domain.model.CategoryNotSelectedException
 import com.cashbacks.domain.usecase.cashbacks.DeleteCashbacksUseCase
 import com.cashbacks.domain.usecase.cashbacks.FetchCashbacksUseCase
+import com.cashbacks.domain.usecase.categories.AddCategoryUseCase
 import com.cashbacks.domain.usecase.categories.FetchCategoriesUseCase
 import com.cashbacks.domain.usecase.shops.AddShopUseCase
 import com.cashbacks.domain.usecase.shops.DeleteShopUseCase
@@ -34,6 +36,7 @@ import kotlinx.coroutines.launch
 class ShopViewModel @AssistedInject constructor(
     fetchCashbacksUseCase: FetchCashbacksUseCase,
     private val fetchCategoriesUseCase: FetchCategoriesUseCase,
+    private val addCategoryUseCase: AddCategoryUseCase,
     private val addShopUseCase: AddShopUseCase,
     private val editShopUseCase: EditShopUseCase,
     private val deleteShopUseCase: DeleteShopUseCase,
@@ -53,6 +56,7 @@ class ShopViewModel @AssistedInject constructor(
     val shop = derivedStateOf { _shop.value }
 
     var showCategoriesSelection by mutableStateOf(false)
+    var addingCategoryState by mutableStateOf(false)
 
     private val defaultTitle = application.getString(R.string.shop)
 
@@ -109,9 +113,9 @@ class ShopViewModel @AssistedInject constructor(
     }
 
 
-    fun save(context: Context, onSuccess: () -> Unit = {}) {
+    fun save(resources: Resources, onSuccess: () -> Unit = {}) {
         showErrors = true
-        shop.value.updateErrors(context)
+        shop.value.updateErrors(resources)
 
         if (shop.value.haveErrors) {
             shop.value.errorMessage?.let(::showSnackbar)
@@ -130,16 +134,38 @@ class ShopViewModel @AssistedInject constructor(
     }
 
 
+    fun addCashback() {
+        shopId?.let { navigateTo(CashbackArgs.Shop.New(it)) }
+    }
+
+
+    fun addCategory(name: String) {
+        viewModelScope.launch {
+            val currentState = state.value
+            _state.value = ViewModelState.Loading
+            delay(100)
+            val result = addCategoryUseCase.addCategory(Category(name = name))
+            result.exceptionOrNull()?.let(exceptionMessage::getMessage)?.let(::showSnackbar)
+            result.getOrNull()?.let {
+                with(shop.value) {
+                    updateValue(::category, Category(id = it, name = name))
+                }
+            }
+            _state.value = currentState
+        }
+    }
+
+
     suspend fun saveShop(): Result<Unit> {
         val shop = shop.value
-        val categoryId =
-            shop.parentCategory?.id ?: return Result.failure(CategoryNotSelectedException)
+        val categoryId = shop.category?.id
+            ?: return Result.failure(CategoryNotSelectedException)
 
         if (!shop.haveChanges) return Result.success(Unit)
 
         return when (shopId) {
             null -> addShop(categoryId)
-            else -> editShopUseCase.updateShop(shop.mapToShop())
+            else -> editShopUseCase.updateShop(categoryId, shop.mapToShop())
         }
     }
 

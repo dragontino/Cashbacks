@@ -12,7 +12,7 @@ import com.cashbacks.app.ui.managment.ListState
 import com.cashbacks.app.viewmodel.EventsViewModel
 import com.cashbacks.domain.model.AppExceptionMessage
 import com.cashbacks.domain.model.Cashback
-import com.cashbacks.domain.model.CashbackWithParent
+import com.cashbacks.domain.model.CashbackWithOwner
 import com.cashbacks.domain.usecase.cashbacks.DeleteCashbacksUseCase
 import com.cashbacks.domain.usecase.cashbacks.FetchCashbacksUseCase
 import com.cashbacks.domain.usecase.cashbacks.SearchCashbacksUseCase
@@ -31,11 +31,12 @@ class CashbacksViewModel @Inject constructor(
     private val _state = mutableStateOf(ListState.Loading)
     val state = derivedStateOf { _state.value }
 
-    private val allCashbacks = mutableStateOf(listOf<CashbackWithParent>())
-    var cashbacks by mutableStateOf(listOf<CashbackWithParent>())
+    private val allCashbacks = mutableStateOf(listOf<CashbackWithOwner>())
+    var cashbacks by mutableStateOf(listOf<CashbackWithOwner>())
         private set
 
     var selectedCashbackIndex: Int? by mutableStateOf(null)
+    var showBottomSheet by mutableStateOf(false)
 
     internal var appBarState: HomeTopAppBarState by mutableStateOf(HomeTopAppBarState.TopBar)
     override val query = mutableStateOf("")

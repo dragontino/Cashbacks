@@ -6,11 +6,11 @@ import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.background
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
@@ -31,14 +31,12 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.ArrowBackIosNew
-import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Clear
 import androidx.compose.material.icons.rounded.DataArray
 import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.Save
 import androidx.compose.material3.CenterAlignedTopAppBar
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
@@ -50,6 +48,7 @@ import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -60,6 +59,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
@@ -69,8 +69,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.cashbacks.app.ui.composables.BasicFloatingActionButton
 import com.cashbacks.app.ui.composables.CashbackComposable
@@ -78,15 +76,16 @@ import com.cashbacks.app.ui.composables.CollapsingToolbarScaffold
 import com.cashbacks.app.ui.composables.CollapsingToolbarScaffoldDefaults
 import com.cashbacks.app.ui.composables.ConfirmDeletionDialog
 import com.cashbacks.app.ui.composables.ConfirmExitWithSaveDataDialog
+import com.cashbacks.app.ui.composables.DropdownMenu
+import com.cashbacks.app.ui.composables.DropdownMenuListContent
 import com.cashbacks.app.ui.composables.EditableTextField
 import com.cashbacks.app.ui.composables.EmptyList
+import com.cashbacks.app.ui.composables.NewNameTextField
 import com.cashbacks.app.ui.composables.OnLifecycleEvent
 import com.cashbacks.app.ui.features.cashback.CashbackArgs
 import com.cashbacks.app.ui.managment.DialogType
 import com.cashbacks.app.ui.managment.ScreenEvents
 import com.cashbacks.app.ui.managment.ViewModelState
-import com.cashbacks.app.ui.theme.CashbacksTheme
-import com.cashbacks.app.util.Loading
 import com.cashbacks.app.util.LoadingInBox
 import com.cashbacks.app.util.animate
 import com.cashbacks.app.util.floatingActionButtonEnterAnimation
@@ -98,19 +97,19 @@ import com.cashbacks.domain.model.Category
 import com.cashbacks.domain.model.Shop
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun ShopScreen(
+internal fun ShopScreen(
     viewModel: ShopViewModel,
     popBackStack: () -> Unit,
     navigateToCashback: (args: CashbackArgs) -> Unit
 ) {
-    val lazyListState = rememberLazyListState()
+
     val snackbarHostState = remember(::SnackbarHostState)
     val scope = rememberCoroutineScope()
-    val keyboardIsVisibleState = keyboardAsState()
     val context = LocalContext.current
-    
+    val keyboardState = keyboardAsState()
+
     OnLifecycleEvent(
         onDestroy = {
             if (viewModel.state.value == ViewModelState.Editing) {
@@ -119,20 +118,33 @@ fun ShopScreen(
         }
     )
 
-    BackHandler {
-        when {
-            viewModel.isEditing.value && viewModel.shop.value.haveChanges -> {
-                viewModel.openDialog(DialogType.Save)
-            }
+    BackHandler(enabled = viewModel.isEditing.value && viewModel.shop.value.haveChanges) {
+        viewModel.openDialog(DialogType.Save)
+    }
 
-            viewModel.isEditing.value -> viewModel.navigateTo(null)
-            else -> viewModel.navigateTo(null)
+    val showSnackbar = remember {
+        fun(message: String) {
+            scope.launch { snackbarHostState.showSnackbar(message) }
         }
     }
-    
-    val showSnackbar = remember {
-        fun (message: String) {
-            scope.launch { snackbarHostState.showSnackbar(message) }
+
+    LaunchedEffect(viewModel.addingCategoryState) {
+        if (viewModel.addingCategoryState) {
+            viewModel.showCategoriesSelection = false
+        }
+    }
+
+    LaunchedEffect(viewModel.showCategoriesSelection) {
+        if (viewModel.showCategoriesSelection) {
+            viewModel.addingCategoryState = false
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        snapshotFlow { keyboardState.value }.collect { isKeyboardOpen ->
+            if (!isKeyboardOpen) {
+                viewModel.addingCategoryState = false
+            }
         }
     }
 
@@ -174,23 +186,56 @@ fun ShopScreen(
         DialogType.Save -> {
             ConfirmExitWithSaveDataDialog(
                 onConfirm = {
-                    viewModel.save(context)
+                    viewModel.save(context.resources)
                     popBackStack()
                 },
                 onDismiss = popBackStack,
                 onClose = viewModel::closeDialog
             )
         }
+
         else -> {}
     }
 
 
-    val addCashback = remember {
-        fun() {
-            viewModel.shopId?.let { viewModel.navigateTo(CashbackArgs.New.Shop(it)) }
+    Box(
+        modifier = Modifier.imePadding().fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        ShopScreenScaffold(
+            viewModel = viewModel,
+            snackbarHostState = snackbarHostState
+        )
+
+        AnimatedVisibility(
+            visible = viewModel.state.value != ViewModelState.Loading && viewModel.addingCategoryState,
+            enter = expandVertically(
+                animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing)
+            ),
+            exit = shrinkVertically(
+                animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing)
+            ),
+            modifier = Modifier.align(Alignment.BottomCenter)
+        ) {
+            NewNameTextField(placeholder = stringResource(R.string.category_placeholder)) { name ->
+                viewModel.addCategory(name)
+                viewModel.addingCategoryState = false
+            }
         }
     }
+}
 
+
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@Composable
+fun ShopScreenScaffold(
+    viewModel: ShopViewModel,
+    snackbarHostState: SnackbarHostState
+) {
+    val lazyListState = rememberLazyListState()
+    val keyboardIsVisibleState = keyboardAsState()
+    val context = LocalContext.current
 
     CollapsingToolbarScaffold(
         topBar = {
@@ -212,7 +257,7 @@ fun ShopScreen(
                             onClick = {
                                 when {
                                     isChanged -> viewModel.openDialog(DialogType.Save)
-                                    else -> popBackStack()
+                                    else -> viewModel.navigateTo(null)
                                 }
                             }
                         ) {
@@ -228,7 +273,9 @@ fun ShopScreen(
                     }
                 },
                 actions = {
-                    AnimatedVisibility(visible = viewModel.isEditing.value) {
+                    AnimatedVisibility(
+                        visible = viewModel.isEditing.value && viewModel.shopId != null
+                    ) {
                         IconButton(
                             onClick = {
                                 viewModel.openDialog(
@@ -266,14 +313,16 @@ fun ShopScreen(
         },
         floatingActionButtons = {
             AnimatedVisibility(
-                visible = viewModel.isEditing.value && !keyboardIsVisibleState.value,
+                visible = viewModel.isEditing.value
+                        && viewModel.shopId != null
+                        && !keyboardIsVisibleState.value,
                 enter = floatingActionButtonEnterAnimation(),
                 exit = floatingActionButtonExitAnimation()
             ) {
                 BasicFloatingActionButton(icon = Icons.Rounded.Add) {
                     when (viewModel.shopId) {
-                        null -> viewModel.save(context, onSuccess = addCashback)
-                        else -> addCashback()
+                        null -> viewModel.save(context.resources, onSuccess = viewModel::addCashback)
+                        else -> viewModel.addCashback()
                     }
                 }
             }
@@ -286,7 +335,7 @@ fun ShopScreen(
                     },
                     onClick = {
                         when {
-                            viewModel.isEditing.value -> viewModel.save(context)
+                            viewModel.isEditing.value -> viewModel.save(context.resources)
                             else -> viewModel.edit()
                         }
                     }
@@ -337,7 +386,7 @@ private fun ShopScreenContent(
                     onExpandedChange = viewModel::showCategoriesSelection::set
                 ) {
                     EditableTextField(
-                        text = viewModel.shop.value.parentCategory?.name
+                        text = viewModel.shop.value.category?.name
                             ?: stringResource(R.string.value_not_selected),
                         onTextChange = {},
                         enabled = false,
@@ -357,32 +406,34 @@ private fun ShopScreenContent(
                             .fillMaxWidth()
                     )
 
-                    ExposedDropdownMenu(
+                    DropdownMenu(
+                        listLiveData = viewModel.getAllCategories(),
                         expanded = viewModel.showCategoriesSelection,
-                        onDismissRequest = { viewModel.showCategoriesSelection = false },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        viewModel.getAllCategories().observeAsState().value.let { categories ->
-                            when (categories) {
-                                null -> Box(
-                                    contentAlignment = Alignment.Center,
+                        onClose = { viewModel.showCategoriesSelection = false }
+                    ) { categories ->
+                        DropdownMenuListContent(
+                            list = categories,
+                            selectedItem = viewModel.shop.value.category,
+                            title = Category::name,
+                            onClick = {
+                                with(viewModel.shop.value) {
+                                    updateValue(this::category, it)
+                                    if (viewModel.showErrors) updateCategoryError(context.resources)
+                                }
+                                viewModel.showCategoriesSelection = false
+                            },
+                            addButton = {
+                                TextButton(
+                                    onClick = { viewModel.addingCategoryState = true },
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
-                                    Loading()
-                                }
-
-                                else -> CategoriesList(
-                                    categories = categories,
-                                    selectedCategory = viewModel.shop.value.parentCategory
-                                ) {
-                                    with(viewModel.shop.value) {
-                                        updateValue(::parentCategory, it)
-                                        if (viewModel.showErrors) updateCategoryError(context)
-                                    }
-                                    viewModel.showCategoriesSelection = false
+                                    Text(
+                                        text = stringResource(R.string.add_category),
+                                        style = MaterialTheme.typography.bodySmall
+                                    )
                                 }
                             }
-                        }
+                        )
                     }
                 }
 
@@ -391,7 +442,7 @@ private fun ShopScreenContent(
                     onTextChange = {
                         with(viewModel.shop.value) {
                             updateValue(::name, it)
-                            if (viewModel.showErrors) updateNameError(context)
+                            if (viewModel.showErrors) updateNameError(context.resources)
                         }
                     },
                     label = stringResource(R.string.shop_placeholder),
@@ -413,7 +464,7 @@ private fun ShopScreenContent(
         ) { cashbacks ->
             when {
                 cashbacks == null -> LoadingInBox()
-                cashbacks.isEmpty() -> EmptyList(
+                cashbacks.isEmpty() && viewModel.shopId != null -> EmptyList(
                     text = when {
                         viewModel.isEditing.value -> stringResource(R.string.empty_cashbacks_list_editing)
                         else -> stringResource(R.string.empty_cashbacks_list_editing)
@@ -442,7 +493,12 @@ private fun ShopScreenContent(
                                 },
                                 onClick = {
                                     viewModel.onItemClick {
-                                        viewModel.navigateTo(CashbackArgs.Existing(cashback.id))
+                                        viewModel.navigateTo(
+                                            args = CashbackArgs.Shop.Existing(
+                                                cashbackId = cashback.id,
+                                                shopId = viewModel.shopId!!
+                                            )
+                                        )
                                     }
                                 },
                                 onDelete = {
@@ -459,56 +515,6 @@ private fun ShopScreenContent(
                     }
                 }
             }
-        }
-    }
-}
-
-
-@Suppress("UnusedReceiverParameter")
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun ColumnScope.CategoriesList(
-    categories: List<Category>,
-    selectedCategory: Category?,
-    onClick: (Category) -> Unit
-) {
-    categories.forEachIndexed { index, category ->
-        DropdownMenuItem(
-            text = {
-                Text(
-                    text = category.name,
-                    style = MaterialTheme.typography.bodySmall,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            },
-            onClick = { onClick(category) },
-            leadingIcon = {
-                if (category.id == selectedCategory?.id) {
-                    Icon(imageVector = Icons.Rounded.Check, contentDescription = null)
-                }
-            },
-            contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
-        )
-
-        if (index != categories.lastIndex) {
-            HorizontalDivider()
-        }
-    }
-}
-
-
-@Preview
-@Composable
-private fun CategoriesListPreview() {
-    CashbacksTheme(isDarkTheme = false) {
-        Column(modifier = Modifier.background(MaterialTheme.colorScheme.background)) {
-            val list = listOf(Category(id = 1, name = "Test №1"), Category(id = 2, name = "Test №2"))
-            CategoriesList(
-                categories = list,
-                selectedCategory = list[0],
-                onClick = {},
-            )
         }
     }
 }

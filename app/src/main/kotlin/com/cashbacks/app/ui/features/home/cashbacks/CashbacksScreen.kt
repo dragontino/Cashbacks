@@ -1,10 +1,12 @@
 package com.cashbacks.app.ui.features.home.cashbacks
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -14,11 +16,14 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.tappableElement
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.DataArray
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -29,6 +34,7 @@ import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -38,14 +44,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.cashbacks.app.ui.composables.BasicFloatingActionButton
 import com.cashbacks.app.ui.composables.CashbackComposable
 import com.cashbacks.app.ui.composables.CollapsingToolbarScaffold
 import com.cashbacks.app.ui.composables.ConfirmDeletionDialog
 import com.cashbacks.app.ui.composables.EmptyList
+import com.cashbacks.app.ui.composables.ModalBottomSheet
+import com.cashbacks.app.ui.composables.ModalSheetItems.TextItem
 import com.cashbacks.app.ui.features.cashback.CashbackArgs
 import com.cashbacks.app.ui.features.home.HomeTopAppBar
 import com.cashbacks.app.ui.features.home.HomeTopAppBarState
@@ -54,12 +64,17 @@ import com.cashbacks.app.ui.managment.ListState
 import com.cashbacks.app.ui.managment.ScreenEvents
 import com.cashbacks.app.util.LoadingInBox
 import com.cashbacks.app.util.animate
+import com.cashbacks.app.util.floatingActionButtonEnterAnimation
+import com.cashbacks.app.util.floatingActionButtonExitAnimation
+import com.cashbacks.app.util.keyboardAsState
 import com.cashbacks.app.util.reversed
 import com.cashbacks.domain.R
 import com.cashbacks.domain.model.Cashback
+import com.cashbacks.domain.model.CategoryCashback
+import com.cashbacks.domain.model.ShopCashback
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun CashbacksScreen(
     viewModel: CashbacksViewModel,
@@ -77,6 +92,7 @@ fun CashbacksScreen(
     val topBarState = rememberTopAppBarState()
     val lazyListState = rememberLazyListState()
     val snackbarHostState = remember(::SnackbarHostState)
+    val keyboardState = keyboardAsState()
     val scope = rememberCoroutineScope()
 
     val showSnackbar = remember {
@@ -108,6 +124,27 @@ fun CashbacksScreen(
         )
     }
 
+
+    if (viewModel.showBottomSheet) {
+        ModalBottomSheet(
+            onClose = { viewModel.showBottomSheet = false },
+            title = stringResource(R.string.add_cashback_title),
+            beautifulDesign = false
+        ) {
+            TextItem(text = stringResource(R.string.to_category)) {
+                viewModel.navigateTo(CashbackArgs.Category.New(categoryId = null))
+                viewModel.showBottomSheet = false
+            }
+
+            TextItem(text = stringResource(R.string.to_shop)) {
+                viewModel.navigateTo(CashbackArgs.Shop.New(shopId = null))
+                viewModel.showBottomSheet = false
+            }
+        }
+    }
+
+    val fabPaddingDp = rememberSaveable { mutableFloatStateOf(0f) }
+
     CollapsingToolbarScaffold(
         topBar = {
             HomeTopAppBar(
@@ -127,10 +164,7 @@ fun CashbacksScreen(
             HomeTopAppBarState.TopBar -> MaterialTheme.colorScheme.primary
         },
         snackbarHost = {
-            SnackbarHost(
-                snackbarHostState,
-                modifier = Modifier.padding(bottom = bottomPadding)
-            ) {
+            SnackbarHost(snackbarHostState) {
                 Snackbar(
                     snackbarData = it,
                     containerColor = MaterialTheme.colorScheme.background.reversed.animate(),
@@ -139,6 +173,23 @@ fun CashbacksScreen(
                 )
             }
         },
+        floatingActionButtons = {
+            AnimatedVisibility(
+                visible = !keyboardState.value,
+                enter = floatingActionButtonEnterAnimation(),
+                exit = floatingActionButtonExitAnimation()
+            ) {
+                BasicFloatingActionButton(icon = Icons.Rounded.Add) {
+                    viewModel.showBottomSheet = true
+                }
+            }
+        },
+        fabModifier = Modifier
+            .windowInsetsPadding(WindowInsets.tappableElement.only(WindowInsetsSides.End))
+            .padding(bottom = bottomPadding)
+            .graphicsLayer {
+                fabPaddingDp.floatValue = size.height.toDp().value
+            },
         contentWindowInsets = WindowInsets.ime.only(WindowInsetsSides.Bottom),
         modifier = Modifier
             .then(modifier)
@@ -170,7 +221,11 @@ fun CashbacksScreen(
                         .padding(bottom = bottomPadding)
                         .fillMaxSize()
                 )
-                ListState.Stable -> CashbacksList(viewModel, lazyListState, bottomPadding)
+                ListState.Stable -> CashbacksList(
+                    viewModel = viewModel,
+                    state = lazyListState,
+                    bottomPadding = (bottomPadding + fabPaddingDp.floatValue.dp).animate()
+                )
             }
         }
     }
@@ -192,11 +247,11 @@ private fun CashbacksList(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.fillMaxSize()
     ) {
-        itemsIndexed(viewModel.cashbacks) { index, cashbackWithParent ->
+        itemsIndexed(viewModel.cashbacks) { index, cashbackWithOwner ->
             CashbackComposable(
-                cashback = cashbackWithParent.asCashback(),
-                parentType = cashbackWithParent.getParentType(context.resources),
-                parentName = cashbackWithParent.parentName,
+                cashback = cashbackWithOwner.asCashback(),
+                parentType = cashbackWithOwner.getParentType(context.resources),
+                parentName = cashbackWithOwner.ownerName,
                 isSwiped = viewModel.selectedCashbackIndex == index,
                 onSwipe = { isSwiped ->
                     viewModel.selectedCashbackIndex = when {
@@ -206,13 +261,23 @@ private fun CashbacksList(
                 },
                 onClick = {
                     viewModel.onItemClick {
-                        viewModel.navigateTo(CashbackArgs.Existing(cashbackWithParent.id))
+                        val args = when (cashbackWithOwner) {
+                            is CategoryCashback -> CashbackArgs.Category.Existing(
+                                cashbackId = cashbackWithOwner.id,
+                                categoryId = cashbackWithOwner.category.id
+                            )
+                            is ShopCashback -> CashbackArgs.Shop.Existing(
+                                cashbackId = cashbackWithOwner.id,
+                                shopId = cashbackWithOwner.shop.id
+                            )
+                        }
+                        viewModel.navigateTo(args)
                     }
                 },
                 onDelete = {
                     viewModel.onItemClick {
                         viewModel.openDialog(
-                            DialogType.ConfirmDeletion(cashbackWithParent.asCashback())
+                            DialogType.ConfirmDeletion(cashbackWithOwner.asCashback())
                         )
                     }
                 }

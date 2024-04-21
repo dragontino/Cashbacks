@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.TypeConverters
 import com.cashbacks.data.model.BankCardDB
 import com.cashbacks.data.model.CashbackDB
 import com.cashbacks.data.model.CategoryDB
@@ -20,6 +21,7 @@ import com.cashbacks.data.room.dao.ShopsDao
     version = 1,
     exportSchema = false
 )
+@TypeConverters(AmountConverter::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun cardsDao(): CardsDao
     abstract fun shopsDao(): ShopsDao

@@ -334,7 +334,7 @@ private fun CategoryInfoScreenContent(
                     viewModel.onItemClick {
                         when (currentScreen.value) {
                             TabItem.Cashbacks -> viewModel.navigateTo(
-                                args = CashbackArgs.New.Category(viewModel.categoryId)
+                                args = CashbackArgs.Category.New(viewModel.categoryId)
                             )
 
                             TabItem.Shops -> viewModel.addingShopState.value = true
@@ -456,7 +456,12 @@ private fun CategoryInfoScreenContent(
                             onClick = {
                                 viewModel.onItemClick {
                                     viewModel.selectedCashbackIndex = -1
-                                    viewModel.navigateTo(CashbackArgs.Existing(id = item.id))
+                                    viewModel.navigateTo(
+                                        args = CashbackArgs.Category.Existing(
+                                            cashbackId = item.id,
+                                            categoryId = viewModel.categoryId
+                                        )
+                                    )
                                 }
                             },
                             onDelete = {

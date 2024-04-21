@@ -4,57 +4,38 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import androidx.room.TypeConverters
+import androidx.room.Transaction
+import androidx.room.Update
 import com.cashbacks.data.model.BasicCashbackDB
 import com.cashbacks.data.model.CashbackDB
-import com.cashbacks.data.model.CashbackWithBankCardDB
-import com.cashbacks.data.model.ParentCashbackWithBankCardDB
-import com.cashbacks.data.room.PaymentSystemConverter
+import com.cashbacks.data.model.CashbackWithOwnerAndBankCardDB
+import com.cashbacks.data.model.CashbackWithOwnersDB
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 
 @Dao
 interface CashbacksDao {
-    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun addCashback(cashback: CashbackDB): Long
 
-    @Query(
-        """
-            UPDATE Cashbacks 
-            SET bankCardId = :bankCardId,
-                amount = :amount,
-                expirationDate = :expirationDate,
-                comment = :comment
-            WHERE id = :id
-        """
-    )
-    suspend fun updateCashbackById(
-        id: Long,
-        bankCardId: Long,
-        amount: Double,
-        expirationDate: String?,
-        comment: String
-    ): Int
+    @Update(onConflict = OnConflictStrategy.ABORT)
+    suspend fun updateCashback(cashback: CashbackDB): Int
 
-    @TypeConverters(PaymentSystemConverter::class)
     @Query(
         """
             SELECT cash.id, cash.amount, cash.expirationDate, cash.comment,
-                   card.id AS card_id,
-                   card.name AS card_name,
-                   card.number AS card_number,
-                   card.paymentSystem AS card_paymentSystem,
-                   card.holder AS card_holder,
-                   card.validityPeriod AS card_validityPeriod,
-                   card.cvv AS card_cvv,
-                   card.pin AS card_pin,
-                   card.comment AS card_comment
+                   cat.id AS category_id, cat.name AS category_name,
+                   s.id AS shop_id, s.categoryId AS shop_categoryId, s.name AS shop_name,
+                   card.id AS card_id, card.name AS card_name, 
+                   card.number AS card_number, card.paymentSystem AS card_paymentSystem
             FROM Cashbacks AS cash
-            INNER JOIN (SELECT * FROM Cards) AS card ON card.id = cash.bankCardId
+            LEFT JOIN Categories AS cat ON cat.id = cash.categoryId
+            LEFT JOIN Shops AS s ON s.id = cash.shopId
+            INNER JOIN (SELECT id, name, number, paymentSystem FROM Cards) AS card ON card.id = cash.bankCardId
             WHERE cash.id = :id
         """,
     )
-    suspend fun getCashbackById(id: Long): CashbackWithBankCardDB?
+    suspend fun getCashbackById(id: Long): CashbackWithOwnersDB?
 
 
     @Query(
@@ -104,7 +85,7 @@ interface CashbacksDao {
             WHERE cash.categoryId IS NOT NULL
         """
     )
-    fun fetchAllCashbacksFromCategories(): Flow<List<ParentCashbackWithBankCardDB.Category>>
+    fun fetchAllCashbacksFromCategories(): Flow<List<CashbackWithOwnerAndBankCardDB.Category>>
 
 
     @Query(
@@ -123,10 +104,10 @@ interface CashbacksDao {
             WHERE cash.shopId IS NOT NULL
         """
     )
-    fun fetchAllCashbacksFromShops(): Flow<List<ParentCashbackWithBankCardDB.Shop>>
+    fun fetchAllCashbacksFromShops(): Flow<List<CashbackWithOwnerAndBankCardDB.Shop>>
 
 
-    fun fetchAllCashbacks(): Flow<List<ParentCashbackWithBankCardDB>> {
+    fun fetchAllCashbacks(): Flow<List<CashbackWithOwnerAndBankCardDB>> {
         val cashbacksFromCategories = fetchAllCashbacksFromCategories()
         val cashbacksFromShops = fetchAllCashbacksFromShops()
         return cashbacksFromCategories.combine(cashbacksFromShops) { cashbacksCategory, cashbacksShop ->
@@ -156,7 +137,7 @@ interface CashbacksDao {
             )
         """
     )
-    suspend fun searchCashbacksInCategories(query: String): List<ParentCashbackWithBankCardDB.Category>
+    suspend fun searchCashbacksInCategories(query: String): List<CashbackWithOwnerAndBankCardDB.Category>
 
 
     @Query(
@@ -181,10 +162,11 @@ interface CashbacksDao {
             )
         """
     )
-    suspend fun searchCashbacksInShops(query: String): List<ParentCashbackWithBankCardDB.Shop>
+    suspend fun searchCashbacksInShops(query: String): List<CashbackWithOwnerAndBankCardDB.Shop>
 
 
-    suspend fun searchCashbacks(query: String): List<ParentCashbackWithBankCardDB> {
+    @Transaction
+    suspend fun searchCashbacks(query: String): List<CashbackWithOwnerAndBankCardDB> {
         return searchCashbacksInCategories(query) + searchCashbacksInShops(query)
     }
 
