@@ -23,6 +23,8 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Category
+import androidx.compose.material.icons.outlined.Store
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.DataArray
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -55,7 +57,7 @@ import com.cashbacks.app.ui.composables.CollapsingToolbarScaffold
 import com.cashbacks.app.ui.composables.ConfirmDeletionDialog
 import com.cashbacks.app.ui.composables.EmptyList
 import com.cashbacks.app.ui.composables.ModalBottomSheet
-import com.cashbacks.app.ui.composables.ModalSheetItems.TextItem
+import com.cashbacks.app.ui.composables.ModalSheetItems.IconTextItem
 import com.cashbacks.app.ui.features.cashback.CashbackArgs
 import com.cashbacks.app.ui.features.home.HomeTopAppBar
 import com.cashbacks.app.ui.features.home.HomeTopAppBarState
@@ -129,14 +131,22 @@ fun CashbacksScreen(
         ModalBottomSheet(
             onClose = { viewModel.showBottomSheet = false },
             title = stringResource(R.string.add_cashback_title),
-            beautifulDesign = false
+            beautifulDesign = true
         ) {
-            TextItem(text = stringResource(R.string.to_category)) {
+            IconTextItem(
+                icon = Icons.Outlined.Category,
+                iconTintColor = MaterialTheme.colorScheme.primary,
+                text = stringResource(R.string.to_category)
+            ) {
                 viewModel.navigateTo(CashbackArgs.Category.New(categoryId = null))
                 viewModel.showBottomSheet = false
             }
 
-            TextItem(text = stringResource(R.string.to_shop)) {
+            IconTextItem(
+                icon = Icons.Outlined.Store,
+                iconTintColor = MaterialTheme.colorScheme.primary,
+                text = stringResource(R.string.to_shop)
+            ) {
                 viewModel.navigateTo(CashbackArgs.Shop.New(shopId = null))
                 viewModel.showBottomSheet = false
             }
