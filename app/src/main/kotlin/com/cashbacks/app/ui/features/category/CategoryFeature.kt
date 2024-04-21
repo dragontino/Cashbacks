@@ -24,6 +24,7 @@ import com.cashbacks.app.ui.navigation.Feature
 import com.cashbacks.app.ui.navigation.FeatureApi
 import com.cashbacks.app.ui.navigation.enterScreenTransition
 import com.cashbacks.app.ui.navigation.exitScreenTransition
+import com.cashbacks.app.util.getEnum
 
 class CategoryFeature(private val application: App) : FeatureApi {
     private sealed class Category(type: String) : Feature {
@@ -135,7 +136,7 @@ class CategoryFeature(private val application: App) : FeatureApi {
                         type = NavType.LongType
                     },
                     navArgument(Category.Args.START_TAB) {
-                        type = NavType.StringType
+                        type = NavType.EnumType(TabItem::class.java)
                     }
                 )
             ) { backStackEntry ->
@@ -153,10 +154,10 @@ class CategoryFeature(private val application: App) : FeatureApi {
 
                 CategoryViewingScreen(
                     viewModel = viewModel(factory = vmFactory),
-                    startTab = backStackEntry.arguments
-                        ?.getString(Category.Args.START_TAB)
-                        ?.let(TabItem::valueOf)
-                        ?: TabItem.Shops,
+                    startTab = backStackEntry.arguments.getEnum(
+                        key = Category.Args.START_TAB,
+                        defaultValue = TabItem.Shops
+                    ),
                     navigateToCategory = {
                         val route = createDestinationRoute(it)
                         navController.navigate(route) {
@@ -191,7 +192,7 @@ class CategoryFeature(private val application: App) : FeatureApi {
                         type = NavType.LongType
                     },
                     navArgument(Category.Args.START_TAB) {
-                        type = NavType.StringType
+                        type = NavType.EnumType(TabItem::class.java)
                     }
                 )
             ) { backStackEntry ->
@@ -208,10 +209,10 @@ class CategoryFeature(private val application: App) : FeatureApi {
 
                 CategoryEditingScreen(
                     viewModel = viewModel(factory = vmFactory),
-                    startTab = backStackEntry.arguments
-                        ?.getString(Category.Args.START_TAB)
-                        ?.let(TabItem::valueOf)
-                        ?: TabItem.Shops,
+                    startTab = backStackEntry.arguments.getEnum(
+                        key = Category.Args.START_TAB,
+                        defaultValue = TabItem.Shops
+                    ),
                     navigateToCategory = {
                         val route = createDestinationRoute(it)
                         val homeRoute = HomeFeature.Home.destinationRoute

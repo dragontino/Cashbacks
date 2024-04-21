@@ -123,12 +123,9 @@ internal fun CardsScreen(
         },
         floatingActionButtons = {
             AnimatedVisibility(visible = !viewModel.isSearch) {
-                BasicFloatingActionButton(
-                    icon = Icons.Rounded.Add,
-                    onClick = {
-                        navigateToCard(BankCardArgs(id = null, isEditing = true))
-                    },
-                )
+                BasicFloatingActionButton(icon = Icons.Rounded.Add) {
+                    navigateToCard(BankCardArgs.New)
+                }
             }
         },
         fabModifier = Modifier
@@ -245,7 +242,7 @@ private fun CardsContentScreen(
 
                 TextButton(
                     onClick = {
-                        navigateToCard(BankCardArgs(id = bankCard.id, isEditing = false))
+                        navigateToCard(BankCardArgs.Existing(id = bankCard.id, isEditing = false))
                     },
                     shape = MaterialTheme.shapes.medium,
                     modifier = Modifier

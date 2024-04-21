@@ -179,9 +179,8 @@ internal fun CategoryViewingScreen(
                 onClick = {
                     viewModel.onItemClick {
                         viewModel.navigateTo(
-                            args = CategoryArgs(
+                            args = CategoryArgs.Editing(
                                 id = viewModel.categoryId,
-                                isEditing = true,
                                 startTab = currentScreen.value
                             )
                         )
@@ -303,7 +302,7 @@ private fun CategoryViewerContent(
                                 viewModel.navigateTo(
                                     args = CashbackArgs.Category.Existing(
                                         cashbackId = item.id,
-                                        categoryId = viewModel.categoryId!!
+                                        categoryId = viewModel.categoryId
                                     )
                                 )
                             }

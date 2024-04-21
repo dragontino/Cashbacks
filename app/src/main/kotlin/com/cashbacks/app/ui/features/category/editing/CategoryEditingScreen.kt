@@ -348,9 +348,8 @@ private fun CategoryInfoScreenContent(
                     viewModel.onItemClick {
                         viewModel.save {
                             viewModel.navigateTo(
-                                args = CategoryArgs(
+                                args = CategoryArgs.Viewing(
                                     id = viewModel.categoryId,
-                                    isEditing = false,
                                     startTab = currentScreen.value
                                 )
                             )

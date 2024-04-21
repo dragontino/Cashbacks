@@ -171,7 +171,7 @@ fun BankCardViewingScreen(
                             IconButton(
                                 onClick = {
                                     navigateToBankCard(
-                                        BankCardArgs(id = viewModel.cardId, isEditing = true)
+                                        BankCardArgs.Existing(id = viewModel.cardId, isEditing = true)
                                     )
                                 }
                             ) {
