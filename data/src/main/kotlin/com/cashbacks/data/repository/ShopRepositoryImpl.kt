@@ -7,6 +7,7 @@ import com.cashbacks.domain.model.DeletionException
 import com.cashbacks.domain.model.EntryAlreadyExistsException
 import com.cashbacks.domain.model.InsertionException
 import com.cashbacks.domain.model.Shop
+import com.cashbacks.domain.model.UpdateException
 import com.cashbacks.domain.repository.ShopRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -16,14 +17,14 @@ import kotlinx.coroutines.flow.mapLatest
 class ShopRepositoryImpl(private val dao: ShopsDao) : ShopRepository {
     override suspend fun addShopToCategory(categoryId: Long, shop: Shop): Result<Long> {
         if (!checkShopNameForUniqueness(shop.name)) {
-            return Result.failure(EntryAlreadyExistsException)
+            return Result.failure(EntryAlreadyExistsException(Shop::class))
         }
 
         val shopDB = ShopDB(id = shop.id, categoryId = categoryId, name = shop.name)
         return dao.addShop(shopDB).let { id ->
             when {
                 id < 0 -> Result.failure(
-                    InsertionException("Не удалось добавить магазин ${shop.name} в базу данных")
+                    InsertionException(type = Shop::class, entityName = shop.name)
                 )
                 else -> Result.success(id)
             }
@@ -36,11 +37,12 @@ class ShopRepositoryImpl(private val dao: ShopsDao) : ShopRepository {
     }
 
 
-    override suspend fun updateShop(shop: Shop): Result<Unit> {
-        return dao.updateShopById(shopId = shop.id, shopName = shop.name).let { updatedCount ->
+    override suspend fun updateShop(categoryId: Long, shop: Shop): Result<Unit> {
+        val shopDB = ShopDB(categoryId, shop)
+        return dao.updateShop(shopDB).let { updatedCount ->
             when {
                 updatedCount < 0 -> Result.failure(
-                    InsertionException("Не удалось обновить все магазины")
+                    UpdateException(type = Shop::class, name = shop.name)
                 )
                 else -> Result.success(Unit)
             }
@@ -51,10 +53,7 @@ class ShopRepositoryImpl(private val dao: ShopsDao) : ShopRepository {
         return dao.deleteShopById(shop.id).let { deletedCount ->
             when {
                 deletedCount <= 0 -> Result.failure(
-                    DeletionException(
-                        type = Shop::class,
-                        name = shop.name
-                    )
+                    DeletionException(type = Shop::class, name = shop.name)
                 )
                 else -> Result.success(Unit)
             }

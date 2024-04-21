@@ -10,15 +10,15 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
 class CategoryRepositoryImpl(private val dao: CategoriesDao) : CategoryRepository {
-    override suspend fun addCategory(category: Category): Result<Unit> {
+    override suspend fun addCategory(category: Category): Result<Long> {
         if (!checkCategoryNameForUniqueness(category.name)) {
-            return Result.failure(EntryAlreadyExistsException)
+            return Result.failure(EntryAlreadyExistsException(Category::class))
         }
 
         val newId = dao.addCategory(CategoryDB(category))
         return when {
-            newId < 0 -> Result.failure(InsertionException("Не удалось добавить категорию в базу данных"))
-            else -> Result.success(Unit)
+            newId < 0 -> Result.failure(InsertionException(Category::class, category.name))
+            else -> Result.success(newId)
         }
     }
 
@@ -29,7 +29,7 @@ class CategoryRepositoryImpl(private val dao: CategoriesDao) : CategoryRepositor
 
     override suspend fun updateCategory(category: Category): Result<Unit> = try {
         if (!checkCategoryNameForUniqueness(category.name)) {
-            throw EntryAlreadyExistsException
+            throw EntryAlreadyExistsException(Category::class)
         }
         dao.updateCategory(CategoryDB(category))
         Result.success(Unit)

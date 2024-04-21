@@ -9,7 +9,7 @@ class AddCategoryUseCase(
     private val repository: CategoryRepository,
     private val dispatcher: CoroutineDispatcher
 ) {
-    suspend fun addCategory(category: Category): Result<Unit> {
+    suspend fun addCategory(category: Category): Result<Long> {
         return withContext(dispatcher) {
             repository.addCategory(category)
         }

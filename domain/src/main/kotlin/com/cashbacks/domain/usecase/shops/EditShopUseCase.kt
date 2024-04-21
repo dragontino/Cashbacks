@@ -15,9 +15,9 @@ class EditShopUseCase(
         const val TAG = "EditShopUseCase"
     }
 
-    suspend fun updateShop(shop: Shop): Result<Unit> {
+    suspend fun updateShop(categoryId: Long, shop: Shop): Result<Unit> {
         return withContext(dispatcher) {
-            val result = repository.updateShop(shop)
+            val result = repository.updateShop(categoryId, shop)
             result.exceptionOrNull()?.let { Log.e(TAG, it.localizedMessage, it) }
             return@withContext result
         }

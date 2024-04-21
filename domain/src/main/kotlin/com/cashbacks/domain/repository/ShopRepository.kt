@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.Flow
 interface ShopRepository {
     suspend fun addShopToCategory(categoryId: Long, shop: Shop): Result<Long>
 
-    suspend fun updateShop(shop: Shop): Result<Unit>
+    suspend fun updateShop(categoryId: Long, shop: Shop): Result<Unit>
 
     suspend fun deleteShop(shop: Shop): Result<Unit>
 

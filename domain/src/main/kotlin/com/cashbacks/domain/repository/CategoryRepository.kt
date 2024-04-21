@@ -4,7 +4,7 @@ import com.cashbacks.domain.model.Category
 import kotlinx.coroutines.flow.Flow
 
 interface CategoryRepository {
-    suspend fun addCategory(category: Category): Result<Unit>
+    suspend fun addCategory(category: Category): Result<Long>
 
     suspend fun updateCategory(category: Category): Result<Unit>
 

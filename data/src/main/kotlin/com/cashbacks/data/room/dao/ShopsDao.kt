@@ -6,6 +6,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
+import androidx.room.Update
 import com.cashbacks.data.model.CategoryShopDB
 import com.cashbacks.data.model.ShopDB
 import com.cashbacks.data.model.ShopWithMaxCashbackDB
@@ -13,14 +14,14 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface ShopsDao {
-    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun addShop(shop: ShopDB): Long
 
     @Query("SELECT COUNT(name) FROM Shops WHERE name = :name")
     suspend fun countShopsWithSameName(name: String): Int
 
-    @Query("UPDATE Shops SET name = :shopName WHERE id = :shopId")
-    suspend fun updateShopById(shopId: Long, shopName: String): Int
+    @Update(onConflict = OnConflictStrategy.ABORT)
+    suspend fun updateShop(shop: ShopDB): Int
 
     @Delete
     suspend fun deleteShop(shop: ShopDB): Int
@@ -36,7 +37,7 @@ interface ShopsDao {
                card.id AS cashback_card_id, card.name AS cashback_card_name,
                card.number AS cashback_card_number, card.paymentSystem AS cashback_card_paymentSystem
         FROM Shops AS s
-        LEFT JOIN (SELECT * FROM Cashbacks) AS cash 
+        LEFT JOIN Cashbacks AS cash 
         ON s.id = cash.shopId AND cash.amount = (
             SELECT MAX(amount) FROM Cashbacks WHERE shopId = s.id
         )

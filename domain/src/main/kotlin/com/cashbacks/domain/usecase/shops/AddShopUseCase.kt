@@ -9,10 +9,7 @@ class AddShopUseCase(
     private val repository: ShopRepository,
     private val dispatcher: CoroutineDispatcher
 ) {
-    suspend fun addShopToCategory(
-        categoryId: Long,
-        shop: Shop,
-    ): Result<Long> {
+    suspend fun addShopToCategory(categoryId: Long, shop: Shop): Result<Long> {
         return withContext(dispatcher) {
             repository.addShopToCategory(categoryId, shop)
         }

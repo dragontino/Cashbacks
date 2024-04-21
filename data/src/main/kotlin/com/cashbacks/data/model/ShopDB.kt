@@ -26,6 +26,12 @@ data class ShopDB(
     val categoryId: Long,
     val name: String = "",
 ) {
+    constructor(categoryId: Long, shop: Shop) : this(
+        id = shop.id,
+        categoryId = categoryId,
+        name = shop.name
+    )
+
     fun mapToShop() = Shop(
         id = id,
         name = name,
