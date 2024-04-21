@@ -52,7 +52,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.cashbacks.domain.R
 import com.cashbacks.app.ui.composables.BankCardCompose
 import com.cashbacks.app.ui.composables.BasicFloatingActionButton
 import com.cashbacks.app.ui.composables.CollapsingToolbarScaffold
@@ -66,6 +65,7 @@ import com.cashbacks.app.ui.theme.CashbacksTheme
 import com.cashbacks.app.util.LoadingInBox
 import com.cashbacks.app.util.animate
 import com.cashbacks.app.util.reversed
+import com.cashbacks.domain.R
 import com.cashbacks.domain.model.BankCard
 import kotlinx.coroutines.launch
 

@@ -83,22 +83,22 @@ class CategoryEditingViewModel @AssistedInject constructor(
         viewModelScope.launch {
             innerState.value = ViewModelState.Loading
             delay(300)
-            val success = when {
-                category.value.isChanged -> {
-                    updateCategoryUseCase.updateCategory(
-                        category = category.value.mapToCategory(),
-                        exceptionMessage = {
-                            exceptionMessage.getMessage(it)?.let(::showSnackbar)
-                        }
-                    ).isSuccess
-                }
-
-                else -> true
+            when {
+                category.value.isChanged -> updateCategory(onSuccess)
+                else -> onSuccess()
             }
             innerState.value = ViewModelState.Editing
-            if (success) onSuccess()
         }
     }
+
+    private suspend fun updateCategory(onSuccess: () -> Unit) {
+        val result = updateCategoryUseCase.updateCategory(
+            category = category.value.mapToCategory(),
+            exceptionMessage = { exceptionMessage.getMessage(it)?.let(::showSnackbar) }
+        )
+        if (result.isSuccess) onSuccess()
+    }
+
 
     fun deleteCategory() {
         viewModelScope.launch {
@@ -114,7 +114,8 @@ class CategoryEditingViewModel @AssistedInject constructor(
         }
     }
 
-    fun addShop(name: String) {
+
+    fun saveShop(name: String) {
         viewModelScope.launch {
             innerState.value = ViewModelState.Loading
             delay(100)

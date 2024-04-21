@@ -26,7 +26,6 @@ import com.cashbacks.domain.model.ColorDesign
 import com.cashbacks.domain.model.PaymentSystem
 
 data object ColorDesignMapper {
-    val ColorDesign.title: String @Composable get() = stringResource(this.titleRes)
 
     val ColorDesign.icon get() = when (this) {
         ColorDesign.Light -> Icons.Outlined.LightMode

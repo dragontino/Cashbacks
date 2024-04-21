@@ -53,6 +53,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.SpanStyle
@@ -166,6 +167,7 @@ private fun SettingsContent(viewModel: SettingsViewModel) {
     val scope = rememberCoroutineScope()
     val bottomSheetState = rememberModalBottomSheetState()
     var isSheetOpen by rememberSaveable { mutableStateOf(false) }
+    val context = LocalContext.current
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -209,7 +211,16 @@ private fun SettingsContent(viewModel: SettingsViewModel) {
                                 fontSynthesis = FontSynthesis.Weight
                             ),
                         ) {
-                            append(viewModel.constructThemeText())
+                            val currentDesign = viewModel.settings.value.colorDesign
+                            append(currentDesign.getTitle(context.resources).lowercase())
+                            if (currentDesign == ColorDesign.System) {
+                                val textToAppend = when {
+                                    currentDesign.isDark -> stringResource(R.string.dark_scheme)
+                                    else -> stringResource(R.string.light_scheme)
+                                }
+
+                                append("\n", stringResource(R.string.now, textToAppend).lowercase())
+                            }
                         }
                     },
                     style = MaterialTheme.typography.bodyMedium,

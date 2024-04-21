@@ -92,7 +92,7 @@ class CategoriesViewModel @Inject constructor(
             _state.value = ListState.Loading
             delay(100)
             addCategoryUseCase
-                .addCategory(Category(id = 0, name = name, maxCashback = null))
+                .addCategory(Category(name = name))
                 .exceptionOrNull()
                 ?.let(exceptionMessage::getMessage)
                 ?.let(::showSnackbar)

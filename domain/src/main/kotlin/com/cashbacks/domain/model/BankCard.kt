@@ -36,8 +36,11 @@ data class BasicBankCard(
     override val name: String = "",
     override val number: String = "",
     override val paymentSystem: PaymentSystem? = null
-) : BasicInfoBankCard
-
+) : BasicInfoBankCard {
+    override fun toString(): String {
+        return "$name $hiddenLastDigitsOfNumber"
+    }
+}
 
 data class BankCard(
     override val id: Long = 0,
@@ -50,7 +53,5 @@ data class BankCard(
     val pin: String = "",
     val comment: String = "",
 ) : BasicInfoBankCard {
-    override fun toString(): String {
-        return "$name $hiddenLastDigitsOfNumber"
-    }
+    fun getBasicInfo() = BasicBankCard(id, name, number, paymentSystem)
 }

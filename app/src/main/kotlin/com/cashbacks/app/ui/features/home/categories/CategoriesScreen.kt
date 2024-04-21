@@ -58,7 +58,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.cashbacks.domain.R
 import com.cashbacks.app.ui.composables.BasicFloatingActionButton
 import com.cashbacks.app.ui.composables.BasicInfoCashback
 import com.cashbacks.app.ui.composables.CollapsingToolbarScaffold
@@ -81,6 +80,7 @@ import com.cashbacks.app.util.floatingActionButtonExitAnimation
 import com.cashbacks.app.util.keyboardAsState
 import com.cashbacks.app.util.reversed
 import com.cashbacks.app.util.smoothScrollToItem
+import com.cashbacks.domain.R
 import com.cashbacks.domain.model.Category
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -270,9 +270,7 @@ internal fun CategoriesScreen(
             ),
             modifier = Modifier.align(Alignment.BottomCenter)
         ) {
-            NewNameTextField(
-                placeholder = stringResource(R.string.category_placeholder)
-            ) { name ->
+            NewNameTextField(placeholder = stringResource(R.string.category_placeholder)) { name ->
                 viewModel.addCategory(name)
                 viewModel.addingCategoriesState = false
             }
@@ -308,12 +306,12 @@ private fun CategoriesList(
                 },
                 onClick = {
                     viewModel.onItemClick {
-                        viewModel.navigateTo(CategoryArgs(id = category.id, isEditing = false))
+                        viewModel.navigateTo(CategoryArgs.Viewing(id = category.id))
                     }
                 },
                 onEdit = {
                     viewModel.selectedCategoryIndex = -1
-                    viewModel.navigateTo(CategoryArgs(id = category.id, isEditing = true))
+                    viewModel.navigateTo(CategoryArgs.Editing(id = category.id))
                 },
                 onDelete = remember {
                     fun() {

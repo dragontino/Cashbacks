@@ -229,7 +229,7 @@ internal fun CategoryEditingScreen(
             NewNameTextField(
                 placeholder = stringResource(R.string.shop_placeholder),
             ) { name ->
-                viewModel.addShop(name)
+                viewModel.saveShop(name)
                 viewModel.addingShopState.value = false
             }
         }
