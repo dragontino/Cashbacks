@@ -48,7 +48,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.cashbacks.domain.R
 import com.cashbacks.app.ui.composables.ModalNavigationDrawerContent
 import com.cashbacks.app.ui.composables.ModalSheetDefaults
 import com.cashbacks.app.ui.composables.ModalSheetItems.IconTextItem
@@ -71,6 +70,7 @@ import com.cashbacks.app.ui.navigation.enterScreenTransition
 import com.cashbacks.app.ui.navigation.exitScreenTransition
 import com.cashbacks.app.util.animate
 import com.cashbacks.app.util.getActivity
+import com.cashbacks.domain.R
 import kotlinx.coroutines.launch
 
 @Suppress("DEPRECATION")
@@ -262,9 +262,11 @@ internal fun HomeScreen(
             BottomBar(
                 selectedDestination = currentDestination.value,
                 onClickToDestination = {
-                    navController.navigate(it.route) {
-                        popUpTo(HomeDestination.Categories.route)
-                        launchSingleTop = true
+                    if (it.route != navController.currentDestination?.route) {
+                        navController.navigate(it.route) {
+                            popUpTo(HomeDestination.Categories.route)
+                            launchSingleTop = true
+                        }
                     }
                 },
                 modifier = Modifier
