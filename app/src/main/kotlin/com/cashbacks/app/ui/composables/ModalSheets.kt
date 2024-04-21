@@ -1,11 +1,10 @@
 package com.cashbacks.app.ui.composables
 
-import android.content.res.Configuration
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -13,6 +12,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.exclude
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.systemBarsIgnoringVisibility
 import androidx.compose.foundation.layout.tappableElement
+import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
@@ -32,15 +33,17 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.NavigationDrawerItemDefaults
+import androidx.compose.material3.SheetState
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -58,6 +61,7 @@ import androidx.compose.ui.unit.dp
 import com.cashbacks.app.R
 import com.cashbacks.app.ui.theme.DarkerGray
 import com.cashbacks.app.util.animate
+import kotlinx.coroutines.launch
 
 
 data class Header(
@@ -158,55 +162,119 @@ private fun NavHeader(
 }
 
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+/* --- BOTTOM SHEET ---- */
+
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ColumnScope.BottomSheetContent(
-    header: Header = Header(),
-    contentWindowInsets: WindowInsets =
-        WindowInsets.systemBarsIgnoringVisibility.only(WindowInsetsSides.Vertical),
-    bodyContent: @Composable (ColumnScope.() -> Unit),
+fun ModalBottomSheet(
+    onClose: () -> Unit,
+    state: SheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+    title: String = "",
+    subtitle: String = "",
+    beautifulDesign: Boolean = false,
+    contentWindowInsets: WindowInsets = ModalSheetDefaults.contentWindowInsets,
+    bodyContent: @Composable (ColumnScope.() -> Unit)
 ) {
+    ModalBottomSheet(
+        onClose = onClose,
+        state = state,
+        header = Header(title, subtitle, beautifulDesign),
+        contentWindowInsets = contentWindowInsets,
+        bodyContent = bodyContent
+    )
+}
+
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ModalBottomSheet(
+    onClose: () -> Unit,
+    state: SheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+    header: Header = Header(),
+    contentWindowInsets: WindowInsets = ModalSheetDefaults.contentWindowInsets,
+    bodyContent: @Composable (ColumnScope.() -> Unit)
+) {
+    val scope = rememberCoroutineScope()
+    val scrollState = rememberScrollState()
     val configuration = LocalConfiguration.current
     val density = LocalDensity.current
 
-    val initialTopPadding = contentWindowInsets
-        .asPaddingValues()
-        .calculateTopPadding()
+    val heightDp = remember { mutableIntStateOf(0) }
+    val topWindowInset = contentWindowInsets.asPaddingValues().calculateTopPadding()
+    val topPadding = animateDpAsState(
+        targetValue = when {
+            heightDp.intValue >= configuration.screenHeightDp -> topWindowInset
+            else -> 0.dp
+        },
+        label = "topInsetPadding",
+        animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)
+    )
 
-    var topInsetsPadding by remember { mutableStateOf(initialTopPadding) }
+    val scrollModifier = remember(configuration.orientation, heightDp.intValue) {
+        when {
+            heightDp.intValue >= configuration.screenHeightDp ->
+                Modifier.verticalScroll(scrollState)
 
-    val scrollModifier = when (configuration.orientation) {
-        Configuration.ORIENTATION_LANDSCAPE -> Modifier.verticalScroll(rememberScrollState())
-        else -> Modifier
+            else -> Modifier
+        }
     }
 
+    ModalBottomSheet(
+        sheetState = state,
+        onDismissRequest = {
+            scope.launch {
+                state.hide()
+                onClose()
+            }
+        },
+        shape = ModalSheetDefaults.BottomSheetShape,
+        containerColor = MaterialTheme.colorScheme.surface.animate(),
+        contentColor = MaterialTheme.colorScheme.onSurface.animate(),
+        dragHandle = {
+            if (header.isEmpty()) {
+                BottomSheetDefaults.DragHandle(
+                    modifier = Modifier.padding(top = topPadding.value)
+                )
+            }
+        },
+        windowInsets = WindowInsets(0),
+        tonalElevation = 40.dp,
+        modifier = Modifier.onGloballyPositioned {
+            with(density) {
+                heightDp.intValue = it.size.height.toDp().value.toInt()
+            }
+        }
+    ) {
+        BottomSheetContent(
+            modifier = scrollModifier,
+            header = header,
+            contentWindowInsets = with(contentWindowInsets) {
+                this.exclude(this.only(WindowInsetsSides.Top))
+                    .union(WindowInsets(top = topPadding.value))
+            },
+            bodyContent = bodyContent
+        )
+    }
+}
+
+
+@Composable
+private fun ColumnScope.BottomSheetContent(
+    modifier: Modifier = Modifier,
+    header: Header = Header(),
+    contentWindowInsets: WindowInsets = ModalSheetDefaults.contentWindowInsets,
+    bodyContent: @Composable (ColumnScope.() -> Unit),
+) {
     Column(
         modifier = Modifier
-            .then(scrollModifier)
+            .then(modifier)
             .align(Alignment.CenterHorizontally)
-            .windowInsetsPadding(contentWindowInsets.only(WindowInsetsSides.Vertical))
-            .onGloballyPositioned {
-                with(density) {
-                    topInsetsPadding = when {
-                        it.size.height.toDp() >= configuration.screenHeightDp.dp / 2 -> initialTopPadding
-                        else -> 0.dp
-                    }
-                }
-            }
+            .windowInsetsPadding(contentWindowInsets)
+            .padding(bottom = 16.dp)
     ) {
-        if (header.isEmpty()) {
-            Box(
-                modifier = Modifier
-                    .padding(top = topInsetsPadding)
-                    .align(Alignment.CenterHorizontally)
-            ) {
-                BottomSheetDefaults.DragHandle()
-            }
-        } else {
-            BottomSheetHeader(
-                header = header,
-                modifier = Modifier.padding(top = topInsetsPadding, bottom = 8.dp)
-            )
+        if (!header.isEmpty()) {
+            BottomSheetHeader(header = header)
         }
         bodyContent()
     }
@@ -259,6 +327,22 @@ private fun ColumnScope.BottomSheetHeader(
 
 
 object ModalSheetItems {
+    @Composable
+    fun ColumnScope.TextItem(
+        text: String,
+        modifier: Modifier = Modifier,
+        selected: Boolean = false,
+        onClick: (text: String) -> Unit
+    ) {
+        BottomSheetItem(
+            text = text,
+            modifier = modifier,
+            selected = selected,
+            onClick = onClick,
+        )
+    }
+
+
     @Composable
     fun ColumnScope.IconTextItem(
         text: String,
@@ -351,8 +435,21 @@ object ModalSheetItems {
 
 
 object ModalSheetDefaults {
-    val BottomSheetShape = RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp)
-    val NavigationDrawerShape = RoundedCornerShape(topEnd = 18.dp, bottomEnd = 18.dp)
+    private val shapeCornerRadius = 18.dp
+
+    val BottomSheetShape = RoundedCornerShape(
+        topStart = shapeCornerRadius,
+        topEnd = shapeCornerRadius
+    )
+    val NavigationDrawerShape = RoundedCornerShape(
+        topEnd = shapeCornerRadius,
+        bottomEnd = shapeCornerRadius
+    )
+
+    @OptIn(ExperimentalLayoutApi::class)
+    val contentWindowInsets: WindowInsets
+        @Composable
+        get() = WindowInsets.systemBarsIgnoringVisibility.only(WindowInsetsSides.Vertical)
 
     val drawerAnimationSpec = tween<Float>(
         durationMillis = 600,

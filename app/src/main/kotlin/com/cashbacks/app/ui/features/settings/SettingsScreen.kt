@@ -13,10 +13,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -30,7 +28,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
@@ -39,7 +36,6 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -66,10 +62,9 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.cashbacks.app.model.ColorDesignMapper.icon
-import com.cashbacks.app.model.ColorDesignMapper.title
-import com.cashbacks.app.ui.composables.BottomSheetContent
+import com.cashbacks.app.model.ColorDesignMapper.isDark
 import com.cashbacks.app.ui.composables.Header
-import com.cashbacks.app.ui.composables.ModalSheetDefaults
+import com.cashbacks.app.ui.composables.ModalBottomSheet
 import com.cashbacks.app.ui.composables.ModalSheetItems.IconTextItem
 import com.cashbacks.app.ui.managment.ScreenEvents
 import com.cashbacks.app.ui.managment.ViewModelState
@@ -78,7 +73,6 @@ import com.cashbacks.app.util.animate
 import com.cashbacks.domain.R
 import com.cashbacks.domain.model.ColorDesign
 import com.cashbacks.domain.model.Settings
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -161,11 +155,8 @@ fun SettingsScreen(
 
 
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SettingsContent(viewModel: SettingsViewModel) {
-    val scope = rememberCoroutineScope()
-    val bottomSheetState = rememberModalBottomSheetState()
     var isSheetOpen by rememberSaveable { mutableStateOf(false) }
     val context = LocalContext.current
 
@@ -263,31 +254,16 @@ private fun SettingsContent(viewModel: SettingsViewModel) {
     }
 
     if (isSheetOpen) {
-        ModalBottomSheet(
-            sheetState = bottomSheetState,
-            onDismissRequest = { isSheetOpen = false },
-            shape = ModalSheetDefaults.BottomSheetShape,
-            containerColor = MaterialTheme.colorScheme.surface.animate(),
-            contentColor = MaterialTheme.colorScheme.onSurface.animate(),
-            dragHandle = null,
-            windowInsets = WindowInsets(0),
-            tonalElevation = 40.dp
-        ) {
-            ThemeSheetContent(
-                currentDesign = viewModel.settings.value.colorDesign,
-                updateDesign = {
-                    viewModel.updateSettingsProperty(
-                        property = Settings::colorDesign,
-                        value = it.name
-                    )
-                    scope.launch {
-                        bottomSheetState.hide()
-                        delay(50)
-                        isSheetOpen = false
-                    }
-                }
-            )
-        }
+        ThemeBottomSheet(
+            currentDesign = viewModel.settings.value.colorDesign,
+            updateDesign = {
+                viewModel.updateSettingsProperty(
+                    property = Settings::colorDesign,
+                    value = it.name
+                )
+            },
+            onClose = { isSheetOpen = false }
+        )
     }
 }
 
@@ -355,18 +331,25 @@ private fun SwitchItem(
 
 
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun ColumnScope.ThemeSheetContent(
+private fun ThemeBottomSheet(
     currentDesign: ColorDesign,
     updateDesign: (newDesign: ColorDesign) -> Unit,
-) = BottomSheetContent {
-    ColorDesign.entries.forEach { design ->
-        IconTextItem(
-            icon = design.icon,
-            text = design.title,
-            selected = design == currentDesign,
-            iconTintColor = MaterialTheme.colorScheme.primary.animate(),
-            onClick = { updateDesign(design) }
-        )
+    onClose: () -> Unit
+) {
+    ModalBottomSheet(onClose = onClose) {
+        ColorDesign.entries.forEach { design ->
+            IconTextItem(
+                icon = design.icon,
+                text = design.getTitle(LocalContext.current.resources),
+                selected = design == currentDesign,
+                iconTintColor = MaterialTheme.colorScheme.primary.animate(),
+                onClick = {
+                    updateDesign(design)
+                    onClose()
+                }
+            )
+        }
     }
 }

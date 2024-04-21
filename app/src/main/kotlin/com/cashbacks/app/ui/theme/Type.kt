@@ -59,6 +59,22 @@ val Typography = Typography(
         letterSpacing = 0.1.sp
     ),
 
+    headlineLarge = TextStyle(
+        fontFamily = FontFamily(BeautifulFont),
+        fontSize = 35.sp,
+        lineHeight = 43.sp
+    ),
+    headlineMedium = TextStyle(
+        fontFamily = FontFamily(BeautifulFont),
+        fontSize = 24.sp,
+        lineHeight = 32.sp
+    ),
+    headlineSmall = TextStyle(
+        fontFamily = FontFamily(BeautifulFont),
+        fontSize = 20.sp,
+        lineHeight = 28.sp
+    ),
+
     displayLarge = TextStyle(
         fontFamily = FontFamily(VerdanaFont),
         fontSize = 50.sp,
