@@ -10,6 +10,7 @@ import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
 import com.cashbacks.app.model.ComposableCashback
 import com.cashbacks.app.model.ComposableCategoryCashback
+import com.cashbacks.app.model.ComposableShopCashback
 import com.cashbacks.app.ui.managment.ViewModelState
 import com.cashbacks.app.viewmodel.EventsViewModel
 import com.cashbacks.domain.model.AppExceptionMessage
@@ -18,11 +19,9 @@ import com.cashbacks.domain.model.BasicBankCard
 import com.cashbacks.domain.model.Cashback
 import com.cashbacks.domain.model.CashbackWithOwner
 import com.cashbacks.domain.model.Category
-import com.cashbacks.domain.model.CategoryCashback
 import com.cashbacks.domain.model.CategoryNotSelectedException
 import com.cashbacks.domain.model.CategoryShop
 import com.cashbacks.domain.model.Shop
-import com.cashbacks.domain.model.ShopCashback
 import com.cashbacks.domain.model.ShopNotSelectedException
 import com.cashbacks.domain.usecase.cards.FetchBankCardsUseCase
 import com.cashbacks.domain.usecase.cashbacks.DeleteCashbacksUseCase
@@ -136,18 +135,15 @@ class CashbackViewModel @AssistedInject constructor(
 
 
     suspend fun saveCashback(): Result<Unit> {
-        val cashback = cashback.value.mapToCashback()
-
-        when (_cashback.value) {
-            is CategoryCashback -> {
-                val categoryId = ownerId ?: return Result.failure(CategoryNotSelectedException)
-                return saveCashbackInCategory(categoryId, cashback)
+        when (val cashback = cashback.value) {
+            is ComposableCategoryCashback -> {
+                val categoryId = cashback.category?.id ?: return Result.failure(CategoryNotSelectedException)
+                return saveCashbackInCategory(categoryId, cashback.mapToCashback())
             }
-            is ShopCashback -> {
-                val shopId = ownerId ?: return Result.failure(ShopNotSelectedException)
-                return saveCashbackInShop(shopId, cashback)
+            is ComposableShopCashback -> {
+                val shopId = cashback.shop?.id ?: return Result.failure(ShopNotSelectedException)
+                return saveCashbackInShop(shopId, cashback.mapToCashback())
             }
-            null -> return Result.success(Unit)
         }
     }
 
