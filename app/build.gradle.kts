@@ -4,9 +4,9 @@ plugins {
     id("com.google.devtools.ksp")
 }
 
-val versionName by extra("1.8.0")
-val versionDate by extra("22/04/2024")
-val debugVersionExt by extra("beta20")
+val versionName by extra("1.8.2")
+val versionDate by extra("28/04/2024")
+val debugVersionExt by extra("beta25")
 
 android {
     namespace = "com.cashbacks.app"

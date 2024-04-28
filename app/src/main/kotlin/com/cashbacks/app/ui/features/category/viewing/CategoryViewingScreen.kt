@@ -309,7 +309,7 @@ private fun CategoryViewerContent(
                         },
                         onDelete = {
                             viewModel.onItemClick {
-                                viewModel.selectedCashbackIndex = -1
+                                viewModel.selectedCashbackIndex = null
                                 viewModel.openDialog(DialogType.ConfirmDeletion(item))
                             }
                         }

@@ -286,9 +286,8 @@ private fun CashbacksList(
                 },
                 onDelete = {
                     viewModel.onItemClick {
-                        viewModel.openDialog(
-                            DialogType.ConfirmDeletion(cashbackWithOwner.asCashback())
-                        )
+                        viewModel.selectedCashbackIndex = null
+                        viewModel.openDialog(DialogType.ConfirmDeletion(cashbackWithOwner.asCashback()))
                     }
                 }
             )

@@ -502,7 +502,10 @@ private fun ShopScreenContent(
                                     }
                                 },
                                 onDelete = {
-                                    viewModel.openDialog(DialogType.ConfirmDeletion(cashback))
+                                    viewModel.onItemClick {
+                                        viewModel.selectedCashbackIndex = null
+                                        viewModel.openDialog(DialogType.ConfirmDeletion(cashback))
+                                    }
                                 }
                             )
                         }
