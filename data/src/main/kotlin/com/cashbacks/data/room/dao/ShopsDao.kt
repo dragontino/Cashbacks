@@ -129,6 +129,7 @@ interface ShopsDao {
     )
     suspend fun searchAllShops(query: String): List<CategoryShopDB>
 
+    @Transaction
     @Query(
         """
         SELECT s.id, s.name,
@@ -151,6 +152,9 @@ interface ShopsDao {
     )
     suspend fun searchShopsWithCashback(query: String): List<CategoryShopDB>
 
+    @Query("SELECT * FROM Shops WHERE id = :id")
+    suspend fun getShopById(id: Long): ShopDB?
+
     @Transaction
     @Query(
         """
@@ -169,5 +173,5 @@ interface ShopsDao {
         WHERE s.id = :id
         """
     )
-    suspend fun getShopById(id: Long): CategoryShopDB?
+    suspend fun getShopWithCategoryById(id: Long): CategoryShopDB?
 }

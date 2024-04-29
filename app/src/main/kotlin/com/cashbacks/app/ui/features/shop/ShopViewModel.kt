@@ -26,7 +26,8 @@ import com.cashbacks.domain.usecase.categories.AddCategoryUseCase
 import com.cashbacks.domain.usecase.categories.FetchCategoriesUseCase
 import com.cashbacks.domain.usecase.shops.AddShopUseCase
 import com.cashbacks.domain.usecase.shops.DeleteShopUseCase
-import com.cashbacks.domain.usecase.shops.EditShopUseCase
+import com.cashbacks.domain.usecase.shops.GetShopUseCase
+import com.cashbacks.domain.usecase.shops.UpdateShopUseCase
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
@@ -37,8 +38,9 @@ class ShopViewModel @AssistedInject constructor(
     fetchCashbacksUseCase: FetchCashbacksUseCase,
     private val fetchCategoriesUseCase: FetchCategoriesUseCase,
     private val addCategoryUseCase: AddCategoryUseCase,
+    private val getShopUseCase: GetShopUseCase,
     private val addShopUseCase: AddShopUseCase,
-    private val editShopUseCase: EditShopUseCase,
+    private val updateShopUseCase: UpdateShopUseCase,
     private val deleteShopUseCase: DeleteShopUseCase,
     private val deleteCashbacksUseCase: DeleteCashbacksUseCase,
     private val exceptionMessage: AppExceptionMessage,
@@ -81,8 +83,8 @@ class ShopViewModel @AssistedInject constructor(
         viewModelScope.launch {
             delay(250)
             if (shopId != null) {
-                editShopUseCase
-                    .getShopById(shopId)
+                getShopUseCase
+                    .getShopWithCategoryById(shopId)
                     .getOrNull()
                     ?.let {
                         _shop.value = ComposableShop(it)
@@ -165,7 +167,7 @@ class ShopViewModel @AssistedInject constructor(
 
         return when (shopId) {
             null -> addShop(categoryId)
-            else -> editShopUseCase.updateShop(categoryId, shop.mapToShop())
+            else -> updateShopUseCase.updateShop(categoryId, shop.mapToShop())
         }
     }
 

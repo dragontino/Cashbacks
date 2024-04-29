@@ -6,6 +6,7 @@ import com.cashbacks.data.room.dao.CashbacksDao
 import com.cashbacks.domain.model.Cashback
 import com.cashbacks.domain.model.CashbackWithOwner
 import com.cashbacks.domain.model.DeletionException
+import com.cashbacks.domain.model.EntityNotFoundException
 import com.cashbacks.domain.model.InsertionException
 import com.cashbacks.domain.model.UpdateException
 import com.cashbacks.domain.repository.CashbackRepository
@@ -85,7 +86,7 @@ class CashbackRepositoryImpl(private val dao: CashbacksDao) : CashbackRepository
 
     override suspend fun getCashbackById(id: Long): Result<CashbackWithOwner> {
         return when (val cashback = dao.getCashbackById(id)?.mapToCashback()) {
-            null -> Result.failure(Exception("Не удалось извлечь данные!"))
+            null -> Result.failure(EntityNotFoundException(Cashback::class, id.toString()))
             else -> Result.success(cashback)
         }
     }

@@ -62,6 +62,12 @@ class DeletionException(type: KClass<*>, val name: String) : EntityException(typ
     }
 }
 
+class EntityNotFoundException(type: KClass<*>, private val id: String) : EntityException(type) {
+    override fun getMessage(resources: Resources): String {
+        return resources.getString(R.string.entity_not_found_exception, getTypeName(resources), id)
+    }
+}
+
 data object ExpiredCashbacksDeletionException : AppException() {
     override fun getMessage(resources: Resources): String {
         return resources.getString(R.string.expired_cashbacks_deletion_failure)

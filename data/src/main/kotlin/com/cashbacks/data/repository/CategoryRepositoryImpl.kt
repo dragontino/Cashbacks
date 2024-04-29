@@ -3,6 +3,7 @@ package com.cashbacks.data.repository
 import com.cashbacks.data.model.CategoryDB
 import com.cashbacks.data.room.dao.CategoriesDao
 import com.cashbacks.domain.model.Category
+import com.cashbacks.domain.model.EntityNotFoundException
 import com.cashbacks.domain.model.EntryAlreadyExistsException
 import com.cashbacks.domain.model.InsertionException
 import com.cashbacks.domain.repository.CategoryRepository
@@ -58,7 +59,7 @@ class CategoryRepositoryImpl(private val dao: CategoriesDao) : CategoryRepositor
 
     override suspend fun getCategoryById(id: Long): Result<Category> {
         return when (val category = dao.getCategoryById(id)) {
-            null -> Result.failure(Exception())
+            null -> Result.failure(EntityNotFoundException(Category::class, id.toString()))
             else -> Result.success(category.mapToCategory())
         }
     }

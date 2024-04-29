@@ -17,7 +17,6 @@ import com.cashbacks.domain.model.AppExceptionMessage
 import com.cashbacks.domain.model.BankCard
 import com.cashbacks.domain.model.BasicBankCard
 import com.cashbacks.domain.model.Cashback
-import com.cashbacks.domain.model.CashbackWithOwner
 import com.cashbacks.domain.model.Category
 import com.cashbacks.domain.model.CategoryNotSelectedException
 import com.cashbacks.domain.model.CategoryShop
@@ -28,7 +27,9 @@ import com.cashbacks.domain.usecase.cashbacks.DeleteCashbacksUseCase
 import com.cashbacks.domain.usecase.cashbacks.EditCashbackUseCase
 import com.cashbacks.domain.usecase.categories.AddCategoryUseCase
 import com.cashbacks.domain.usecase.categories.FetchCategoriesUseCase
+import com.cashbacks.domain.usecase.categories.GetCategoryUseCase
 import com.cashbacks.domain.usecase.shops.FetchAllShopsUseCase
+import com.cashbacks.domain.usecase.shops.GetShopUseCase
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
@@ -40,6 +41,8 @@ class CashbackViewModel @AssistedInject constructor(
     private val editCashbackUseCase: EditCashbackUseCase,
     private val deleteCashbacksUseCase: DeleteCashbacksUseCase,
     private val fetchCategoriesUseCase: FetchCategoriesUseCase,
+    private val getCategoryUseCase: GetCategoryUseCase,
+    private val getShopUseCase: GetShopUseCase,
     private val fetchAllShopsUseCase: FetchAllShopsUseCase,
     private val fetchBankCardsUseCase: FetchBankCardsUseCase,
     private val addCategoryUseCase: AddCategoryUseCase,
@@ -52,10 +55,8 @@ class CashbackViewModel @AssistedInject constructor(
     private val _state = mutableStateOf(ViewModelState.Loading)
     val state = derivedStateOf { _state.value }
 
-    private val _cashback = mutableStateOf<CashbackWithOwner?>(null)
-    val cashback = derivedStateOf {
-        _cashback.value?.let(::ComposableCashback) ?: ComposableCashback(ownerType)
-    }
+    private val _cashback = mutableStateOf(ComposableCashback(ownerType))
+    val cashback = derivedStateOf { _cashback.value }
 
     var showBankCardsSelection by mutableStateOf(false)
     var showOwnersSelection by mutableStateOf(false)
@@ -68,16 +69,37 @@ class CashbackViewModel @AssistedInject constructor(
 
     init {
         viewModelScope.launch {
-            if (cashbackId != null) {
-                delay(100)
-                editCashbackUseCase
-                    .getCashbackById(cashbackId)
-                    .getOrNull()
-                    ?.let { _cashback.value = it }
+            delay(100)
+            when {
+                cashbackId != null -> getCashback(cashbackId)?.let { _cashback.value = it }
+                ownerId != null -> updateOwner(cashback.value, ownerId)
             }
             _state.value = ViewModelState.Viewing
         }
     }
+
+
+    private suspend fun getCashback(id: Long): ComposableCashback? {
+        val result = editCashbackUseCase.getCashbackById(id)
+        result.exceptionOrNull()?.let(exceptionMessage::getMessage)?.let(::showSnackbar)
+        return result.getOrNull()?.let(::ComposableCashback)
+    }
+
+
+    private suspend fun updateOwner(cashback: ComposableCashback, ownerId: Long) {
+        val result = when (cashback) {
+            is ComposableCategoryCashback -> getCategoryUseCase
+                .getCategoryById(ownerId)
+                .also { cashback.category = it.getOrNull() }
+
+            is ComposableShopCashback -> getShopUseCase
+                .getShopById(ownerId)
+                .also { cashback.shop = it.getOrNull() }
+        }
+
+        result.exceptionOrNull()?.let(exceptionMessage::getMessage)?.let(::showSnackbar)
+    }
+
 
     fun getAllCategories(): LiveData<List<Category>> {
         return fetchCategoriesUseCase.fetchAllCategories().asLiveData(timeoutInMs = 200)

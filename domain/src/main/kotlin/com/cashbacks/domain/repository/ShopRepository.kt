@@ -11,7 +11,9 @@ interface ShopRepository {
 
     suspend fun deleteShop(shop: Shop): Result<Unit>
 
-    suspend fun getShopById(id: Long): Result<CategoryShop>
+    suspend fun getShopById(id: Long): Result<Shop>
+
+    suspend fun getShopWithCategoryById(id: Long): Result<CategoryShop>
 
     fun fetchAllShopsFromCategory(categoryId: Long): Flow<List<Shop>>
 

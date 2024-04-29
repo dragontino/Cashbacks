@@ -3,10 +3,11 @@ package com.cashbacks.app.di.modules
 import com.cashbacks.domain.repository.ShopRepository
 import com.cashbacks.domain.usecase.shops.AddShopUseCase
 import com.cashbacks.domain.usecase.shops.DeleteShopUseCase
-import com.cashbacks.domain.usecase.shops.EditShopUseCase
 import com.cashbacks.domain.usecase.shops.FetchAllShopsUseCase
 import com.cashbacks.domain.usecase.shops.FetchShopsFromCategoryUseCase
+import com.cashbacks.domain.usecase.shops.GetShopUseCase
 import com.cashbacks.domain.usecase.shops.SearchShopsUseCase
+import com.cashbacks.domain.usecase.shops.UpdateShopUseCase
 import dagger.Module
 import dagger.Provides
 import kotlinx.coroutines.Dispatchers
@@ -20,13 +21,19 @@ class ShopsModule {
     )
 
     @Provides
-    fun provideShopUseCase(shopRepository: ShopRepository) = EditShopUseCase(
+    fun provideUpdateShopUseCase(shopRepository: ShopRepository) = UpdateShopUseCase(
         repository = shopRepository,
         dispatcher = Dispatchers.IO
     )
 
     @Provides
     fun provideDeleteShopUseCase(shopRepository: ShopRepository) = DeleteShopUseCase(
+        repository = shopRepository,
+        dispatcher = Dispatchers.IO
+    )
+
+    @Provides
+    fun provideGetShopUseCase(shopRepository: ShopRepository) = GetShopUseCase(
         repository = shopRepository,
         dispatcher = Dispatchers.IO
     )

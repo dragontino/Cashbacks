@@ -4,6 +4,7 @@ import com.cashbacks.data.model.ShopDB
 import com.cashbacks.data.room.dao.ShopsDao
 import com.cashbacks.domain.model.CategoryShop
 import com.cashbacks.domain.model.DeletionException
+import com.cashbacks.domain.model.EntityNotFoundException
 import com.cashbacks.domain.model.EntryAlreadyExistsException
 import com.cashbacks.domain.model.InsertionException
 import com.cashbacks.domain.model.Shop
@@ -60,11 +61,18 @@ class ShopRepositoryImpl(private val dao: ShopsDao) : ShopRepository {
         }
     }
 
-    override suspend fun getShopById(id: Long): Result<CategoryShop> {
+    override suspend fun getShopById(id: Long): Result<Shop> {
         return dao
             .getShopById(id)
+            ?.let { Result.success(it.mapToShop()) }
+            ?: Result.failure(EntityNotFoundException(type = Shop::class, id = id.toString()))
+    }
+
+    override suspend fun getShopWithCategoryById(id: Long): Result<CategoryShop> {
+        return dao
+            .getShopWithCategoryById(id)
             ?.let { Result.success(it.mapToCategoryShop()) }
-            ?: Result.failure(Exception())
+            ?: Result.failure(EntityNotFoundException(type = Shop::class, id = id.toString()))
     }
 
     override fun fetchAllShopsFromCategory(categoryId: Long): Flow<List<Shop>> {
