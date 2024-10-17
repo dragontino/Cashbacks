@@ -16,10 +16,8 @@ class DeleteCashbacksUseCase(
 
     suspend fun deleteCashback(cashback: Cashback): Result<Unit> {
         return withContext(dispatcher) {
-            repository.deleteCashback(cashback).also { result ->
-                result.exceptionOrNull()?.let {
-                    Log.e(TAG, it.message, it)
-                }
+            repository.deleteCashback(cashback).onFailure {
+                Log.e(TAG, it.message, it)
             }
         }
     }

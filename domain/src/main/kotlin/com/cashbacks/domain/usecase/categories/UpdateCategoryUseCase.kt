@@ -2,6 +2,7 @@ package com.cashbacks.domain.usecase.categories
 
 import android.util.Log
 import com.cashbacks.domain.model.Category
+import com.cashbacks.domain.model.FullCategory
 import com.cashbacks.domain.repository.CategoryRepository
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
@@ -14,16 +15,8 @@ class UpdateCategoryUseCase(
         const val TAG = "UpdateCategoriesUseCase"
     }
 
-    suspend fun updateCategory(
-        category: Category,
-        exceptionMessage: (Throwable) -> Unit
-    ): Result<Unit> = withContext(dispatcher) {
-        val result = categoryRepository.updateCategory(category)
-
-        result.exceptionOrNull()
-            ?.also { Log.e(TAG, it.message, it) }
-            ?.let(exceptionMessage)
-
-        return@withContext result
+    suspend fun updateCategory(category: Category): Result<Unit> = withContext(dispatcher) {
+        return@withContext categoryRepository.updateCategory(category)
+            .onFailure { Log.e(TAG, it.message, it) }
     }
 }

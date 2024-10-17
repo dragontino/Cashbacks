@@ -4,11 +4,10 @@ import android.util.Log
 import com.cashbacks.domain.model.Settings
 import com.cashbacks.domain.repository.SettingsRepository
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -20,32 +19,28 @@ class SettingsUseCase(
         const val TAG = "SettingsUseCase"
     }
 
-    suspend fun updateSettingsProperty(
-        name: String,
-        value: Any,
-        errorMessage: (String) -> Unit
-    ) {
-        withContext(dispatcher) {
-            repository.updateSettingsProperty(name, value)
-                .exceptionOrNull()
-                ?.also { Log.e(TAG, it.message, it) }
-                ?.message
-                ?.let(errorMessage)
+    suspend fun updateSettings(settings: Settings): Result<Unit> {
+        return withContext(dispatcher) {
+            repository.updateSettings(settings).onFailure {
+                Log.e(TAG, it.message, it)
+            }
         }
     }
 
-    fun fetchSettings(): Flow<Settings> = repository
-        .fetchSettings()
-        .mapLatest { settings ->
-            when (settings) {
-                null -> {
-                    repository.addSettings(Settings())
-                    delay(200)
-                    return@mapLatest Settings()
-                }
-
-                else -> return@mapLatest settings
-            }
+    suspend fun updateSettingsProperty(
+        name: String,
+        value: Any
+    ): Result<Long> = withContext(dispatcher) {
+        repository.updateSettingsProperty(name, value).onFailure {
+            Log.e(TAG, it.message, it)
         }
-        .flowOn(dispatcher)
+    }
+
+    fun fetchSettings(onFailure: (Throwable) -> Unit = {}): Flow<Settings> {
+        val handler = CoroutineExceptionHandler { _, throwable ->
+            Log.e(TAG, throwable.message, throwable)
+            onFailure(throwable)
+        }
+        return repository.fetchSettings().flowOn(handler + dispatcher)
+    }
 }

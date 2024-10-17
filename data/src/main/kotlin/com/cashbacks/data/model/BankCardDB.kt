@@ -2,13 +2,11 @@ package com.cashbacks.data.model
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import androidx.room.TypeConverters
-import com.cashbacks.data.room.PaymentSystemConverter
-import com.cashbacks.domain.model.BankCard
+import com.cashbacks.domain.model.FullBankCard
 import com.cashbacks.domain.model.PaymentSystem
+import com.cashbacks.domain.model.PrimaryBankCard
 
 @Entity(tableName = "Cards")
-@TypeConverters(PaymentSystemConverter::class)
 data class BankCardDB(
     @PrimaryKey(autoGenerate = true)
     val id: Long,
@@ -21,7 +19,7 @@ data class BankCardDB(
     val pin: String = "",
     val comment: String = "",
 ) {
-    constructor(bankCard: BankCard) : this(
+    constructor(bankCard: FullBankCard) : this(
         id = bankCard.id,
         name = bankCard.name,
         number = bankCard.number,
@@ -33,7 +31,7 @@ data class BankCardDB(
         comment = bankCard.comment
     )
 
-    fun mapToBankCard() = BankCard(
+    fun mapToBankCard() = FullBankCard(
         id = id,
         name = name,
         number = number,
@@ -43,5 +41,26 @@ data class BankCardDB(
         cvv = cvv,
         pin = pin,
         comment = comment
+    )
+}
+
+
+data class PrimaryBankCardDB(
+    val id: Long,
+    val name: String,
+    val number: String,
+    val paymentSystem: PaymentSystem?,
+    val holder: String = "",
+    val validityPeriod: String = "",
+    val cvv: String = "",
+) {
+    fun mapToDomainBankCard() = PrimaryBankCard(
+        id = id,
+        name = name,
+        number = number,
+        paymentSystem = paymentSystem,
+        holder = holder,
+        validityPeriod = validityPeriod,
+        cvv = cvv
     )
 }

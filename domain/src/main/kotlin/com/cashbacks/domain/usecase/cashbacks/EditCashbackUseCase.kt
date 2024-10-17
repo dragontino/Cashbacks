@@ -1,7 +1,7 @@
 package com.cashbacks.domain.usecase.cashbacks
 
 import com.cashbacks.domain.model.Cashback
-import com.cashbacks.domain.model.CashbackWithOwner
+import com.cashbacks.domain.model.FullCashback
 import com.cashbacks.domain.repository.CashbackRepository
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
@@ -34,7 +34,7 @@ class EditCashbackUseCase(
         }
     }
 
-    suspend fun getCashbackById(id: Long): Result<CashbackWithOwner> {
+    suspend fun getCashbackById(id: Long): Result<FullCashback> {
         return withContext(dispatcher) {
             repository.getCashbackById(id)
         }

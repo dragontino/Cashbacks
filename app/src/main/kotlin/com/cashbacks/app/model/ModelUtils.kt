@@ -1,5 +1,7 @@
 package com.cashbacks.app.model
 
+import android.content.Context
+import androidx.annotation.StringRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -42,7 +44,7 @@ data object ColorDesignMapper {
 }
 
 
-data object PaymentSystemMapper {
+data object PaymentSystemUtils {
     val PaymentSystem?.title @Composable
     get(): String {
         if (this == null) return stringResource(R.string.value_not_selected)
@@ -89,7 +91,7 @@ data object PaymentSystemMapper {
 }
 
 
-data object BankCardMapper {
+data object BankCardUtils {
     fun addSpacesToCardNumber(numberWithoutSpaces: String) = buildString {
         for (i in numberWithoutSpaces.indices) {
             if (i > 0 && i % 4 == 0) append(" ")
@@ -98,4 +100,27 @@ data object BankCardMapper {
     }.trimIndent()
 
     fun removeSpacesFromNumber(cardNumber: String) = cardNumber.filter { it != ' ' }
+}
+
+
+sealed class CopyableBankCardPart {
+    @get:StringRes
+    protected abstract val descriptionRes: Int
+
+    fun getDescription(context: Context): String {
+        return context.getString(descriptionRes)
+    }
+
+    data object Number : CopyableBankCardPart() {
+        override val descriptionRes: Int = R.string.card_number
+    }
+
+    data object Holder : CopyableBankCardPart() {
+        override val descriptionRes: Int = R.string.full_name
+
+    }
+
+    data object Cvv : CopyableBankCardPart() {
+        override val descriptionRes: Int = R.string.cvv_for_copy
+    }
 }

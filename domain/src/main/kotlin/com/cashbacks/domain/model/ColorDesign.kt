@@ -11,7 +11,7 @@ enum class ColorDesign {
         override fun getTitle(resources: Resources) = resources.getString(R.string.dark_scheme)
     },
     System {
-        override fun getTitle(resources: Resources) = resources.getString(R.string.system_theme)
+        override fun getTitle(resources: Resources) = resources.getString(R.string.system_scheme)
     };
 
     abstract fun getTitle(resources: Resources): String

@@ -1,6 +1,6 @@
 package com.cashbacks.domain.usecase.shops
 
-import com.cashbacks.domain.model.Shop
+import com.cashbacks.domain.model.BasicShop
 import com.cashbacks.domain.repository.ShopRepository
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
@@ -11,11 +11,7 @@ class FetchShopsFromCategoryUseCase(
     private val dispatcher: CoroutineDispatcher
 ) {
 
-    fun fetchAllShopsFromCategory(categoryId: Long): Flow<List<Shop>> {
+    fun fetchAllShopsFromCategory(categoryId: Long): Flow<List<BasicShop>> {
         return repository.fetchAllShopsFromCategory(categoryId).flowOn(dispatcher)
-    }
-
-    fun fetchShopsWithCashbackFromCategory(categoryId: Long): Flow<List<Shop>> {
-        return repository.fetchShopsWithCashbackFromCategory(categoryId).flowOn(dispatcher)
     }
 }

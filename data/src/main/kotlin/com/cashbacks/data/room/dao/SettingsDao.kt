@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Update
 import com.cashbacks.data.model.SettingsDB
 import kotlinx.coroutines.flow.Flow
 
@@ -12,11 +13,11 @@ interface SettingsDao {
     @Insert(entity = SettingsDB::class, onConflict = OnConflictStrategy.REPLACE)
     suspend fun addSettings(settings: SettingsDB): Long?
 
-    @Query("UPDATE Settings SET colorDesign = :colorDesign")
-    suspend fun updateColorDesign(colorDesign: String): Int?
+    @Query("SELECT COUNT(colorDesign) FROM Settings")
+    suspend fun getRowCount(): Int
 
-    @Query("UPDATE Settings SET dynamicColor = :dynamicColor")
-    suspend fun updateDynamicColor(dynamicColor: Boolean): Int?
+    @Update(entity = SettingsDB::class, onConflict = OnConflictStrategy.REPLACE)
+    suspend fun updateSettings(settings: SettingsDB): Int
 
     @Query("SELECT * FROM Settings")
     fun fetchSettings(): Flow<SettingsDB?>

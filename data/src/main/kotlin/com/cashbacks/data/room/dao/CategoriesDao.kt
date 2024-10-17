@@ -6,12 +6,14 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
+import com.cashbacks.data.model.BasicCategoryDB
 import com.cashbacks.data.model.CategoryDB
-import com.cashbacks.data.model.CategoryWithCashbackDB
+import com.cashbacks.domain.model.FullCategory
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 
 @Dao
-interface CategoriesDao {
+interface CategoriesDao : BaseDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun addCategory(category: CategoryDB): Long
 
@@ -23,7 +25,10 @@ interface CategoriesDao {
 
 
     @Query("SELECT COUNT(name) FROM Categories WHERE name = :name")
-    suspend fun countCategoriesWithSameName(name: String): Int
+    suspend fun getNumberOfCategoriesWithSameName(name: String): Int
+
+    @Query("SELECT * FROM Categories WHERE id = :id")
+    fun fetchBasicCategoryById(id: Long): Flow<CategoryDB>
 
 
     @Query(
@@ -42,7 +47,7 @@ interface CategoriesDao {
         ORDER BY cat.name ASC
         """,
     )
-    fun fetchAllCategories(): Flow<List<CategoryWithCashbackDB>>
+    fun fetchAllCategories(): Flow<List<BasicCategoryDB>>
 
 
     @Query(
@@ -62,7 +67,7 @@ interface CategoriesDao {
         ORDER BY cat.name ASC
         """
     )
-    fun fetchCategoriesWithCashback(): Flow<List<CategoryWithCashbackDB>>
+    fun fetchCategoriesWithCashback(): Flow<List<BasicCategoryDB>>
 
 
     @Query(
@@ -82,7 +87,7 @@ interface CategoriesDao {
         ORDER BY cat.name ASC
         """
     )
-    suspend fun searchAllCategories(query: String): List<CategoryWithCashbackDB>
+    suspend fun searchAllCategories(query: String): List<BasicCategoryDB>
 
 
     @Query(
@@ -102,9 +107,23 @@ interface CategoriesDao {
         ORDER BY cat.name ASC
         """
     )
-    suspend fun searchCategoriesWithCashback(query: String): List<CategoryWithCashbackDB>
+    suspend fun searchCategoriesWithCashback(query: String): List<BasicCategoryDB>
 
-
-    @Query("SELECT * FROM Categories WHERE id = :id")
-    suspend fun getCategoryById(id: Long): CategoryDB?
+    fun fetchCategoryById(id: Long): Flow<FullCategory> {
+        val basicCategoryFlow = fetchBasicCategoryById(id)
+        val shopsFlow = fetchShopsWithCashbackFromCategory(id)
+        val cashbacksFlow = fetchCashbacksFromCategory(id)
+        return combine(
+            flow = basicCategoryFlow,
+            flow2 = shopsFlow,
+            flow3 = cashbacksFlow
+        ) { basicCategory, shops, cashbacks ->
+            FullCategory(
+                id = basicCategory.id,
+                name = basicCategory.name,
+                shops = shops.map { it.mapToDomainShop() },
+                cashbacks = cashbacks.map { it.mapToDomainCashback() }
+            )
+        }
+    }
 }

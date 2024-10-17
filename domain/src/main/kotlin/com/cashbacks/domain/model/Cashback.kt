@@ -1,11 +1,11 @@
 package com.cashbacks.domain.model
 
-import android.content.res.Resources
-import com.cashbacks.domain.R
+import android.os.Parcelable
+import kotlinx.parcelize.Parcelize
 
-sealed interface CashbackInterface {
+sealed interface Cashback : Parcelable {
     val id: Long
-    val bankCard: BasicInfoBankCard
+    val bankCard: BasicBankCard
     val amount: String
     val expirationDate: String?
     val comment: String
@@ -18,67 +18,22 @@ sealed interface CashbackInterface {
 }
 
 
-data class Cashback(
+@Parcelize
+data class BasicCashback(
     override val id: Long,
-    override val bankCard: BasicInfoBankCard,
+    override val bankCard: BasicBankCard,
     override val amount: String,
     override val expirationDate: String?,
     override val comment: String
-) : CashbackInterface
+) : Cashback
 
 
-
-sealed class CashbackWithOwner(
+@Parcelize
+data class FullCashback(
     override val id: Long,
-    val ownerName: String,
-    override val bankCard: BasicInfoBankCard,
+    val owner: CashbackOwner,
+    override val bankCard: BasicBankCard,
     override val amount: String,
     override val expirationDate: String?,
     override val comment: String
-) : CashbackInterface {
-    fun asCashback() = Cashback(id, bankCard, amount, expirationDate, comment)
-
-    abstract fun getParentType(resources: Resources): String
-}
-
-
-class ShopCashback(
-    id: Long,
-    val shop: Shop,
-    bankCard: BasicInfoBankCard,
-    amount: String,
-    expirationDate: String?,
-    comment: String
-) : CashbackWithOwner(
-    id = id,
-    ownerName = shop.name,
-    bankCard = bankCard,
-    amount = amount,
-    expirationDate = expirationDate,
-    comment = comment
-) {
-    override fun getParentType(resources: Resources): String {
-        return resources.getString(R.string.shop)
-    }
-}
-
-
-class CategoryCashback(
-    id: Long,
-    val category: Category,
-    bankCard: BasicInfoBankCard,
-    amount: String,
-    expirationDate: String?,
-    comment: String
-) : CashbackWithOwner(
-    id = id,
-    ownerName = category.name,
-    bankCard = bankCard,
-    amount = amount,
-    expirationDate = expirationDate,
-    comment = comment
-) {
-    override fun getParentType(resources: Resources): String {
-        return resources.getString(R.string.category_title)
-    }
-}
+) : Cashback

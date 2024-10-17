@@ -7,12 +7,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
-import com.cashbacks.domain.model.BankCard
+import com.cashbacks.domain.model.FullBankCard
 import com.cashbacks.domain.model.PaymentSystem
 import kotlin.math.abs
+import kotlin.random.Random
 
 class ComposableBankCard(
-    val id: Long = 0,
+    id: Long? = null,
     name: String = "",
     number: String = "",
     paymentSystem: PaymentSystem? = null,
@@ -22,20 +23,10 @@ class ComposableBankCard(
     pin: String = "",
     comment: String = ""
 ) : Updatable {
-    constructor(bankCard: BankCard) : this(
-        id = bankCard.id,
-        name = bankCard.name,
-        number = bankCard.number,
-        paymentSystem = bankCard.paymentSystem,
-        holder = bankCard.holder,
-        validityPeriod = bankCard.validityPeriod,
-        cvv = bankCard.cvv,
-        pin = bankCard.pin,
-        comment = bankCard.comment
-    )
 
+    var id by mutableStateOf(id)
     var name by mutableStateOf(name)
-    var number by mutableStateOf(TextFieldValue(BankCardMapper.addSpacesToCardNumber(number)))
+    var number by mutableStateOf(TextFieldValue(BankCardUtils.addSpacesToCardNumber(number)))
         private set
 
     var paymentSystem by mutableStateOf(paymentSystem)
@@ -49,14 +40,26 @@ class ComposableBankCard(
 
     override val updatedProperties: SnapshotStateMap<String, Pair<String, String>> = mutableStateMapOf()
 
+    fun update(card: FullBankCard) {
+        id = card.id
+        name = card.name
+        number = TextFieldValue(card.number)
+        paymentSystem = card.paymentSystem
+        holder = card.holder
+        validityPeriod = TextFieldValue(card.validityPeriod)
+        cvv = card.cvv
+        pin = card.pin
+        comment = card.comment
+    }
+
+
     fun updateNumber(newNumber: TextFieldValue) {
         if (newNumber.text.length > number.text.length && !newNumber.text.last().isDigit()) {
             return
         }
 
-        println("new length = ${newNumber.text.length}, old length = ${number.text.length}")
         val newText = if (abs(newNumber.text.length - number.text.length) > 1) {
-            BankCardMapper.addSpacesToCardNumber(newNumber.text)
+            BankCardUtils.addSpacesToCardNumber(newNumber.text)
         } else when (newNumber.text.length) {
             4, 9, 14 -> {
                 if (newNumber.text.length < number.text.length) {
@@ -103,10 +106,10 @@ class ComposableBankCard(
         )
     }
 
-    fun mapToBankCard() = BankCard(
-        id = this.id,
+    fun mapToBankCard() = FullBankCard(
+        id = this.id ?: Random.nextLong(),
         name = this.name,
-        number = BankCardMapper.removeSpacesFromNumber(number.text),
+        number = BankCardUtils.removeSpacesFromNumber(number.text),
         paymentSystem = this.paymentSystem,
         holder = this.holder,
         validityPeriod = this.validityPeriod.text,

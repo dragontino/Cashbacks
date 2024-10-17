@@ -1,6 +1,6 @@
 package com.cashbacks.domain.usecase.categories
 
-import com.cashbacks.domain.model.Category
+import com.cashbacks.domain.model.BasicCategory
 import com.cashbacks.domain.repository.CategoryRepository
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
@@ -10,11 +10,11 @@ class FetchCategoriesUseCase(
     private val repository: CategoryRepository,
     private val dispatcher: CoroutineDispatcher
 ) {
-    fun fetchAllCategories(): Flow<List<Category>> {
+    fun fetchAllCategories(): Flow<List<BasicCategory>> {
         return repository.fetchAllCategories().flowOn(dispatcher)
     }
 
-    fun fetchCategoriesWithCashback(): Flow<List<Category>> {
+    fun fetchCategoriesWithCashback(): Flow<List<BasicCategory>> {
         return repository.fetchCategoriesWithCashback().flowOn(dispatcher)
     }
 }

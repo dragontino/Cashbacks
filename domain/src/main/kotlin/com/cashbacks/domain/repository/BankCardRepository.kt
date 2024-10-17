@@ -1,18 +1,22 @@
 package com.cashbacks.domain.repository
 
-import com.cashbacks.domain.model.BankCard
+import com.cashbacks.domain.model.BasicBankCard
+import com.cashbacks.domain.model.FullBankCard
+import com.cashbacks.domain.model.PrimaryBankCard
 import kotlinx.coroutines.flow.Flow
 
 interface BankCardRepository {
-    suspend fun addBankCard(bankCard: BankCard)
+    suspend fun addBankCard(bankCard: FullBankCard): Result<Long>
 
-    suspend fun updateBankCard(bankCard: BankCard)
+    suspend fun updateBankCard(bankCard: FullBankCard): Result<Unit>
 
-    fun fetchBankCards(): Flow<List<BankCard>>
+    fun fetchBankCards(): Flow<List<PrimaryBankCard>>
 
-    suspend fun searchBankCards(query: String): List<BankCard>
+    suspend fun searchBankCards(query: String): List<PrimaryBankCard>
 
-    suspend fun getBankCardById(id: Long): Result<BankCard>
+    suspend fun getBankCardById(id: Long): Result<FullBankCard>
 
-    suspend fun deleteBankCard(card: BankCard): Result<Unit>
+    suspend fun fetchBankCardById(id: Long): Flow<FullBankCard>
+
+    suspend fun deleteBankCard(card: BasicBankCard): Result<Unit>
 }

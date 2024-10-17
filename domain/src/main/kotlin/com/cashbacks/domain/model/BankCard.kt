@@ -1,6 +1,10 @@
 package com.cashbacks.domain.model
 
-interface BasicInfoBankCard {
+import android.os.Parcelable
+import kotlinx.parcelize.Parcelize
+import kotlin.random.Random
+
+interface BasicBankCard : Parcelable {
     val id: Long
     val name: String
     val number: String
@@ -31,27 +35,49 @@ interface BasicInfoBankCard {
 }
 
 
-data class BasicBankCard(
+sealed interface BankCard : BasicBankCard {
+    val holder: String
+    val validityPeriod: String
+    val cvv: String
+}
+
+
+@Parcelize
+data class PreviewBankCard(
     override val id: Long = 0,
     override val name: String = "",
     override val number: String = "",
     override val paymentSystem: PaymentSystem? = null
-) : BasicInfoBankCard {
+) : BasicBankCard {
     override fun toString(): String {
         return "$name $hiddenLastDigitsOfNumber"
     }
 }
 
-data class BankCard(
-    override val id: Long = 0,
+
+@Parcelize
+data class PrimaryBankCard(
+    override val id: Long = Random.nextLong(),
     override val name: String = "",
     override val number: String = "",
     override val paymentSystem: PaymentSystem? = null,
-    val holder: String = "",
-    val validityPeriod: String = "",
-    val cvv: String = "",
+    override val holder: String = "",
+    override val validityPeriod: String = "",
+    override val cvv: String = ""
+) : BankCard {
+    fun getBasicInfo() = PreviewBankCard(id, name, number, paymentSystem)
+}
+
+
+@Parcelize
+data class FullBankCard(
+    override val id: Long = Random.nextLong(),
+    override val name: String = "",
+    override val number: String = "",
+    override val paymentSystem: PaymentSystem? = null,
+    override val holder: String = "",
+    override val validityPeriod: String = "",
+    override val cvv: String = "",
     val pin: String = "",
     val comment: String = "",
-) : BasicInfoBankCard {
-    fun getBasicInfo() = BasicBankCard(id, name, number, paymentSystem)
-}
+) : BankCard

@@ -5,11 +5,10 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
-import com.cashbacks.domain.model.BasicBankCard
+import com.cashbacks.domain.model.BasicCashback
 import com.cashbacks.domain.model.Cashback
-import com.cashbacks.domain.model.CashbackWithOwner
-import com.cashbacks.domain.model.CategoryCashback
-import com.cashbacks.domain.model.ShopCashback
+import com.cashbacks.domain.model.FullCashback
+import com.cashbacks.domain.model.PreviewBankCard
 
 data class AmountDB(val value: Double) : Comparable<AmountDB> {
     constructor(value: String) : this(value.toDoubleOrNull() ?: -1.0)
@@ -79,12 +78,12 @@ data class CashbackDB(
 data class BasicCashbackDB(
     val id: Long,
     @Embedded(prefix = "card_")
-    val bankCard: BasicBankCard,
+    val bankCard: PreviewBankCard,
     val amount: AmountDB,
     val expirationDate: String?,
     val comment: String
 ) {
-    fun mapToCashback() = Cashback(
+    fun mapToDomainCashback() = BasicCashback(
         id = id,
         amount = amount.toString(),
         expirationDate = expirationDate,
@@ -94,89 +93,22 @@ data class BasicCashbackDB(
 }
 
 
-data class CashbackWithOwnersDB(
-    val id: Long,
+data class FullCashbackDB(
+    @Embedded
+    val basicCashbackDB: BasicCashbackDB,
     @Embedded(prefix = "category_")
     val category: CategoryDB?,
     @Embedded(prefix = "shop_")
-    val shop: ShopDB?,
-    @Embedded(prefix = "card_")
-    val bankCard: BasicBankCard,
-    val amount: AmountDB,
-    val expirationDate: String?,
-    val comment: String
+    val shop: ShopDB?
 ) {
-    fun mapToCashback(): CashbackWithOwner? {
-        return when {
-            category != null -> CategoryCashback(
-                id = id,
-                category = category.mapToCategory(),
-                bankCard = bankCard,
-                amount = amount.toString(),
-                expirationDate = expirationDate,
-                comment = comment
-            )
-            shop != null -> ShopCashback(
-                id = id,
-                shop = shop.mapToShop(),
-                bankCard = bankCard,
-                amount = amount.toString(),
-                expirationDate = expirationDate,
-                comment = comment
-            )
-            else -> null
-        }
-    }
-}
-
-
-
-sealed class CashbackWithOwnerAndBankCardDB(
-    val id: Long,
-    @Embedded(prefix = "card_")
-    val bankCard: BasicBankCard,
-    val amount: AmountDB,
-    val expirationDate: String?,
-    val comment: String,
-) {
-    abstract fun mapToCashback(): CashbackWithOwner
-
-    class Category(
-        id: Long,
-        @Embedded(prefix = "category_")
-        val categoryDB: CategoryDB,
-        bankCard: BasicBankCard,
-        amount: AmountDB,
-        expirationDate: String?,
-        comment: String
-    ) : CashbackWithOwnerAndBankCardDB(id, bankCard, amount, expirationDate, comment) {
-        override fun mapToCashback() = CategoryCashback(
-            id = id,
-            category = categoryDB.mapToCategory(),
-            bankCard = bankCard,
-            expirationDate = expirationDate,
-            amount = amount.toString(),
-            comment = comment
-        )
-    }
-
-
-    class Shop(
-        id: Long,
-        @Embedded(prefix = "shop_")
-        val shop: ShopDB,
-        bankCard: BasicBankCard,
-        amount: AmountDB,
-        expirationDate: String?,
-        comment: String
-    ) : CashbackWithOwnerAndBankCardDB(id, bankCard, amount, expirationDate, comment) {
-        override fun mapToCashback() = ShopCashback(
-            id = id,
-            shop = shop.mapToShop(),
-            bankCard = bankCard,
-            expirationDate = expirationDate,
-            amount = amount.toString(),
-            comment = comment
+    fun mapToDomainCashback(): FullCashback? {
+        return FullCashback(
+            id = basicCashbackDB.id,
+            owner = category?.mapToDomainCategory() ?: shop?.mapToDomainShop() ?: return null,
+            bankCard = basicCashbackDB.bankCard,
+            amount = basicCashbackDB.amount.toString(),
+            expirationDate = basicCashbackDB.expirationDate,
+            comment = basicCashbackDB.comment
         )
     }
 }

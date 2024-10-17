@@ -3,6 +3,7 @@ package com.cashbacks.data.model
 import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.cashbacks.domain.model.BasicCategory
 import com.cashbacks.domain.model.Category
 
 @Entity(tableName = "Categories")
@@ -16,19 +17,17 @@ data class CategoryDB(
         name = category.name
     )
 
-    fun mapToCategory() = Category(id, name, maxCashback = null)
+    fun mapToDomainCategory() = BasicCategory(id, name, maxCashback = null)
 }
 
 
-data class CategoryWithCashbackDB(
-    val id: Long,
-    val name: String,
+data class BasicCategoryDB(
+    @Embedded
+    val categoryDB: CategoryDB,
     @Embedded(prefix = "cashback_")
     val maxCashbackDB: BasicCashbackDB?
 ) {
-    fun mapToCategory() = Category(
-        id = id,
-        name = name,
-        maxCashback = maxCashbackDB?.mapToCashback()
+    fun mapToDomainCategory() = categoryDB.mapToDomainCategory().copy(
+        maxCashback = maxCashbackDB?.mapToDomainCashback()
     )
 }

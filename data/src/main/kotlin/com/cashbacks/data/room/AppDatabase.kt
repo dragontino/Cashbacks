@@ -21,7 +21,7 @@ import com.cashbacks.data.room.dao.ShopsDao
     version = 1,
     exportSchema = false
 )
-@TypeConverters(AmountConverter::class)
+@TypeConverters(PaymentSystemConverter::class, AmountConverter::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun cardsDao(): CardsDao
     abstract fun shopsDao(): ShopsDao
@@ -42,9 +42,9 @@ abstract class AppDatabase : RoomDatabase() {
             synchronized(this) {
                 val instance = Room
                     .databaseBuilder(
-                        context.applicationContext,
-                        AppDatabase::class.java,
-                        "SalesDatabase.db"
+                        context = context.applicationContext,
+                        klass = AppDatabase::class.java,
+                        name = "SalesDatabase.db"
                     )
                     .build()
 

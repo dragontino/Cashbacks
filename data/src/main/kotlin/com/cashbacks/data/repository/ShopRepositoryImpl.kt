@@ -2,6 +2,8 @@ package com.cashbacks.data.repository
 
 import com.cashbacks.data.model.ShopDB
 import com.cashbacks.data.room.dao.ShopsDao
+import com.cashbacks.domain.model.BasicCategoryShop
+import com.cashbacks.domain.model.BasicShop
 import com.cashbacks.domain.model.CategoryShop
 import com.cashbacks.domain.model.DeletionException
 import com.cashbacks.domain.model.EntityNotFoundException
@@ -16,13 +18,23 @@ import kotlinx.coroutines.flow.mapLatest
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ShopRepositoryImpl(private val dao: ShopsDao) : ShopRepository {
-    override suspend fun addShopToCategory(categoryId: Long, shop: Shop): Result<Long> {
+
+    override suspend fun addShop(shop: CategoryShop): Result<Long> {
+        return addShop(ShopDB(shop))
+    }
+
+
+    override suspend fun addShop(categoryId: Long, shop: Shop): Result<Long> {
+        return addShop(ShopDB(categoryId, shop))
+    }
+
+
+    private suspend fun addShop(shop: ShopDB): Result<Long> {
         if (!checkShopNameForUniqueness(shop.name)) {
-            return Result.failure(EntryAlreadyExistsException(Shop::class))
+            return Result.failure(EntryAlreadyExistsException(BasicShop::class))
         }
 
-        val shopDB = ShopDB(id = shop.id, categoryId = categoryId, name = shop.name)
-        return dao.addShop(shopDB).let { id ->
+        return dao.addShop(shop).let { id ->
             when {
                 id < 0 -> Result.failure(
                     InsertionException(type = Shop::class, entityName = shop.name)
@@ -38,17 +50,18 @@ class ShopRepositoryImpl(private val dao: ShopsDao) : ShopRepository {
     }
 
 
-    override suspend fun updateShop(categoryId: Long, shop: Shop): Result<Unit> {
-        val shopDB = ShopDB(categoryId, shop)
+    override suspend fun updateShop(shop: CategoryShop): Result<Unit> {
+        val shopDB = ShopDB(shop)
         return dao.updateShop(shopDB).let { updatedCount ->
             when {
                 updatedCount < 0 -> Result.failure(
-                    UpdateException(type = Shop::class, name = shop.name)
+                    UpdateException(type = BasicShop::class, name = shop.name)
                 )
                 else -> Result.success(Unit)
             }
         }
     }
+
 
     override suspend fun deleteShop(shop: Shop): Result<Unit> {
         return dao.deleteShopById(shop.id).let { deletedCount ->
@@ -61,39 +74,34 @@ class ShopRepositoryImpl(private val dao: ShopsDao) : ShopRepository {
         }
     }
 
-    override suspend fun getShopById(id: Long): Result<Shop> {
-        return dao
-            .getShopById(id)
-            ?.let { Result.success(it.mapToShop()) }
-            ?: Result.failure(EntityNotFoundException(type = Shop::class, id = id.toString()))
-    }
 
-    override suspend fun getShopWithCategoryById(id: Long): Result<CategoryShop> {
+    override suspend fun getShopById(id: Long): Result<CategoryShop> {
         return dao
-            .getShopWithCategoryById(id)
+            .getCategoryShopById(id)
             ?.let { Result.success(it.mapToCategoryShop()) }
-            ?: Result.failure(EntityNotFoundException(type = Shop::class, id = id.toString()))
+            ?: Result.failure(EntityNotFoundException(type = BasicShop::class, id = id.toString()))
     }
 
-    override fun fetchAllShopsFromCategory(categoryId: Long): Flow<List<Shop>> {
+
+    override fun fetchAllShopsFromCategory(categoryId: Long): Flow<List<BasicShop>> {
         return dao.fetchAllShopsFromCategory(categoryId).mapLatest { list ->
-            list.map { it.mapToShop() }
+            list.map { it.mapToDomainShop() }
         }
     }
 
-    override fun fetchShopsWithCashbackFromCategory(categoryId: Long): Flow<List<Shop>> {
+    override fun fetchShopsWithCashbackFromCategory(categoryId: Long): Flow<List<BasicShop>> {
         return dao.fetchShopsWithCashbackFromCategory(categoryId).mapLatest { list ->
-            list.map { it.mapToShop() }
+            list.map { it.mapToDomainShop() }
         }
     }
 
-    override fun fetchAllShops(): Flow<List<CategoryShop>> {
+    override fun fetchAllShops(): Flow<List<BasicCategoryShop>> {
         return dao.fetchAllShops().mapLatest { list ->
             list.map { it.mapToCategoryShop() }
         }
     }
 
-    override fun fetchShopsWithCashbacks(): Flow<List<CategoryShop>> {
+    override fun fetchShopsWithCashback(): Flow<List<BasicCategoryShop>> {
         return dao.fetchShopsWithCashback().mapLatest { list ->
             list.map { it.mapToCategoryShop() }
         }
@@ -102,7 +110,7 @@ class ShopRepositoryImpl(private val dao: ShopsDao) : ShopRepository {
     override suspend fun searchShops(
         query: String,
         cashbacksRequired: Boolean
-    ): List<CategoryShop> {
+    ): List<BasicCategoryShop> {
         return when {
             cashbacksRequired -> dao.searchShopsWithCashback(query)
             else -> dao.searchAllShops(query)

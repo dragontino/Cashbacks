@@ -14,7 +14,7 @@ data class SettingsDB(
         dynamicColor = settings.dynamicColor
     )
 
-    fun mapToSettings() = Settings(
+    fun mapToDomainSettings() = Settings(
         colorDesign = ColorDesign.valueOf(this.colorDesign),
         dynamicColor = this.dynamicColor
     )

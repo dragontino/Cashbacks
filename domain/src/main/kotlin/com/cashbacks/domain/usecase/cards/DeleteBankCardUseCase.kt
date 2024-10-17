@@ -1,6 +1,7 @@
 package com.cashbacks.domain.usecase.cards
 
-import com.cashbacks.domain.model.BankCard
+import android.util.Log
+import com.cashbacks.domain.model.BasicBankCard
 import com.cashbacks.domain.repository.BankCardRepository
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
@@ -9,13 +10,13 @@ class DeleteBankCardUseCase(
     private val repository: BankCardRepository,
     private val dispatcher: CoroutineDispatcher
 ) {
-    suspend fun deleteBankCard(
-        bankCard: BankCard,
-        errorMessage: (String) -> Unit = {}
-    ) {
-        withContext(dispatcher) {
-            repository.deleteBankCard(bankCard)
-                .apply { exceptionOrNull()?.message?.let(errorMessage) }
+    private companion object {
+        const val TAG = "DeleteBankCardUseCase"
+    }
+
+    suspend fun deleteBankCard(bankCard: BasicBankCard) = withContext(dispatcher) {
+        repository.deleteBankCard(bankCard).onFailure {
+            Log.e(TAG, it.message, it)
         }
     }
 }

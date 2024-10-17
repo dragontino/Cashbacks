@@ -7,13 +7,13 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Update
+import com.cashbacks.data.model.BasicShopDB
 import com.cashbacks.data.model.CategoryShopDB
 import com.cashbacks.data.model.ShopDB
-import com.cashbacks.data.model.ShopWithMaxCashbackDB
 import kotlinx.coroutines.flow.Flow
 
 @Dao
-interface ShopsDao {
+interface ShopsDao : BaseDao {
     @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun addShop(shop: ShopDB): Long
 
@@ -31,41 +31,23 @@ interface ShopsDao {
 
     @Query(
         """
-        SELECT s.id, s.name, 
-               cash.id AS cashback_id, cash.amount AS cashback_amount, 
-               cash.expirationDate AS cashback_expirationDate, cash.comment AS cashback_comment,
-               card.id AS cashback_card_id, card.name AS cashback_card_name,
-               card.number AS cashback_card_number, card.paymentSystem AS cashback_card_paymentSystem
-        FROM Shops AS s
-        LEFT JOIN Cashbacks AS cash 
-        ON s.id = cash.shopId AND cash.amount = (
-            SELECT MAX(amount) FROM Cashbacks WHERE shopId = s.id
-        )
-        LEFT JOIN Cards AS card ON cash.bankCardId = card.id
-        WHERE s.categoryId = :categoryId
-        ORDER BY s.name ASC
+            SELECT s.id, s.name,
+                   cash.id AS cashback_id, cash.amount AS cashback_amount, 
+                   cash.expirationDate AS cashback_expirationDate, cash.comment AS cashback_comment,
+                   card.id AS cashback_card_id, card.name AS cashback_card_name,
+                   card.number AS cashback_card_number, card.paymentSystem AS cashback_card_paymentSystem
+            FROM Shops AS s
+            LEFT JOIN Cashbacks AS cash 
+            ON s.id = cash.shopId AND cash.amount = (
+                SELECT MAX(amount) FROM Cashbacks WHERE shopId = s.id
+            )
+            LEFT JOIN Cards AS card ON cash.bankCardId = card.id
+            WHERE s.categoryId = :categoryId
+            ORDER BY s.name ASC
         """
     )
-    fun fetchAllShopsFromCategory(categoryId: Long): Flow<List<ShopWithMaxCashbackDB>>
+    fun fetchAllShopsFromCategory(categoryId: Long): Flow<List<BasicShopDB>>
 
-    @Query(
-        """
-        SELECT s.id, s.name, 
-               cash.id AS cashback_id, cash.amount AS cashback_amount, 
-               cash.expirationDate AS cashback_expirationDate, cash.comment AS cashback_comment,
-               card.id AS cashback_card_id, card.name AS cashback_card_name,
-               card.number AS cashback_card_number, card.paymentSystem AS cashback_card_paymentSystem
-        FROM Shops AS s
-        LEFT JOIN (SELECT * FROM Cashbacks) AS cash 
-        ON s.id = cash.shopId AND cash.amount = (
-            SELECT MAX(amount) FROM Cashbacks WHERE shopId = s.id
-        )
-        LEFT JOIN Cards AS card ON cash.bankCardId = card.id
-        WHERE s.categoryId = :categoryId AND cash.id IS NOT NULL
-        ORDER BY s.name ASC
-        """
-    )
-    fun fetchShopsWithCashbackFromCategory(categoryId: Long): Flow<List<ShopWithMaxCashbackDB>>
 
     @Query(
         """
@@ -173,5 +155,5 @@ interface ShopsDao {
         WHERE s.id = :id
         """
     )
-    suspend fun getShopWithCategoryById(id: Long): CategoryShopDB?
+    suspend fun getCategoryShopById(id: Long): CategoryShopDB?
 }

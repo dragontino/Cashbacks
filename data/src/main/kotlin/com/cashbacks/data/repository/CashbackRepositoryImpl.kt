@@ -1,12 +1,13 @@
 package com.cashbacks.data.repository
 
 import com.cashbacks.data.model.CashbackDB
-import com.cashbacks.data.model.CashbackWithOwnerAndBankCardDB
+import com.cashbacks.data.model.FullCashbackDB
 import com.cashbacks.data.room.dao.CashbacksDao
+import com.cashbacks.domain.model.BasicCashback
 import com.cashbacks.domain.model.Cashback
-import com.cashbacks.domain.model.CashbackWithOwner
 import com.cashbacks.domain.model.DeletionException
 import com.cashbacks.domain.model.EntityNotFoundException
+import com.cashbacks.domain.model.FullCashback
 import com.cashbacks.domain.model.InsertionException
 import com.cashbacks.domain.model.UpdateException
 import com.cashbacks.domain.repository.CashbackRepository
@@ -14,12 +15,18 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
 class CashbackRepositoryImpl(private val dao: CashbacksDao) : CashbackRepository {
-    override suspend fun addCashbackToCategory(categoryId: Long, cashback: Cashback): Result<Long> {
+    override suspend fun addCashbackToCategory(
+        categoryId: Long,
+        cashback: Cashback
+    ): Result<Long> {
         val cashbacksDB = CashbackDB(cashback, categoryId = categoryId)
         return addCashback(cashbacksDB)
     }
 
-    override suspend fun addCashbackToShop(shopId: Long, cashback: Cashback): Result<Long> {
+    override suspend fun addCashbackToShop(
+        shopId: Long,
+        cashback: Cashback
+    ): Result<Long> {
         val cashbackDB = CashbackDB(cashback, shopId = shopId)
         return addCashback(cashbackDB)
     }
@@ -29,7 +36,7 @@ class CashbackRepositoryImpl(private val dao: CashbacksDao) : CashbackRepository
         return dao.addCashback(cashback).let { id ->
             when {
                 id < 0 -> Result.failure(
-                    InsertionException(Cashback::class, cashback.id.toString())
+                    InsertionException(BasicCashback::class, cashback.id.toString())
                 )
 
                 else -> Result.success(id)
@@ -38,13 +45,19 @@ class CashbackRepositoryImpl(private val dao: CashbacksDao) : CashbackRepository
     }
 
 
-    override suspend fun updateCashbackInCategory(categoryId: Long, cashback: Cashback): Result<Unit> {
+    override suspend fun updateCashbackInCategory(
+        categoryId: Long,
+        cashback: Cashback
+    ): Result<Unit> {
         val cashbackDB = CashbackDB(cashback, categoryId = categoryId)
         return updateCashback(cashbackDB)
     }
 
 
-    override suspend fun updateCashbackInShop(shopId: Long, cashback: Cashback): Result<Unit> {
+    override suspend fun updateCashbackInShop(
+        shopId: Long,
+        cashback: Cashback
+    ): Result<Unit> {
         val cashbackDB = CashbackDB(cashback, shopId = shopId)
         return updateCashback(cashbackDB)
     }
@@ -54,7 +67,7 @@ class CashbackRepositoryImpl(private val dao: CashbacksDao) : CashbackRepository
         val updatedCount = dao.updateCashback(cashback)
         return when {
             updatedCount <= 0 ->
-                Result.failure(UpdateException(Cashback::class, cashback.id.toString()))
+                Result.failure(UpdateException(BasicCashback::class, cashback.id.toString()))
             else -> Result.success(Unit)
         }
     }
@@ -63,7 +76,7 @@ class CashbackRepositoryImpl(private val dao: CashbacksDao) : CashbackRepository
     override suspend fun deleteCashback(cashback: Cashback): Result<Unit> {
         val deletedCount = dao.deleteCashbackById(id = cashback.id)
         return when {
-            deletedCount < 0 -> Result.failure(DeletionException(Cashback::class, cashback.amount))
+            deletedCount < 0 -> Result.failure(DeletionException(BasicCashback::class, cashback.amount))
             else -> Result.success(Unit)
         }
     }
@@ -76,7 +89,7 @@ class CashbackRepositoryImpl(private val dao: CashbacksDao) : CashbackRepository
             deletedCount >= cashbacks.size / 2 -> Result.success(Unit)
             else -> Result.failure(
                 DeletionException(
-                    type = Cashback::class,
+                    type = BasicCashback::class,
                     name = cashbacks.joinToString { it.expirationDate!! }
                 )
             )
@@ -84,41 +97,41 @@ class CashbackRepositoryImpl(private val dao: CashbacksDao) : CashbackRepository
     }
 
 
-    override suspend fun getCashbackById(id: Long): Result<CashbackWithOwner> {
-        return when (val cashback = dao.getCashbackById(id)?.mapToCashback()) {
-            null -> Result.failure(EntityNotFoundException(Cashback::class, id.toString()))
+    override suspend fun getCashbackById(id: Long): Result<FullCashback> {
+        return when (val cashback = dao.getCashbackById(id)?.mapToDomainCashback()) {
+            null -> Result.failure(EntityNotFoundException(BasicCashback::class, id.toString()))
             else -> Result.success(cashback)
         }
     }
 
 
-    override fun fetchCashbacksFromCategory(categoryId: Long): Flow<List<Cashback>> {
+    override fun fetchCashbacksFromCategory(categoryId: Long): Flow<List<BasicCashback>> {
         return dao.fetchCashbacksFromCategory(categoryId).map { list ->
-            list.map { it.mapToCashback() }
+            list.map { it.mapToDomainCashback() }
         }
     }
 
 
-    override fun fetchCashbacksFromShop(shopId: Long): Flow<List<Cashback>> {
+    override fun fetchCashbacksFromShop(shopId: Long): Flow<List<BasicCashback>> {
         return dao.fetchCashbacksFromShop(shopId).map { list ->
-            list.map { it.mapToCashback() }
+            list.map { it.mapToDomainCashback() }
         }
     }
 
 
-    override fun fetchAllCashbacks(): Flow<List<CashbackWithOwner>> {
+    override fun fetchAllCashbacks(): Flow<List<FullCashback>> {
         return dao.fetchAllCashbacks().map {
-            it.map(CashbackWithOwnerAndBankCardDB::mapToCashback)
+            it.mapNotNull(FullCashbackDB::mapToDomainCashback)
         }
     }
 
 
-    override suspend fun searchCashbacks(query: String): List<CashbackWithOwner> {
-        return dao.searchCashbacks(query).map { it.mapToCashback() }
+    override suspend fun searchCashbacks(query: String): List<FullCashback> {
+        return dao.searchCashbacks(query).mapNotNull { it.mapToDomainCashback() }
     }
 
 
-    override suspend fun getAllCashbacks(): List<Cashback> {
-        return dao.getAllCashbacks().map { it.mapToCashback() }
+    override suspend fun getAllCashbacks(): List<BasicCashback> {
+        return dao.getAllCashbacks().map { it.mapToDomainCashback() }
     }
 }
