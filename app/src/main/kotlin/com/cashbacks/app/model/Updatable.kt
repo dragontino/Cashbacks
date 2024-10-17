@@ -1,8 +1,10 @@
 package com.cashbacks.app.model
 
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.snapshots.SnapshotStateMap
 import kotlin.reflect.KMutableProperty0
 
+@Stable
 internal interface Updatable {
     val updatedProperties: SnapshotStateMap<String, Pair<String, String>>
 

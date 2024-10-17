@@ -15,13 +15,9 @@ import com.cashbacks.domain.model.FullCashback
 import com.cashbacks.domain.model.IncorrectCashbackAmountException
 import com.cashbacks.domain.model.MessageHandler
 import com.cashbacks.domain.model.Shop
-import com.cashbacks.domain.model.ShopCashback
 import com.cashbacks.domain.model.ShopNotSelectedException
 import kotlin.random.Random
 
-sealed class ComposableCashback(
-    val id: Long,
-    var bankCard: BasicBankCard?,
 @Stable
 internal class ComposableCashback private constructor(
     id: Long?,
