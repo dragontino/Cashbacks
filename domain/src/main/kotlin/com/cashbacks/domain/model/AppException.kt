@@ -11,13 +11,20 @@ sealed class AppException : Exception() {
 }
 
 
-sealed class EntityException(private val type: KClass<*>) : AppException() {
-    protected fun getTypeName(resources: Resources) = when (type) {
-        Category::class -> resources.getString(R.string.category_title)
-        Shop::class -> resources.getString(R.string.shop)
-        Cashback::class -> resources.getString(R.string.cashback_title)
-        else -> ""
-    }.lowercase()
+sealed class EntityException(private val entity: Any) : AppException() {
+    protected fun getTypeName(resources: Resources) = when (entity) {
+        is Category -> resources.getString(R.string.category_title)
+        is Shop -> resources.getString(R.string.shop_title)
+        is Cashback -> resources.getString(R.string.cashback_title)
+        else -> null
+    }?.lowercase()
+}
+
+
+data object SaveSettingsException : AppException() {
+    override fun getMessage(resources: Resources): String {
+        return resources.getString(R.string.save_settings_exception)
+    }
 }
 
 
@@ -74,6 +81,12 @@ data object ExpiredCashbacksDeletionException : AppException() {
     }
 }
 
+data object ShopNameNotSelectedException : AppException() {
+    override fun getMessage(resources: Resources): String {
+        return resources.getString(R.string.shop_name_not_selected)
+    }
+}
+
 data object CategoryNotSelectedException : AppException() {
     override fun getMessage(resources: Resources): String {
         return resources.getString(R.string.category_not_selected)
@@ -84,4 +97,17 @@ data object ShopNotSelectedException : AppException() {
     override fun getMessage(resources: Resources): String {
         return resources.getString(R.string.shop_not_selected)
     }
+}
+
+data object IncorrectCashbackAmountException : AppException() {
+    override fun getMessage(resources: Resources): String {
+        return resources.getString(R.string.incorrect_cashback_amount)
+    }
+}
+
+data object BankCardNotSelectedException : AppException() {
+    override fun getMessage(resources: Resources): String {
+        return resources.getString(R.string.bank_card_not_selected)
+    }
+
 }
