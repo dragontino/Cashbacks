@@ -13,9 +13,9 @@ desugaring = "2.1.2"
 androidx-core = "1.13.1"
 androidx-lifecycle = "2.8.6"
 
-compose-bom = "2024.09.03"
-activity-compose = "1.9.2"
-compose-navigation = "2.8.2"
+compose-bom = "2024.10.00"
+activity-compose = "1.9.3"
+compose-navigation = "2.8.3"
 
 room = "2.6.1"
 dagger = "2.52"
@@ -47,7 +47,7 @@ compose-icons-extended = { group = "androidx.compose.material", name = "material
 compose-material3 = { group = "androidx.compose.material3", name = "material3-android" }
 compose-livedata = { group = "androidx.compose.runtime", name = "runtime-livedata" }
 compose-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest", version = "1.7.3" }
+compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest", version = "1.7.4" }
 
 # Room
 room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
