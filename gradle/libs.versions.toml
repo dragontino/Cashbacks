@@ -1,0 +1,77 @@
+[versions]
+app-android = "1.9.0-beta22"
+app-date = "16/10/2024"
+android-minSdk = "27"
+android-compileSdk = "34"
+
+agp = "8.7.1"
+kotlin = "2.0.21"
+kotlinx-coroutines = "1.9.0"
+ksp = "2.0.21-1.0.25"
+kapt = "2.0.21"
+desugaring = "2.1.2"
+androidx-core = "1.13.1"
+androidx-lifecycle = "2.8.6"
+
+compose-bom = "2024.09.03"
+activity-compose = "1.9.2"
+compose-navigation = "2.8.2"
+
+room = "2.6.1"
+dagger = "2.52"
+junit = "4.13.2"
+junit-ext = "1.2.1"
+espresso = "3.6.1"
+csv = "5.5.1"
+
+[libraries]
+kotlin-reflect = { group = "org.jetbrains.kotlin", name = "kotlin-reflect", version.ref = "kotlin" }
+kotlinx-coroutines = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "kotlinx-coroutines" }
+opencsv = { group = "com.opencsv", name = "opencsv", version.ref = "csv" }
+
+tools-desugaring = { group = "com.android.tools", name = "desugar_jdk_libs", version.ref = "desugaring" }
+androidx-core = { group = "androidx.core", name = "core-ktx", version.ref = "androidx-core" }
+androidx-lifecycle-runtime = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "androidx-lifecycle" }
+androidx-lifecycle-viewmodel-compose = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-compose", version.ref = "androidx-lifecycle"}
+
+# Compose
+compose-bom = { group ="androidx.compose", name = "compose-bom", version.ref = "compose-bom" }
+compose-activity = { group = "androidx.activity", name = "activity-compose", version.ref ="activity-compose" }
+compose-navigation =  { group = "androidx.navigation", name = "navigation-compose" , version.ref = "compose-navigation" }
+compose-ui = { group = "androidx.compose.ui", name = "ui"}
+compose-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics" }
+compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
+compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
+compose-icons-core = { group = "androidx.compose.material", name = "material-icons-core" }
+compose-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended" }
+compose-material3 = { group = "androidx.compose.material3", name = "material3-android" }
+compose-livedata = { group = "androidx.compose.runtime", name = "runtime-livedata" }
+compose-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
+compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest", version = "1.7.3" }
+
+# Room
+room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
+room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
+room-paging = { group = "androidx.room", name = "room-paging", version.ref = "room" }
+room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
+room-testing = { group = "androidx.room", name = "room-testing", version.ref = "room" }
+
+# DI
+dagger = { group = "com.google.dagger", name = "dagger", version.ref = "dagger" }
+dagger-compiler = { group = "com.google.dagger", name = "dagger-compiler", version.ref = "dagger" }
+
+# Tests
+junit = { module = "junit:junit", version.ref = "junit" }
+junit-ext = { module = "androidx.test.ext:junit", version.ref = "junit-ext" }
+espresso = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espresso" }
+
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+android-library = { id = "com.android.library", version.ref = "agp" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kotlin-parcelize = { id = "org.jetbrains.kotlin.plugin.parcelize", version.ref = "kotlin" }
+compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+google-ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+kotlin-kapt = { id = "org.jetbrains.kotlin.kapt", version.ref = "kapt" }

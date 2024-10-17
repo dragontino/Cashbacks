@@ -1,23 +1,23 @@
 plugins {
-    id("com.android.application")
-    kotlin("android")
-    id("com.google.devtools.ksp")
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kotlin.kapt)
+    alias(libs.plugins.compose.compiler)
+    alias(libs.plugins.kotlin.parcelize)
 }
-
-val versionName by extra("1.8.3")
-val versionDate by extra("29/04/2024")
-val debugVersionExt by extra("beta26")
 
 android {
     namespace = "com.cashbacks.app"
-    compileSdk = 34
+    compileSdk = libs.versions.android.compileSdk.get().toInt()
 
     defaultConfig {
         applicationId = "com.cashbacks.app"
-        minSdk = 26
+        minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = 34
-        versionCode = this@Build_gradle.versionName[0].toString().toInt()
-        versionName = this@Build_gradle.versionName
+        versionCode = libs.versions.app.android.get().split(".")[0].toInt()
+        versionName = libs.versions.app.android.get()
+
+        project.base.archivesName = "Cashbacks-$versionName"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -26,6 +26,9 @@ android {
     }
 
     buildTypes {
+        val versionName = libs.versions.app.android
+        val versionDate = libs.versions.app.date
+
         release {
             isMinifyEnabled = false
             proguardFiles(
@@ -33,29 +36,45 @@ android {
                 "proguard-rules.pro"
             )
 
-            buildConfigField("String", "VERSION_NAME", "\"$versionName\"")
-            buildConfigField("String", "VERSION_DATE", "\"$versionDate\"")
+            buildConfigField(
+                type = "String",
+                name = "VERSION_NAME",
+                value = "\"${versionName.get()}\""
+            )
+            buildConfigField(
+                type = "String",
+                name = "VERSION_DATE",
+                value = "\"${versionDate.get()}\""
+            )
         }
 
         debug {
-            buildConfigField("String", "VERSION_NAME", "\"$versionName-$debugVersionExt\"")
-            buildConfigField("String", "VERSION_DATE", "\"$versionDate\"")
+            applicationIdSuffix = ".debug"
+            versionNameSuffix = "-debug"
+
+            buildConfigField(
+                type = "String",
+                name = "VERSION_NAME",
+                value = "\"${versionName.get()}\""
+            )
+            buildConfigField(
+                type = "String",
+                name = "VERSION_DATE",
+                value = "\"${versionDate.get()}\""
+            )
         }
     }
     compileOptions {
         isCoreLibraryDesugaringEnabled = true
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions {
-        jvmTarget = "1.8"
+        jvmTarget = "17"
     }
     buildFeatures {
         compose = true
         buildConfig = true
-    }
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.10"
     }
     packaging {
         resources {
@@ -67,42 +86,42 @@ android {
 dependencies {
     implementation(project(":data"))
     implementation(project(":domain"))
-    implementation("org.jetbrains.kotlin:kotlin-reflect:1.9.22")
+    implementation(libs.kotlin.reflect)
 
-    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
+    coreLibraryDesugaring(libs.tools.desugaring)
 
-    implementation("androidx.core:core-ktx:1.13.0")
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
+    implementation(libs.androidx.core)
+    implementation(libs.androidx.lifecycle.runtime)
 
     //Compose
-    implementation(platform("androidx.compose:compose-bom:2024.04.01"))
-    implementation("androidx.activity:activity-compose:1.9.0")
-    implementation("androidx.navigation:navigation-compose:2.7.7")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
-    implementation("androidx.compose.ui:ui")
-    implementation("androidx.compose.ui:ui-graphics")
-    implementation("androidx.compose.ui:ui-tooling")
-    implementation("androidx.compose.ui:ui-tooling-preview")
-    implementation("androidx.compose.material:material-icons-core")
-    implementation("androidx.compose.material:material-icons-extended")
-    implementation("androidx.compose.material3:material3-android:1.2.1")
-    implementation("androidx.compose.runtime:runtime-livedata")
+    implementation(platform(libs.compose.bom))
+    implementation(libs.compose.activity)
+    implementation(libs.compose.navigation)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.compose.ui)
+    implementation(libs.compose.ui.graphics)
+    implementation(libs.compose.ui.tooling)
+    implementation(libs.compose.ui.tooling.preview)
+    implementation(libs.compose.icons.core)
+    implementation(libs.compose.icons.extended)
+    implementation(libs.compose.material3)
+    implementation(libs.compose.livedata)
 
     //Room
-    implementation("androidx.room:room-runtime:2.6.1")
-    implementation("androidx.room:room-ktx:2.6.1")
-    implementation("androidx.room:room-paging:2.6.1")
+    implementation(libs.room.runtime)
+    implementation(libs.room.ktx)
+    implementation(libs.room.paging)
 
     //Tests
-    testImplementation("junit:junit:4.13.2")
-    androidTestImplementation("androidx.test.ext:junit:1.1.5")
-    androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
-    androidTestImplementation(platform("androidx.compose:compose-bom:2024.04.01"))
-    androidTestImplementation("androidx.compose.ui:ui-test-junit4")
-    debugImplementation("androidx.compose.ui:ui-tooling")
-    debugImplementation("androidx.compose.ui:ui-test-manifest:1.6.6")
+    testImplementation(libs.junit)
+    androidTestImplementation(libs.junit.ext)
+    androidTestImplementation(libs.espresso)
+    androidTestImplementation(platform(libs.compose.bom))
+    androidTestImplementation(libs.compose.junit4)
+    debugImplementation(libs.compose.ui.tooling)
+    debugImplementation(libs.compose.ui.test.manifest)
 
     //DI
-    implementation("com.google.dagger:dagger:2.50")
-    ksp("com.google.dagger:dagger-compiler:2.50")
+    implementation(libs.dagger)
+    kapt(libs.dagger.compiler)
 }
