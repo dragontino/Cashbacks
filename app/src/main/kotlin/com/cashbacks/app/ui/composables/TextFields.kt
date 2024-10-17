@@ -357,7 +357,6 @@ private fun <T> EditableTextField(
 
 
     val basicTextFieldModifier = Modifier
-        .padding(horizontal = 16.dp)
         .then(modifier)
         .fillMaxWidth()
     val decorationBox: @Composable (innerTextField: @Composable () -> Unit) -> Unit = { innerTextField ->
@@ -594,10 +593,10 @@ internal class KeyboardParams private constructor(
         onImeActionClick: (KeyboardActionScope.() -> Unit)? = null
     ) : this(
         options = KeyboardOptions(
-            capitalization,
-            autoCorrect,
-            type,
-            imeAction
+            capitalization = capitalization,
+            autoCorrectEnabled = autoCorrect,
+            keyboardType = type,
+            imeAction = imeAction
         ),
         onImeActionClick = onImeActionClick
     )

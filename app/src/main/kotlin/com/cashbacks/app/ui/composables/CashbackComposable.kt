@@ -24,20 +24,22 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.cashbacks.app.model.PaymentSystemMapper
+import com.cashbacks.app.model.PaymentSystemUtils
 import com.cashbacks.app.ui.managment.rememberScrollableListItemState
 import com.cashbacks.app.util.animate
 import com.cashbacks.domain.R
-import com.cashbacks.domain.model.BasicBankCard
+import com.cashbacks.domain.model.BasicCategory
 import com.cashbacks.domain.model.Cashback
+import com.cashbacks.domain.model.Category
+import com.cashbacks.domain.model.FullCashback
 import com.cashbacks.domain.model.PaymentSystem
+import com.cashbacks.domain.model.PreviewBankCard
+import com.cashbacks.domain.model.Shop
 
 @Composable
 fun CashbackComposable(
     cashback: Cashback,
     onClick: () -> Unit,
-    parentType: String? = null,
-    parentName: String? = null,
     isSwiped: Boolean = false,
     onSwipe: suspend (isSwiped: Boolean) -> Unit = {},
     onDelete: () -> Unit = {}
@@ -82,19 +84,22 @@ fun CashbackComposable(
                 .padding(8.dp)
                 .fillMaxWidth()
         ) {
-            if (parentType != null && parentName != null) {
+            if (cashback is FullCashback) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(20.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
-                        text = parentType,
+                        text = when (cashback.owner) {
+                            is Category -> stringResource(R.string.category_title)
+                            is Shop -> stringResource(R.string.shop_title)
+                        },
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = parentName,
+                        text = cashback.owner.name,
                         style = MaterialTheme.typography.bodyMedium,
                         textAlign = TextAlign.Center,
                         maxLines = 1,
@@ -151,7 +156,7 @@ fun CashbackComposable(
                 )
 
                 cashback.bankCard.paymentSystem?.let {
-                    PaymentSystemMapper.PaymentSystemImage(
+                    PaymentSystemUtils.PaymentSystemImage(
                         paymentSystem = it,
                         drawBackground = false,
                         maxWidth = 30.dp
@@ -196,18 +201,18 @@ fun CashbackComposable(
 @Composable
 private fun CashbackComposablePreview() {
     CashbackComposable(
-        cashback = Cashback(
+        cashback = FullCashback(
             id = 0,
-            bankCard = BasicBankCard(
+            bankCard = PreviewBankCard(
                 paymentSystem = PaymentSystem.MasterCard,
                 name = "My Card",
                 number = "1111 2222 3333 4444"
             ),
             amount = "12",
             expirationDate = null,
-            comment = "Hello world!"
+            comment = "Hello world!",
+            owner = BasicCategory(name = "Products")
         ),
         onClick = {},
-        parentName = "Products"
     )
 }

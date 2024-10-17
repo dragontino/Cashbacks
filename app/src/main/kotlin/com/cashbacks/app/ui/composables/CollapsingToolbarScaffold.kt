@@ -1,7 +1,8 @@
 package com.cashbacks.app.ui.composables
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.ScrollableState
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animate
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,7 +16,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.tappableElement
 import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FabPosition
 import androidx.compose.material3.MaterialTheme
@@ -24,11 +24,10 @@ import androidx.compose.material3.TopAppBarState
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.isUnspecified
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -36,7 +35,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
-import com.cashbacks.app.util.mix
+import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -45,8 +44,6 @@ fun CollapsingToolbarScaffold(
     modifier: Modifier = Modifier,
     topBar: @Composable (() -> Unit) = {},
     topBarState: TopAppBarState = rememberTopAppBarState(initialHeightOffsetLimit = -100f),
-    topBarContainerColor: Color = MaterialTheme.colorScheme.primary,
-    contentState: ScrollableState = rememberScrollState(),
     topBarScrollEnabled: Boolean = true,
     floatingActionButtons: @Composable (ColumnScope.() -> Unit) = {},
     fabModifier: Modifier = Modifier.windowInsetsPadding(
@@ -56,24 +53,58 @@ fun CollapsingToolbarScaffold(
     contentWindowInsets: WindowInsets = CollapsingToolbarScaffoldDefaults.contentWindowInsets,
     content: @Composable (() -> Unit),
 ) {
-    val nestedScrollConnection = remember {
+    val scope = rememberCoroutineScope()
+    val nestedScrollConnection = remember(topBarState, topBarScrollEnabled) {
         object : NestedScrollConnection {
             override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
                 if (!topBarScrollEnabled) return Offset.Zero
 
                 val delta = available.y
+                val previousContentOffset = topBarState.contentOffset
 
-                if (delta > 0 && !contentState.canScrollBackward || delta < 0) {
-                    topBarState.contentOffset = (topBarState.contentOffset + delta)
-                        .coerceIn(topBarState.heightOffsetLimit, 0f)
+                topBarState.heightOffset = (topBarState.heightOffset + delta)
+                    .coerceIn(topBarState.heightOffsetLimit, 0f)
+
+                topBarState.contentOffset = (topBarState.contentOffset + delta)
+                    .coerceIn(topBarState.heightOffsetLimit, 0f)
+
+                return when (topBarState.contentOffset) {
+                    previousContentOffset -> Offset.Zero
+                    else -> available.copy(x = 0f)
+                }
+            }
+
+            override fun onPostScroll(
+                consumed: Offset,
+                available: Offset,
+                source: NestedScrollSource
+            ): Offset {
+                scope.launch {
+                    animate(
+                        initialValue = topBarState.heightOffset,
+                        targetValue = when {
+                            topBarState.collapsedFraction < .5f -> 0f
+                            else -> topBarState.heightOffsetLimit
+                        },
+                        animationSpec = tween(durationMillis = 100, easing = FastOutSlowInEasing)
+                    ) { value, _ ->
+                        topBarState.heightOffset = value
+                    }
                 }
 
-                return when {
-                    !contentState.canScrollBackward
-                            && topBarState.contentOffset > topBarState.heightOffsetLimit ->
-                                available.copy(x = 0f)
-                    else -> Offset.Zero
+                scope.launch {
+                    animate(
+                        initialValue = topBarState.contentOffset,
+                        targetValue = when {
+                            topBarState.overlappedFraction < .5f -> 0f
+                            else -> topBarState.heightOffsetLimit
+                        },
+                        animationSpec = tween(durationMillis = 100, easing = FastOutSlowInEasing)
+                    ) { value, _ ->
+                        topBarState.contentOffset = value
+                    }
                 }
+                return Offset.Zero
             }
         }
     }
@@ -101,18 +132,8 @@ fun CollapsingToolbarScaffold(
                 .padding(contentPadding)
                 .nestedScroll(nestedScrollConnection)
         ) {
-            val backgroundModifier = when {
-                topBarContainerColor.isUnspecified -> Modifier
-                else -> Modifier.background(
-                    color = MaterialTheme.colorScheme.surface.copy(alpha = .6f)
-                            mix topBarContainerColor
-                            ratio topBarState.overlappedFraction
-                )
-            }
-
             Box(
                 modifier = Modifier
-                    .then(backgroundModifier)
                     .offset { IntOffset(x = 0, y = topBarState.heightOffset.roundToInt()) }
                     .zIndex(3f)
                     .onGloballyPositioned {

@@ -3,7 +3,6 @@ package com.cashbacks.app.ui.composables
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -23,6 +22,7 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.DataArray
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Tab
@@ -38,17 +38,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.cashbacks.app.ui.managment.ListState
 import com.cashbacks.app.ui.navigation.AppBarItem
 import com.cashbacks.app.util.LoadingInBox
 import com.cashbacks.app.util.animate
 import kotlinx.coroutines.launch
 
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 internal fun <T : AppBarItem> PrimaryTabsLayout(
     pages: List<T>,
@@ -62,7 +61,6 @@ internal fun <T : AppBarItem> PrimaryTabsLayout(
 }
 
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 internal fun <T : AppBarItem> SecondaryTabsLayout(
     pages: Collection<T>,
@@ -76,7 +74,7 @@ internal fun <T : AppBarItem> SecondaryTabsLayout(
 }
 
 
-@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun <T : AppBarItem> TabsLayout(
     pages: List<T>,
@@ -146,17 +144,18 @@ private fun <T : AppBarItem> TabsLayout(
                     selected = selectedTabIndex.value == index,
                     onClick = { scrollToPage(index) },
                     icon = {
-                        when (index) {
-                            selectedTabIndex.value -> page.selectedIcon
-                            else -> page.unselectedIcon
-                        }.Icon(
+                        Icon(
+                            imageVector = when (index) {
+                                selectedTabIndex.value -> page.selectedIcon
+                                else -> page.unselectedIcon
+                            },
                             contentDescription = "tab logo",
                             modifier = Modifier.height(35.dp)
                         )
                     },
                     text = {
                         Text(
-                            text = stringResource(page.tabTitleRes),
+                            text = page.tabTitle,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -180,8 +179,8 @@ private fun <T : AppBarItem> TabsLayout(
 
 
 @Composable
-fun <T> ListContentTabPage(
-    items: List<T>?,
+fun <T : Any> ListContentTabPage(
+    contentState: ListState<T>,
     placeholderText: String,
     modifier: Modifier = Modifier,
     state: LazyListState = rememberLazyListState(),
@@ -190,16 +189,16 @@ fun <T> ListContentTabPage(
     itemComposable: @Composable ((index: Int, item: T) -> Unit)
 ) {
     Crossfade(
-        targetState = items,
+        targetState = contentState,
         label = "tabItems",
         modifier = Modifier
             .then(modifier)
             .clip(MaterialTheme.shapes.small)
             .background(MaterialTheme.colorScheme.background.animate())
-    ) { list ->
-        when {
-            list == null -> LoadingInBox()
-            list.isEmpty() -> EmptyList(
+    ) { listState ->
+        when (listState) {
+            is ListState.Loading -> LoadingInBox()
+            is ListState.Empty -> EmptyList(
                 text = placeholderText,
                 icon = Icons.Rounded.DataArray,
                 iconModifier = Modifier.scale(2.5f),
@@ -207,7 +206,7 @@ fun <T> ListContentTabPage(
                     .padding(contentPadding)
                     .fillMaxSize()
             )
-            else -> {
+            is ListState.Stable<T> -> {
                 LazyColumn(
                     state = state,
                     verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -215,7 +214,7 @@ fun <T> ListContentTabPage(
                     contentPadding = contentPadding,
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    itemsIndexed(list) { index, item ->
+                    itemsIndexed(listState.data) { index, item ->
                         itemComposable(index, item)
                     }
                     item {

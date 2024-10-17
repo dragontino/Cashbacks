@@ -1,5 +1,6 @@
 package com.cashbacks.app.ui.composables
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,39 +17,52 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.lifecycle.LiveData
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.cashbacks.app.ui.managment.ListState
 import com.cashbacks.app.ui.theme.CashbacksTheme
 import com.cashbacks.app.util.Loading
+import com.cashbacks.app.util.animate
+import kotlinx.coroutines.flow.StateFlow
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun <T : Any> ExposedDropdownMenuBoxScope.DropdownMenu(
-    listLiveData: LiveData<out List<T>>,
+    itemsFlow: StateFlow<List<T>?>,
     expanded: Boolean,
     onClose: () -> Unit,
-    listContent: @Composable (ColumnScope.(List<T>) -> Unit)
+    modifier: Modifier = Modifier,
+    content: @Composable (ColumnScope.(List<T>) -> Unit)
 ) {
-    val list = listLiveData.observeAsState().value
+    val listState = ListState.fromList(itemsFlow.collectAsStateWithLifecycle().value)
 
     ExposedDropdownMenu(
         expanded = expanded,
         onDismissRequest = onClose,
-        modifier = Modifier.fillMaxWidth()
+        shape = MaterialTheme.shapes.small,
+        border = BorderStroke(
+            width = 1.dp,
+            color = MaterialTheme.colorScheme.onSurface.animate()
+        ),
+        modifier = modifier
     ) {
-        when (list) {
-            null -> Box(
+        when (listState) {
+            is ListState.Loading -> Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Loading()
             }
-            else -> listContent(list)
+
+            is ListState.Empty -> content(emptyList())
+
+            is ListState.Stable -> content(listState.data)
         }
     }
 }
@@ -59,12 +73,18 @@ internal fun <T : Any> ExposedDropdownMenuBoxScope.DropdownMenu(
 @Composable
 internal fun <T : Any> ColumnScope.DropdownMenuListContent(
     list: List<T>,
-    selectedItem: T?,
+    selected: (T) -> Boolean,
     onClick: (T) -> Unit,
     title: (T) -> CharSequence = { it.toString() },
     leadingIcon: @Composable ((T) -> Unit)? = null,
     addButton: @Composable (() -> Unit)? = null,
 ) {
+    @Composable
+    fun getBackgroundColorForPosition(position: Int) = when (position % 2) {
+        0 -> MaterialTheme.colorScheme.background
+        else -> MaterialTheme.colorScheme.surface
+    }
+
     list.forEachIndexed { index, item ->
         DropdownMenuItem(
             text = {
@@ -87,7 +107,7 @@ internal fun <T : Any> ColumnScope.DropdownMenuListContent(
             onClick = { onClick(item) },
             leadingIcon = { leadingIcon?.invoke(item) },
             trailingIcon = {
-                if (item == selectedItem) {
+                if (selected(item)) {
                     Icon(imageVector = Icons.Rounded.Check, contentDescription = null)
                 }
             },
@@ -113,7 +133,7 @@ private fun DropdownMenuListContentPreview() {
             val list = List(8) { "Item ${it + 1}" }
             DropdownMenuListContent(
                 list = list,
-                selectedItem = list[3],
+                selected = { it == list[3] },
                 onClick = {},
                 addButton = {
                     Text(

@@ -10,11 +10,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.cashbacks.app.model.PaymentSystemMapper
+import com.cashbacks.app.model.PaymentSystemUtils
 import com.cashbacks.app.util.animate
 import com.cashbacks.domain.model.Cashback
 
 
+@Deprecated("Use MaxCashbackOwnerComposable instead")
 @Composable
 fun BasicInfoCashback(cashback: Cashback) {
     val textColor = MaterialTheme.colorScheme.onBackground.animate()
@@ -33,7 +34,7 @@ fun BasicInfoCashback(cashback: Cashback) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             cashback.bankCard.paymentSystem?.let {
-                PaymentSystemMapper.PaymentSystemImage(
+                PaymentSystemUtils.PaymentSystemImage(
                     paymentSystem = it,
                     drawBackground = false,
                     maxWidth = 30.dp

@@ -39,18 +39,20 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
-import com.cashbacks.app.model.BankCardMapper
-import com.cashbacks.app.model.PaymentSystemMapper
+import com.cashbacks.app.model.BankCardUtils
+import com.cashbacks.app.model.CopyableBankCardPart
+import com.cashbacks.app.model.PaymentSystemUtils
 import com.cashbacks.app.ui.theme.BackgroundDark
 import com.cashbacks.app.util.animate
 import com.cashbacks.domain.R
 import com.cashbacks.domain.model.BankCard
+import com.cashbacks.domain.model.FullBankCard
 import com.cashbacks.domain.model.PaymentSystem
 
 @Composable
-fun BankCardCompose(
+fun BankCard(
     bankCard: BankCard,
-    onCopy: (String) -> Unit,
+    onCopy: (CopyableBankCardPart, String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var isVisible by rememberSaveable { mutableStateOf(false) }
@@ -86,7 +88,7 @@ fun BankCardCompose(
 private fun CardFrontSide(
     bankCard: BankCard,
     isVisible: Boolean,
-    onCopy: (String) -> Unit,
+    onCopy: (CopyableBankCardPart, String) -> Unit,
     onChangeVisibility: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -100,7 +102,7 @@ private fun CardFrontSide(
     ) {
         Box(modifier = Modifier.fillMaxWidth()) {
             bankCard.paymentSystem?.let {
-                PaymentSystemMapper.PaymentSystemImage(
+                PaymentSystemUtils.PaymentSystemImage(
                     paymentSystem = it,
                     maxWidth = 50.dp,
                     modifier = Modifier.align(Alignment.BottomStart)
@@ -128,13 +130,13 @@ private fun CardFrontSide(
                 text = when {
                     isVisible -> bankCard.number
                     else -> bankCard.hiddenNumber
-                }.let { BankCardMapper.addSpacesToCardNumber(it) },
+                }.let { BankCardUtils.addSpacesToCardNumber(it) },
                 style = MaterialTheme.typography.bodyMedium,
                 fontFamily = FontFamily.Monospace
             )
 
             IconButton(
-                onClick = { onCopy(bankCard.number) },
+                onClick = { onCopy(CopyableBankCardPart.Number, bankCard.number) },
                 modifier = Modifier.align(Alignment.CenterEnd)
             ) {
                 Icon(
@@ -163,7 +165,7 @@ private fun CardFrontSide(
             )
 
             IconButton(
-                onClick = { onCopy(bankCard.holder) },
+                onClick = { onCopy(CopyableBankCardPart.Holder, bankCard.holder) },
                 modifier = Modifier.align(Alignment.BottomEnd),
             ) {
                 Icon(
@@ -182,7 +184,7 @@ private fun CardBackSide(
     bankCard: BankCard,
     isVisible: Boolean,
     modifier: Modifier = Modifier,
-    onCopy: (String) -> Unit,
+    onCopy: (CopyableBankCardPart, String) -> Unit,
 ) {
     ShadowElevatedCard(
         modifier = modifier,
@@ -202,7 +204,7 @@ private fun CardBackSide(
         Spacer(Modifier.height(20.dp))
 
         IconButton(
-            onClick = { onCopy(bankCard.cvv) },
+            onClick = { onCopy(CopyableBankCardPart.Cvv, bankCard.cvv) },
             modifier = Modifier.align(Alignment.End).scale(.8f)
         ) {
             Icon(
@@ -264,12 +266,12 @@ private fun ShadowElevatedCard(
 @Preview
 @Composable
 private fun BankCardComposablePreview() {
-    BankCardCompose(
-        bankCard = BankCard(
+    BankCard(
+        bankCard = FullBankCard(
             id = 0,
             number = "45555",
             paymentSystem = PaymentSystem.MasterCard
         ),
-        onCopy = {}
+        onCopy = { _, _ -> }
     )
 }

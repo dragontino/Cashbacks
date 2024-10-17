@@ -238,7 +238,7 @@ fun ModalBottomSheet(
                 )
             }
         },
-        windowInsets = WindowInsets(0),
+        contentWindowInsets = { WindowInsets(0) },
         tonalElevation = 40.dp,
         modifier = Modifier.onGloballyPositioned {
             with(density) {

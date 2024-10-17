@@ -87,7 +87,22 @@ class ComposableBankCard(
                 selection = TextRange(newText.length)
             )
         )
+
+        updatePaymentSystemByNumber(newText)
     }
+
+    private fun updatePaymentSystemByNumber(number: String) {
+        val withoutSpacesNumber = BankCardUtils.removeSpacesFromNumber(number)
+        val newPaymentSystem = PaymentSystem.entries.find { withoutSpacesNumber.startsWith(it.prefix) }
+
+        if (newPaymentSystem != null) {
+            updateValue(
+                property = ::paymentSystem,
+                newValue = newPaymentSystem
+            )
+        }
+    }
+
 
     fun updateValidityPeriod(newPeriod: TextFieldValue) {
         val newText = when {
