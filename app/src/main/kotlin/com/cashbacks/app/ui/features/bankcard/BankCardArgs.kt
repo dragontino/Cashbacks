@@ -1,9 +1,15 @@
 package com.cashbacks.app.ui.features.bankcard
 
-sealed class BankCardArgs(
-    val id: Long?,
+import android.os.Parcelable
+import kotlinx.parcelize.Parcelize
+
+@Parcelize
+data class BankCardArgs internal constructor(
+    val cardId: Long?,
     val isEditing: Boolean
-) {
-    data object New : BankCardArgs(id = null, isEditing = true)
-    class Existing(id: Long, isEditing: Boolean) : BankCardArgs(id, isEditing)
+) : Parcelable {
+
+    constructor() : this(cardId = null, isEditing = true)
+
+    constructor(id: Long, isEditing: Boolean) : this(cardId = id, isEditing = isEditing)
 }

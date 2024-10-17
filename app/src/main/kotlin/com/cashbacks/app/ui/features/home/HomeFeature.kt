@@ -36,7 +36,7 @@ class HomeFeature(private val application: App) : FeatureApi {
                         launchSingleTop = true
                     }
                 },
-                navigateToCategory = {
+                navigateToCategory = { args, isEditing ->
                     val route = application.appComponent
                         .categoryFeature()
                         .createDestinationRoute(it)

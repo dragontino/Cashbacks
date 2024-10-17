@@ -37,6 +37,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -46,12 +47,9 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -64,9 +62,8 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.cashbacks.app.model.ComposableCategoryCashback
-import com.cashbacks.app.model.ComposableShopCashback
-import com.cashbacks.app.model.PaymentSystemMapper
+import com.cashbacks.app.model.CashbackError
+import com.cashbacks.app.model.PaymentSystemUtils
 import com.cashbacks.app.ui.composables.CollapsingToolbarScaffold
 import com.cashbacks.app.ui.composables.ConfirmDeletionDialog
 import com.cashbacks.app.ui.composables.ConfirmExitWithSaveDataDialog
@@ -76,129 +73,115 @@ import com.cashbacks.app.ui.composables.EditableTextField
 import com.cashbacks.app.ui.composables.NewNameTextField
 import com.cashbacks.app.ui.composables.OnLifecycleEvent
 import com.cashbacks.app.ui.features.bankcard.BankCardArgs
-import com.cashbacks.app.ui.features.category.CategoryArgs
+import com.cashbacks.app.ui.features.cashback.mvi.CashbackAction
+import com.cashbacks.app.ui.features.cashback.mvi.CashbackEvent
 import com.cashbacks.app.ui.features.shop.ShopArgs
 import com.cashbacks.app.ui.managment.DialogType
-import com.cashbacks.app.ui.managment.ScreenEvents
-import com.cashbacks.app.ui.managment.ViewModelState
+import com.cashbacks.app.ui.managment.ScreenState
 import com.cashbacks.app.ui.theme.CashbacksTheme
 import com.cashbacks.app.util.LoadingInBox
 import com.cashbacks.app.util.animate
 import com.cashbacks.app.util.keyboardAsState
 import com.cashbacks.domain.R
-import com.cashbacks.domain.model.Category
-import com.cashbacks.domain.model.Shop
-import com.cashbacks.domain.model.ShopInterface
 import com.cashbacks.domain.util.LocalDate
 import com.cashbacks.domain.util.epochMillis
 import com.cashbacks.domain.util.parseToDate
 import com.cashbacks.domain.util.parseToString
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import java.time.LocalDate
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun CashbackScreen(
     viewModel: CashbackViewModel,
-    navigateToCategory: (args: CategoryArgs) -> Unit,
     navigateToShop: (args: ShopArgs) -> Unit,
     navigateToCard: (args: BankCardArgs) -> Unit,
-    popBackStack: () -> Unit
+    navigateBack: () -> Unit
 ) {
     val snackbarHostState = remember(::SnackbarHostState)
-    val scope = rememberCoroutineScope()
-    val context = LocalContext.current
     val keyboardState = keyboardAsState()
+    val dialogType = rememberSaveable { mutableStateOf<DialogType?>(null) }
 
     OnLifecycleEvent(
         onDestroy = {
-            if (viewModel.state.value == ViewModelState.Editing) {
-                scope.launch { viewModel.saveCashback() }
-            }
+            viewModel.push(CashbackAction.SaveData())
         }
     )
 
-    val showSnackbar = remember {
-        fun (message: String) {
-            scope.launch { snackbarHostState.showSnackbar(message) }
-        }
-    }
-
-    LaunchedEffect(viewModel.addingCategoryState) {
-        if (viewModel.addingCategoryState) {
-            viewModel.showOwnersSelection = false
+    LaunchedEffect(viewModel.isCreatingCategory) {
+        if (viewModel.isCreatingCategory) {
+            viewModel.push(CashbackAction.HideAllSelections)
         }
     }
 
     LaunchedEffect(viewModel.showOwnersSelection) {
         if (viewModel.showOwnersSelection) {
-            viewModel.addingCategoryState = false
+            viewModel.push(CashbackAction.CancelCreatingCategory)
         }
     }
 
     LaunchedEffect(Unit) {
-        snapshotFlow { keyboardState.value }.collect { isKeyboardOpen ->
-            if (!isKeyboardOpen) {
-                viewModel.addingCategoryState = false
-            }
-        }
-    }
-
-    var dialogType: DialogType? by rememberSaveable { mutableStateOf(null) }
-    LaunchedEffect(key1 = true) {
-        viewModel.eventsFlow.collect { event ->
+        viewModel.eventFlow.onEach { event ->
             when (event) {
-                is ScreenEvents.Navigate -> {
-                    when (event.args) {
-                        is CategoryArgs -> navigateToCategory(event.args)
-                        is ShopArgs -> navigateToShop(event.args)
-                        is BankCardArgs -> navigateToCard(event.args)
-                        null -> popBackStack()
-                    }
-                }
-                is ScreenEvents.ShowSnackbar -> showSnackbar(event.message)
-                is ScreenEvents.OpenDialog -> dialogType = event.type
-                ScreenEvents.CloseDialog -> dialogType = null
+                is CashbackEvent.ShowSnackbar -> snackbarHostState.showSnackbar(event.message)
+                is CashbackEvent.OpenDialog -> dialogType.value = event.type
+                is CashbackEvent.CloseDialog -> dialogType.value = null
+                is CashbackEvent.NavigateBack -> navigateBack()
+                is CashbackEvent.NavigateToShop -> navigateToShop(event.args)
+                is CashbackEvent.NavigateToBankCard -> navigateToCard(event.args)
             }
-        }
+        }.launchIn(this)
+
+
+        snapshotFlow { keyboardState.value }.onEach { isKeyboardOpen ->
+            if (!isKeyboardOpen) {
+                viewModel.push(CashbackAction.CancelCreatingCategory)
+            }
+        }.launchIn(this)
     }
 
 
-    when (val type = dialogType) {
+    when (val type = dialogType.value) {
         is DialogType.ConfirmDeletion<*> -> {
             ConfirmDeletionDialog(
                 text = stringResource(R.string.confirm_cashback_deletion),
                 onConfirm = {
-                    viewModel.deleteCashback()
-                    viewModel.navigateTo(null)
+                    viewModel.push(
+                        CashbackAction.DeleteData {
+                            viewModel.push(CashbackAction.ClickButtonBack)
+                        }
+                    )
                 },
-                onClose = viewModel::closeDialog
+                onClose = { viewModel.push(CashbackAction.HideDialog) }
             )
         }
+
         is DialogType.DatePicker -> {
             DatePickerDialog(
                 date = type.date,
                 onConfirm = {
-                    with(viewModel.cashback.value) {
+                    with(viewModel.cashback) {
                         updateValue(
                             property = ::expirationDate,
                             newValue = it?.parseToString() ?: ""
                         )
                     }
-                    viewModel.closeDialog()
                 },
-                onClose = viewModel::closeDialog
+                onClose = { viewModel.push(CashbackAction.HideDialog) }
             )
         }
         DialogType.Save -> {
             ConfirmExitWithSaveDataDialog(
                 onConfirm = {
-                    viewModel.saveInfo(context.resources) {
-                        viewModel.navigateTo(null)
-                    }
+                    viewModel.push(
+                        CashbackAction.SaveData {
+                            viewModel.push(CashbackAction.ClickButtonBack)
+                        }
+                    )
                 },
-                onDismiss = { viewModel.navigateTo(null) },
-                onClose = viewModel::closeDialog
+                onDismiss = { viewModel.push(CashbackAction.ClickButtonBack) },
+                onClose = { viewModel.push(CashbackAction.HideDialog) }
             )
         }
         null -> {}
@@ -211,7 +194,7 @@ internal fun CashbackScreen(
             .fillMaxSize()
     ) {
         Crossfade(
-            targetState = viewModel.state.value,
+            targetState = viewModel.state,
             label = "loading animation",
             animationSpec = tween(durationMillis = 100, easing = LinearEasing),
             modifier = Modifier
@@ -219,13 +202,13 @@ internal fun CashbackScreen(
                 .fillMaxSize()
         ) { state ->
             when (state) {
-                ViewModelState.Loading -> LoadingInBox()
-                else -> CashbackContent(viewModel, snackbarHostState)
+                ScreenState.Loading -> LoadingInBox()
+                ScreenState.Showing -> CashbackContent(viewModel, snackbarHostState)
             }
         }
 
         AnimatedVisibility(
-            visible = viewModel.state.value != ViewModelState.Loading && viewModel.addingCategoryState,
+            visible = viewModel.state != ScreenState.Loading && viewModel.isCreatingCategory,
             enter = expandVertically(
                 animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing)
             ),
@@ -235,15 +218,14 @@ internal fun CashbackScreen(
             modifier = Modifier.align(Alignment.BottomCenter)
         ) {
             NewNameTextField(placeholder = stringResource(R.string.category_placeholder)) { name ->
-                viewModel.addCategory(name)
-                viewModel.addingCategoryState = false
+                viewModel.push(CashbackAction.AddCategory(name))
             }
         }
     }
 
 
-    BackHandler(enabled = viewModel.cashback.value.haveChanges) {
-        viewModel.openDialog(DialogType.Save)
+    BackHandler(enabled = viewModel.cashback.haveChanges) {
+        viewModel.push(CashbackAction.ShowDialog(DialogType.Save))
     }
 }
 
@@ -255,7 +237,6 @@ private fun CashbackContent(
     snackbarHostState: SnackbarHostState
 ) {
     val scrollState = rememberScrollState()
-    val context = LocalContext.current
 
     CollapsingToolbarScaffold(
         topBar = {
@@ -270,16 +251,16 @@ private fun CashbackContent(
                 navigationIcon = {
                     IconButton(
                         onClick = {
-                            if (viewModel.cashback.value.haveChanges) {
-                                viewModel.openDialog(DialogType.Save)
-                            } else {
-                                viewModel.navigateTo(null)
+                            val action = when {
+                                viewModel.cashback.haveChanges -> CashbackAction.ShowDialog(DialogType.Save)
+                                else -> CashbackAction.ClickButtonBack
                             }
+                            viewModel.push(action)
                         }
                     ) {
                         Icon(
                             imageVector = when {
-                                viewModel.cashback.value.haveChanges -> Icons.Rounded.Close
+                                viewModel.cashback.haveChanges -> Icons.Rounded.Close
                                 else -> Icons.Rounded.ArrowBackIosNew
                             },
                             contentDescription = "return to previous screen",
@@ -288,12 +269,16 @@ private fun CashbackContent(
                     }
                 },
                 actions = {
-                    if (viewModel.cashbackId != null) {
+                    if (viewModel.cashback.id != null) {
                         IconButton(
                             onClick = {
-                                viewModel.openDialog(
-                                    type = DialogType.ConfirmDeletion(viewModel.cashback.value)
-                                )
+                                viewModel.cashback.mapToCashback()?.let {
+                                    viewModel.push(
+                                        action = CashbackAction.ShowDialog(
+                                            type = DialogType.ConfirmDeletion(it)
+                                        )
+                                    )
+                                }
                             }
                         ) {
                             Icon(
@@ -306,9 +291,11 @@ private fun CashbackContent(
 
                     IconButton(
                         onClick = {
-                            viewModel.saveInfo(context.resources) {
-                                viewModel.navigateTo(null)
-                            }
+                            viewModel.push(
+                                CashbackAction.SaveData {
+                                    viewModel.push(CashbackAction.ClickButtonBack)
+                                }
+                            )
                         }
                     ) {
                         Icon(
@@ -319,7 +306,7 @@ private fun CashbackContent(
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = Color.Transparent,
+                    containerColor = MaterialTheme.colorScheme.primary.animate(),
                     titleContentColor = MaterialTheme.colorScheme.onPrimary.animate(),
                     navigationIconContentColor = MaterialTheme.colorScheme.onPrimary.animate(),
                     actionIconContentColor = MaterialTheme.colorScheme.onPrimary.animate()
@@ -348,20 +335,26 @@ private fun CashbackContent(
         ) {
             ExposedDropdownMenuBox(
                 expanded = viewModel.showOwnersSelection,
-                onExpandedChange = viewModel::showOwnersSelection::set
+                onExpandedChange = { expanded ->
+                    val action = when {
+                        expanded -> CashbackAction.ShowOwnersSelection
+                        else -> CashbackAction.HideOwnersSelection
+                    }
+                    viewModel.push(action)
+                }
             ) {
                 EditableTextField(
-                    text = when (val cashback = viewModel.cashback.value) {
-                        is ComposableCategoryCashback -> cashback.category?.name
-                        is ComposableShopCashback -> cashback.shop?.name
-                    } ?: stringResource(R.string.value_not_selected),
+                    text = viewModel.cashback.owner?.name ?: stringResource(R.string.value_not_selected),
                     onTextChange = {},
-                    label = viewModel.ownerType.getTitle(context.resources),
+                    label = when (viewModel.ownerType) {
+                        CashbackOwnerType.Category -> stringResource(R.string.category_title)
+                        CashbackOwnerType.Shop -> stringResource(R.string.shop_title)
+                    },
                     enabled = false,
                     textStyle = MaterialTheme.typography.bodyMedium,
                     error = viewModel.showErrors
-                            && !viewModel.cashback.value.ownerErrorMessage.value.isNullOrBlank(),
-                    errorMessage = viewModel.cashback.value.ownerErrorMessage.value ?: "",
+                            && viewModel.cashback.errors[CashbackError.Owner] != null,
+                    errorMessage = viewModel.cashback.errors[CashbackError.Owner] ?: "",
                     trailingActions = {
                         ExposedDropdownMenuDefaults.TrailingIcon(
                             expanded = viewModel.showOwnersSelection
@@ -369,63 +362,53 @@ private fun CashbackContent(
                     },
                     shape = MaterialTheme.shapes.medium,
                     modifier = Modifier
-                        .menuAnchor()
+                        .padding(horizontal = 16.dp)
+                        .menuAnchor(MenuAnchorType.PrimaryNotEditable)
                         .fillMaxWidth()
                 )
 
                 DropdownMenu(
-                    listLiveData = when (viewModel.ownerType) {
-                        CashbackOwner.Category -> viewModel.getAllCategories()
-                        CashbackOwner.Shop -> viewModel.getAllShops()
-                    },
+                    itemsFlow = viewModel.ownersStateFlow,
                     expanded = viewModel.showOwnersSelection,
-                    onClose = { viewModel.showOwnersSelection = false }
+                    onClose = { viewModel.push(CashbackAction.HideOwnersSelection) },
                 ) { list ->
-                    val cashback = viewModel.cashback.value
                     DropdownMenuListContent(
                         list = list,
-                        selectedItem = when (cashback) {
-                            is ComposableCategoryCashback -> cashback.category
-                            is ComposableShopCashback -> cashback.shop
-                        },
-                        title = {
-                            when (it) {
-                                is Category -> it.name
-                                is ShopInterface -> it.name
-                                else -> it.toString()
-                            }
-                        },
+                        selected = { viewModel.cashback.owner?.id == it.id },
+                        title = { it.name },
                         onClick = {
-                            when (cashback) {
-                                is ComposableCategoryCashback -> cashback.updateValue(
-                                    property = cashback::category,
-                                    newValue = it as Category
-                                )
-                                is ComposableShopCashback -> cashback.updateValue(
-                                    property = cashback::shop,
-                                    newValue = it as Shop
-                                )
-                            }
+                            viewModel.cashback.updateValue(
+                                property = viewModel.cashback::owner,
+                                newValue = it
+                            )
 
                             if (viewModel.showErrors) {
-                                cashback.updateOwnerError(context.resources)
+                                viewModel.push(
+                                    CashbackAction.UpdateCashbackErrorMessage(
+                                        CashbackError.Owner)
+                                )
                             }
-                            viewModel.showOwnersSelection = false
+                            viewModel.push(CashbackAction.HideOwnersSelection)
                         },
                         addButton = {
                             TextButton(
                                 onClick = {
                                     when (viewModel.ownerType) {
-                                        CashbackOwner.Category -> viewModel.addingCategoryState = true
-                                        CashbackOwner.Shop -> viewModel.navigateTo(ShopArgs.New)
+                                        CashbackOwnerType.Category -> {
+                                            viewModel.push(CashbackAction.StartCreatingCategory)
+                                        }
+
+                                        CashbackOwnerType.Shop -> {
+                                            viewModel.push(CashbackAction.CreateShop)
+                                        }
                                     }
                                 },
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 Text(
                                     text = when (viewModel.ownerType) {
-                                        CashbackOwner.Category -> stringResource(R.string.add_category)
-                                        CashbackOwner.Shop -> stringResource(R.string.add_shop)
+                                        CashbackOwnerType.Category -> stringResource(R.string.add_category)
+                                        CashbackOwnerType.Shop -> stringResource(R.string.add_shop)
                                     },
                                     style = MaterialTheme.typography.bodySmall
                                 )
@@ -439,21 +422,27 @@ private fun CashbackContent(
 
             ExposedDropdownMenuBox(
                 expanded = viewModel.showBankCardsSelection,
-                onExpandedChange = viewModel::showBankCardsSelection::set,
+                onExpandedChange = { expanded ->
+                    val action = when {
+                        expanded -> CashbackAction.ShowBankCardsSelection
+                        else -> CashbackAction.HideBankCardsSelection
+                    }
+                    viewModel.push(action)
+                },
             ) {
                 EditableTextField(
-                    text = viewModel.cashback.value.bankCard?.toString()
+                    text = viewModel.cashback.bankCard?.toString()
                         ?: stringResource(R.string.value_not_selected),
                     onTextChange = {},
                     label = stringResource(R.string.bank_card),
                     enabled = false,
                     textStyle = MaterialTheme.typography.bodyMedium,
                     error = viewModel.showErrors
-                            && !viewModel.cashback.value.bankCardErrorMessage.value.isNullOrBlank(),
-                    errorMessage = viewModel.cashback.value.bankCardErrorMessage.value ?: "",
+                            && viewModel.cashback.errors[CashbackError.BankCard] != null,
+                    errorMessage = viewModel.cashback.errors[CashbackError.BankCard] ?: "",
                     leadingIcon = {
-                        viewModel.cashback.value.bankCard?.paymentSystem?.let {
-                            PaymentSystemMapper.PaymentSystemImage(
+                        viewModel.cashback.bankCard?.paymentSystem?.let {
+                            PaymentSystemUtils.PaymentSystemImage(
                                 paymentSystem = it,
                                 maxWidth = 30.dp,
                                 drawBackground = false
@@ -467,43 +456,49 @@ private fun CashbackContent(
                     },
                     shape = MaterialTheme.shapes.medium,
                     modifier = Modifier
-                        .menuAnchor()
+                        .padding(horizontal = 16.dp)
+                        .menuAnchor(MenuAnchorType.PrimaryNotEditable)
                         .fillMaxWidth()
                 )
 
                 DropdownMenu(
-                    listLiveData = viewModel.getAllBankCards(),
+                    itemsFlow = viewModel.bankCardsStateFlow,
                     expanded = viewModel.showBankCardsSelection,
-                    onClose = { viewModel.showBankCardsSelection = false }
+                    onClose = { viewModel.push(CashbackAction.HideBankCardsSelection) }
                 ) { cards ->
                     DropdownMenuListContent(
                         list = cards,
-                        selectedItem = viewModel.cashback.value.bankCard,
+                        selected = { viewModel.cashback.bankCard?.id == it.id },
                         leadingIcon = { card ->
                             card.paymentSystem?.let {
-                                PaymentSystemMapper.PaymentSystemImage(
+                                PaymentSystemUtils.PaymentSystemImage(
                                     paymentSystem = it,
                                     maxWidth = 30.dp,
                                     drawBackground = false
                                 )
                             }
                         },
+                        title = { it.name },
                         onClick = {
-                            with(viewModel.cashback.value) {
+                            with(viewModel.cashback) {
                                 updateValue(
                                     property = ::bankCard,
                                     newValue = it
                                 )
 
                                 if (viewModel.showErrors) {
-                                    updateBankCardError(context.resources)
+                                    viewModel.push(
+                                        CashbackAction.UpdateCashbackErrorMessage(
+                                            CashbackError.BankCard
+                                        )
+                                    )
                                 }
                             }
-                            viewModel.showBankCardsSelection = false
+                            viewModel.push(CashbackAction.HideBankCardsSelection)
                         },
                         addButton = {
                             TextButton(
-                                onClick = { viewModel.navigateTo(BankCardArgs.New) },
+                                onClick = { viewModel.push(CashbackAction.CreateBankCard) },
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 Text(
@@ -517,52 +512,55 @@ private fun CashbackContent(
             }
 
             EditableTextField(
-                text = viewModel.cashback.value.amount,
+                text = viewModel.cashback.amount,
                 onTextChange = {
-                    with(viewModel.cashback.value) {
+                    with(viewModel.cashback) {
                         updateValue(::amount, it)
 
                         if (viewModel.showErrors) {
-                            updateAmountError(context.resources)
+                            viewModel.push(CashbackAction.UpdateCashbackErrorMessage(CashbackError.Amount))
                         }
                     }
                 },
                 error = viewModel.showErrors
-                        && viewModel.cashback.value.amountErrorMessage.value?.isNotBlank() == true,
-                errorMessage = viewModel.cashback.value.amountErrorMessage.value ?: "",
+                        && viewModel.cashback.errors[CashbackError.Amount] != null,
+                errorMessage = viewModel.cashback.errors[CashbackError.Amount] ?: "",
                 label = stringResource(R.string.amount),
-                keyboardType = KeyboardType.Number
+                keyboardType = KeyboardType.Number,
+                modifier = Modifier.padding(horizontal = 16.dp)
             )
 
             EditableTextField(
-                text = viewModel.cashback.value.expirationDate,
+                text = viewModel.cashback.expirationDate,
                 onTextChange = {},
                 label = stringResource(R.string.validity_period),
                 textStyle = MaterialTheme.typography.bodyMedium,
                 enabled = false,
                 modifier = Modifier
+                    .padding(horizontal = 16.dp)
                     .clickable(
                         interactionSource = remember(::MutableInteractionSource),
                         indication = null
                     ) {
-                        val date = viewModel.cashback.value.expirationDate
+                        val date = viewModel.cashback.expirationDate
                             .takeIf { it.isNotBlank() }
                             ?.parseToDate()
-                        viewModel.openDialog(DialogType.DatePicker(date))
+                        viewModel.push(CashbackAction.ShowDialog(DialogType.DatePicker(date)))
                     }
                     .fillMaxWidth()
             )
 
             EditableTextField(
-                text = viewModel.cashback.value.comment,
+                text = viewModel.cashback.comment,
                 onTextChange = {
-                    with(viewModel.cashback.value) {
+                    with(viewModel.cashback) {
                         updateValue(::comment, it)
                     }
                 },
                 label = stringResource(R.string.comment),
                 singleLine = false,
                 imeAction = ImeAction.Default,
+                modifier = Modifier.padding(horizontal = 16.dp)
             )
         }
     }
@@ -583,9 +581,6 @@ private fun DatePickerDialog(
         confirmButton = {
             TextButton(
                 onClick = {
-                    onConfirm(
-                        datePickerState.selectedDateMillis?.let(::LocalDate)
-                    )
                     datePickerState.selectedDateMillis?.let {
                         onConfirm(LocalDate(epochMillis = it))
                         onClose()

@@ -101,14 +101,13 @@ import kotlinx.coroutines.launch
 @Composable
 internal fun ShopScreen(
     viewModel: ShopViewModel,
-    popBackStack: () -> Unit,
+    navigateBack: () -> Unit,
     navigateToCashback: (args: CashbackArgs) -> Unit
 ) {
 
     val snackbarHostState = remember(::SnackbarHostState)
-    val scope = rememberCoroutineScope()
-    val context = LocalContext.current
     val keyboardState = keyboardAsState()
+    var dialogType by rememberSaveable { mutableStateOf<DialogType?>(null) }
 
     OnLifecycleEvent(
         onDestroy = {
@@ -118,48 +117,42 @@ internal fun ShopScreen(
         }
     )
 
-    BackHandler(enabled = viewModel.isEditing.value && viewModel.shop.value.haveChanges) {
-        viewModel.openDialog(DialogType.Save)
+    BackHandler(
+        enabled = viewModel.viewModelState == ViewModelState.Editing && viewModel.shop.haveChanges
+    ) {
+        viewModel.push(ShopAction.OpenDialog(DialogType.Save))
     }
 
-    val showSnackbar = remember {
-        fun(message: String) {
-            scope.launch { snackbarHostState.showSnackbar(message) }
-        }
-    }
 
-    LaunchedEffect(viewModel.addingCategoryState) {
-        if (viewModel.addingCategoryState) {
-            viewModel.showCategoriesSelection = false
+    LaunchedEffect(viewModel.isCreatingCategory) {
+        if (viewModel.isCreatingCategory) {
+            viewModel.push(ShopAction.HideCategoriesSelection)
         }
     }
 
     LaunchedEffect(viewModel.showCategoriesSelection) {
         if (viewModel.showCategoriesSelection) {
-            viewModel.addingCategoryState = false
+            viewModel.push(ShopAction.CancelCreatingCategory)
         }
     }
 
     LaunchedEffect(Unit) {
-        snapshotFlow { keyboardState.value }.collect { isKeyboardOpen ->
-            if (!isKeyboardOpen) {
-                viewModel.addingCategoryState = false
+        snapshotFlow { keyboardState.value }
+            .onEach { isKeyboardOpen ->
+                if (!isKeyboardOpen) {
+                    viewModel.push(ShopAction.CancelCreatingCategory)
+                }
             }
-        }
-    }
+            .launchIn(this)
 
-    var dialogType by rememberSaveable { mutableStateOf<DialogType?>(null) }
-    LaunchedEffect(key1 = true) {
-        viewModel.eventsFlow.collect { event ->
+        viewModel.eventFlow.onEach { event ->
             when (event) {
-                is ScreenEvents.Navigate -> (event.args as? CashbackArgs)
-                    ?.let(navigateToCashback)
-                    ?: popBackStack()
-                is ScreenEvents.ShowSnackbar -> showSnackbar(event.message)
-                is ScreenEvents.OpenDialog -> dialogType = event.type
-                ScreenEvents.CloseDialog -> dialogType = null
+                is ShopEvent.NavigateBack -> navigateBack()
+                is ShopEvent.NavigateToCashback -> navigateToCashback(event.args)
+                is ShopEvent.ChangeOpenedDialog -> dialogType = event.openedDialogType
+                is ShopEvent.ShowSnackbar -> snackbarHostState.showSnackbar(event.message)
             }
-        }
+        }.launchIn(this)
     }
 
     when (val type = dialogType) {
@@ -172,25 +165,27 @@ internal fun ShopScreen(
                 },
                 onConfirm = {
                     when (type.value) {
-                        is Shop -> viewModel.deleteShop {
-                            viewModel.navigateTo(null)
-                        }
+                        is Shop -> viewModel.push(
+                            action = ShopAction.Delete {
+                                viewModel.push(ShopAction.ClickButtonBack)
+                            }
+                        )
 
-                        is Cashback -> viewModel.deleteCashback(type.value)
+                        is Cashback -> viewModel.push(ShopAction.DeleteCashback(type.value))
                     }
                 },
-                onClose = viewModel::closeDialog
+                onClose = { viewModel.push(ShopAction.CloseDialog) }
             )
         }
 
         DialogType.Save -> {
             ConfirmExitWithSaveDataDialog(
                 onConfirm = {
-                    viewModel.save(context.resources)
-                    popBackStack()
+                    viewModel.push(ShopAction.Save)
+                    viewModel.push(ShopAction.ClickButtonBack)
                 },
-                onDismiss = popBackStack,
-                onClose = viewModel::closeDialog
+                onDismiss = { viewModel.push(ShopAction.ClickButtonBack) },
+                onClose = { viewModel.push(ShopAction.CloseDialog) }
             )
         }
 
@@ -208,7 +203,7 @@ internal fun ShopScreen(
         )
 
         AnimatedVisibility(
-            visible = viewModel.state.value != ViewModelState.Loading && viewModel.addingCategoryState,
+            visible = viewModel.state != ScreenState.Loading && viewModel.isCreatingCategory,
             enter = expandVertically(
                 animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing)
             ),
@@ -242,22 +237,25 @@ fun ShopScreenScaffold(
             CenterAlignedTopAppBar(
                 title = {
                     Text(
-                        text = viewModel.title,
+                        text = when (viewModel.viewModelState) {
+                            ViewModelState.Editing -> stringResource(R.string.shop_title)
+                            ViewModelState.Viewing -> viewModel.shop.name
+                        },
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
                 },
                 navigationIcon = {
                     Crossfade(
-                        targetState = viewModel.shop.value.haveChanges,
+                        targetState = viewModel.shop.haveChanges,
                         label = "is changed anim",
                         animationSpec = tween(durationMillis = 500, easing = LinearEasing)
                     ) { isChanged ->
                         IconButton(
                             onClick = {
                                 when {
-                                    isChanged -> viewModel.openDialog(DialogType.Save)
-                                    else -> viewModel.navigateTo(null)
+                                    isChanged -> viewModel.push(ShopAction.OpenDialog(DialogType.Save))
+                                    else -> viewModel.push(ShopAction.ClickButtonBack)
                                 }
                             }
                         ) {
@@ -274,15 +272,20 @@ fun ShopScreenScaffold(
                 },
                 actions = {
                     AnimatedVisibility(
-                        visible = viewModel.isEditing.value && viewModel.shopId != null
+                        visible = viewModel.viewModelState == ViewModelState.Editing
+                                && viewModel.shop.id != null
                     ) {
                         IconButton(
                             onClick = {
-                                viewModel.openDialog(
-                                    DialogType.ConfirmDeletion(viewModel.shop.value.mapToShop())
-                                )
+                                viewModel.onItemClick {
+                                    viewModel.push(
+                                        action = ShopAction.OpenDialog(
+                                            DialogType.ConfirmDeletion(viewModel.shop.mapToShop())
+                                        )
+                                    )
+                                }
                             },
-                            enabled = !viewModel.isLoading.value
+                            enabled = viewModel.state != ScreenState.Loading
                         ) {
                             Icon(
                                 imageVector = Icons.Rounded.DeleteOutline,
@@ -313,53 +316,58 @@ fun ShopScreenScaffold(
         },
         floatingActionButtons = {
             AnimatedVisibility(
-                visible = viewModel.isEditing.value
-                        && viewModel.shopId != null
+                visible = viewModel.viewModelState == ViewModelState.Editing
+                        && viewModel.shop.id != null
                         && !keyboardIsVisibleState.value,
                 enter = floatingActionButtonEnterAnimation(),
                 exit = floatingActionButtonExitAnimation()
             ) {
                 BasicFloatingActionButton(icon = Icons.Rounded.Add) {
-                    when (viewModel.shopId) {
-                        null -> viewModel.save(context.resources, onSuccess = viewModel::addCashback)
-                        else -> viewModel.addCashback()
+                    viewModel.onItemClick {
+                        viewModel.push(ShopAction.CreateCashback)
                     }
                 }
             }
 
             AnimatedVisibility(visible = !keyboardIsVisibleState.value) {
                 BasicFloatingActionButton(
-                    icon = when {
-                        viewModel.isEditing.value -> Icons.Rounded.Save
-                        else -> Icons.Rounded.Edit
-                    },
-                    onClick = {
-                        when {
-                            viewModel.isEditing.value -> viewModel.save(context.resources)
-                            else -> viewModel.edit()
-                        }
+                    icon = when (viewModel.viewModelState) {
+                        ViewModelState.Editing -> Icons.Rounded.Save
+                        ViewModelState.Viewing -> Icons.Rounded.Edit
                     }
-                )
+                ) {
+                    viewModel.onItemClick {
+                        val action = when (viewModel.viewModelState) {
+                            ViewModelState.Editing -> ShopAction.Save
+                            ViewModelState.Viewing -> ShopAction.Edit
+                        }
+                        viewModel.push(action)
+                    }
+                }
             }
 
         },
         contentWindowInsets = WindowInsets.ime.only(WindowInsetsSides.Bottom),
         fabModifier = Modifier
-            .graphicsLayer { viewModel.fabPaddingDp.floatValue = size.height.toDp().value }
+            .onGloballyPositioned { fabHeightPx.floatValue = it.size.height.toFloat() }
             .windowInsetsPadding(CollapsingToolbarScaffoldDefaults.contentWindowInsets),
         modifier = Modifier
             .imePadding()
             .fillMaxSize()
     ) {
         Crossfade(
-            targetState = viewModel.state.value,
+            targetState = viewModel.state,
             label = "content loading animation",
             animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing),
             modifier = Modifier.fillMaxSize()
         ) { state ->
             when (state) {
-                ViewModelState.Loading -> LoadingInBox()
-                else -> ShopScreenContent(viewModel, lazyListState)
+                ScreenState.Loading -> LoadingInBox()
+                else -> ShopScreenContent(
+                    viewModel = viewModel,
+                    state = lazyListState,
+                    bottomPadding = with(LocalDensity.current) { fabHeightPx.floatValue.toDp() }
+                )
             }
         }
     }
@@ -367,157 +375,167 @@ fun ShopScreenScaffold(
 
 
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 private fun ShopScreenContent(
     viewModel: ShopViewModel,
-    state: LazyListState
+    state: LazyListState,
+    bottomPadding: Dp
 ) {
-    val context = LocalContext.current
-
-    Column(modifier = Modifier.fillMaxSize()) {
-        if (viewModel.isEditing.value) {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                modifier = Modifier.padding(vertical = 16.dp)
-            ) {
-                ExposedDropdownMenuBox(
-                    expanded = viewModel.showCategoriesSelection,
-                    onExpandedChange = viewModel::showCategoriesSelection::set
+    LazyColumn(
+        state = state,
+        contentPadding = PaddingValues(vertical = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.fillMaxSize()
+    ) {
+        if (viewModel.viewModelState == ViewModelState.Editing) {
+            stickyHeader {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    modifier = Modifier.background(MaterialTheme.colorScheme.background.animate())
                 ) {
-                    EditableTextField(
-                        text = viewModel.shop.value.category?.name
-                            ?: stringResource(R.string.value_not_selected),
-                        onTextChange = {},
-                        enabled = false,
-                        textStyle = MaterialTheme.typography.bodyMedium,
-                        error = viewModel.showErrors
-                                && viewModel.shop.value.categoryErrorMessage.value.isNotBlank(),
-                        errorMessage = viewModel.shop.value.categoryErrorMessage.value,
-                        label = stringResource(R.string.category_title),
-                        leadingIcon = {
-                            ExposedDropdownMenuDefaults.TrailingIcon(
-                                expanded = viewModel.showCategoriesSelection
-                            )
-                        },
-                        shape = MaterialTheme.shapes.medium,
-                        modifier = Modifier
-                            .menuAnchor()
-                            .fillMaxWidth()
-                    )
-
-                    DropdownMenu(
-                        listLiveData = viewModel.getAllCategories(),
+                    ExposedDropdownMenuBox(
                         expanded = viewModel.showCategoriesSelection,
-                        onClose = { viewModel.showCategoriesSelection = false }
-                    ) { categories ->
-                        DropdownMenuListContent(
-                            list = categories,
-                            selectedItem = viewModel.shop.value.category,
-                            title = Category::name,
-                            onClick = {
-                                with(viewModel.shop.value) {
-                                    updateValue(this::category, it)
-                                    if (viewModel.showErrors) updateCategoryError(context.resources)
-                                }
-                                viewModel.showCategoriesSelection = false
+                        onExpandedChange = { isExpanded ->
+                            val action = when {
+                                isExpanded -> ShopAction.ShowCategoriesSelection
+                                else -> ShopAction.HideCategoriesSelection
+                            }
+                            viewModel.push(action)
+                        },
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    ) {
+                        EditableTextField(
+                            text = viewModel.shop.parentCategory?.name
+                                ?: stringResource(R.string.value_not_selected),
+                            onTextChange = {},
+                            enabled = false,
+                            textStyle = MaterialTheme.typography.bodyMedium,
+                            error = viewModel.showErrors
+                                    && viewModel.shop.errors[ShopError.Parent] != null,
+                            errorMessage = viewModel.shop.errors[ShopError.Parent] ?: "",
+                            label = stringResource(R.string.category_title),
+                            leadingIcon = {
+                                ExposedDropdownMenuDefaults.TrailingIcon(
+                                    expanded = viewModel.showCategoriesSelection
+                                )
                             },
-                            addButton = {
-                                TextButton(
-                                    onClick = { viewModel.addingCategoryState = true },
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Text(
-                                        text = stringResource(R.string.add_category),
-                                        style = MaterialTheme.typography.bodySmall
-                                    )
+                            shape = MaterialTheme.shapes.medium,
+                            modifier = Modifier
+                                .menuAnchor(MenuAnchorType.PrimaryNotEditable)
+                                .fillMaxWidth()
+                        )
+
+                        DropdownMenu(
+                            itemsFlow = viewModel.categoriesStateFlow,
+                            expanded = viewModel.showCategoriesSelection,
+                            onClose = { viewModel.push(ShopAction.HideCategoriesSelection) }
+                        ) { categories ->
+                            DropdownMenuListContent(
+                                list = categories,
+                                selected = { viewModel.shop.parentCategory?.id == it.id },
+                                title = Category::name,
+                                onClick = {
+                                    with(viewModel) {
+                                        shop.updateValue(shop::parentCategory, it)
+                                        if (showErrors) {
+                                            updateShopErrorMessage(ShopError.Parent)
+                                        }
+                                        push(ShopAction.HideCategoriesSelection)
+                                    }
+                                },
+                                addButton = {
+                                    TextButton(
+                                        onClick = {
+                                            viewModel.push(ShopAction.StartCreatingCategory)
+                                        },
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Text(
+                                            text = stringResource(R.string.add_category),
+                                            style = MaterialTheme.typography.bodySmall
+                                        )
+                                    }
+                                }
+                            )
+                        }
+                    }
+
+
+                    EditableTextField(
+                        text = viewModel.shop.name,
+                        onTextChange = {
+                            with(viewModel) {
+                                shop.updateValue(shop::name, it)
+                                if (showErrors) {
+                                    updateShopErrorMessage(ShopError.Name)
                                 }
                             }
-                        )
-                    }
-                }
+                        },
+                        label = stringResource(R.string.shop_placeholder),
+                        imeAction = ImeAction.Done,
+                        error = viewModel.showErrors
+                                && viewModel.shop.errors[ShopError.Name] != null,
+                        errorMessage = viewModel.shop.errors[ShopError.Name] ?: "",
+                        enabled = viewModel.viewModelState == ViewModelState.Editing,
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    )
 
-                EditableTextField(
-                    text = viewModel.shop.value.name,
-                    onTextChange = {
-                        with(viewModel.shop.value) {
-                            updateValue(::name, it)
-                            if (viewModel.showErrors) updateNameError(context.resources)
-                        }
-                    },
-                    label = stringResource(R.string.shop_placeholder),
-                    imeAction = ImeAction.Done,
-                    error = viewModel.showErrors
-                            && viewModel.shop.value.nameErrorMessage.value.isNotBlank(),
-                    enabled = viewModel.state.value == ViewModelState.Editing
-                )
-                HorizontalDivider(Modifier.padding(horizontal = 8.dp))
+                    HorizontalDivider(Modifier.padding(horizontal = 8.dp))
+                }
             }
         }
 
-        val cashbacksState = viewModel.cashbacksLiveData.observeAsState()
+        if (viewModel.shop.cashbacks.isEmpty()) {
+            if (viewModel.shop.id != null) {
+                item {
+                    EmptyList(
+                        text = when (viewModel.viewModelState) {
+                            ViewModelState.Editing -> stringResource(R.string.empty_cashbacks_list_editing)
+                            ViewModelState.Viewing -> stringResource(R.string.empty_cashbacks_list_viewing)
+                        },
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                        icon = Icons.Rounded.DataArray,
+                        iconModifier = Modifier.scale(2.5f)
+                    )
+                }
+            }
+        }
 
-        Crossfade(
-            targetState = cashbacksState.value,
-            label = "cashbacks animation",
-            animationSpec = tween(durationMillis = 100, easing = FastOutSlowInEasing)
-        ) { cashbacks ->
-            when {
-                cashbacks == null -> LoadingInBox()
-                cashbacks.isEmpty() && viewModel.shopId != null -> EmptyList(
-                    text = when {
-                        viewModel.isEditing.value -> stringResource(R.string.empty_cashbacks_list_editing)
-                        else -> stringResource(R.string.empty_cashbacks_list_editing)
+        else {
+            itemsIndexed(viewModel.shop.cashbacks) { index, cashback ->
+                CashbackComposable(
+                    cashback = cashback,
+                    isSwiped = viewModel.selectedCashbackIndex == index,
+                    onSwipe = { isSwiped ->
+                        viewModel.push(ShopAction.SwipeCashback(isSwiped, index))
                     },
-                    icon = Icons.Rounded.DataArray,
-                    iconModifier = Modifier.scale(2.5f)
-                )
-
-                else -> {
-                    LazyColumn(
-                        state = state,
-                        contentPadding = PaddingValues(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.fillMaxSize()
-                    ) {
-                        itemsIndexed(cashbacks) { index, cashback ->
-                            CashbackComposable(
-                                cashback = cashback,
-                                isSwiped = viewModel.selectedCashbackIndex == index,
-                                onSwipe = { isSwiped ->
-                                    viewModel.selectedCashbackIndex = when {
-                                        isSwiped -> index
-                                        else -> null
-                                    }
-                                },
-                                onClick = {
-                                    viewModel.onItemClick {
-                                        viewModel.navigateTo(
-                                            args = CashbackArgs.Shop.Existing(
-                                                cashbackId = cashback.id,
-                                                shopId = viewModel.shopId!!
-                                            )
-                                        )
-                                    }
-                                },
-                                onDelete = {
-                                    viewModel.onItemClick {
-                                        viewModel.selectedCashbackIndex = null
-                                        viewModel.openDialog(DialogType.ConfirmDeletion(cashback))
-                                    }
-                                }
-                            )
+                    onClick = {
+                        viewModel.onItemClick {
+                            viewModel.push(ShopAction.SwipeCashback(isOpened = false))
+                            viewModel.push(ShopAction.NavigateToCashback(cashback.id))
                         }
-
-                        item {
-                            Spacer(
-                                modifier = Modifier.height(viewModel.fabPaddingDp.floatValue.dp)
+                    },
+                    onDelete = {
+                        viewModel.onItemClick {
+                            viewModel.push(ShopAction.SwipeCashback(isOpened = false))
+                            viewModel.push(
+                                action = ShopAction.OpenDialog(
+                                    type = DialogType.ConfirmDeletion(cashback)
+                                )
                             )
                         }
                     }
-                }
+                )
             }
+        }
+
+
+        item {
+            Spacer(
+                modifier = Modifier.height(bottomPadding)
+            )
         }
     }
 }

@@ -1,66 +1,97 @@
 package com.cashbacks.app.ui.features.bankcard
 
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.lifecycle.viewModelScope
 import com.cashbacks.app.model.ComposableBankCard
-import com.cashbacks.app.ui.managment.ViewModelState
+import com.cashbacks.app.mvi.MviViewModel
+import com.cashbacks.app.ui.features.bankcard.mvi.BankCardEditingAction
+import com.cashbacks.app.ui.features.bankcard.mvi.BankCardEditingEvent
+import com.cashbacks.app.ui.managment.ScreenState
 import com.cashbacks.app.util.AnimationDefaults
-import com.cashbacks.app.viewmodel.EventsViewModel
-import com.cashbacks.domain.model.PaymentSystem
+import com.cashbacks.domain.model.MessageHandler
 import com.cashbacks.domain.usecase.cards.EditBankCardUseCase
 import com.cashbacks.domain.usecase.cards.GetBankCardUseCase
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 class BankCardEditingViewModel @AssistedInject constructor(
     private val getBankCardUseCase: GetBankCardUseCase,
     private val editBankCardUseCase: EditBankCardUseCase,
+    private val messageHandler: MessageHandler,
     @Assisted private val bankCardId: Long?
-) : EventsViewModel() {
+) : MviViewModel<BankCardEditingAction, BankCardEditingEvent>() {
 
-    private val _state = mutableStateOf(ViewModelState.Loading)
-    val state = derivedStateOf { _state.value }
+    var state by mutableStateOf(ScreenState.Showing)
+        private set
 
-    private val _bankCard = mutableStateOf(ComposableBankCard())
-    val bankCard = derivedStateOf { _bankCard.value }
+    val bankCard by lazy { ComposableBankCard(id = bankCardId) }
 
     var showPaymentSystemSelection by mutableStateOf(false)
+        private set
 
-    private val bankCardJob = viewModelScope.launch {
+    override suspend fun bootstrap() {
+        state = ScreenState.Loading
         delay(AnimationDefaults.SCREEN_DELAY_MILLIS + 40L)
         if (bankCardId != null) {
             getBankCardUseCase.getBankCardById(bankCardId)
-                ?.let { _bankCard.value = ComposableBankCard(it) }
+                .onSuccess { bankCard.update(it) }
+                .onFailure { throwable ->
+                    messageHandler.getExceptionMessage(throwable)
+                        ?.takeIf { it.isNotBlank() }
+                        ?.let { push(BankCardEditingEvent.ShowSnackbar(it)) }
+                }
         }
-        _state.value = ViewModelState.Editing
+        state = ScreenState.Showing
     }
 
-    override fun onCleared() {
-        bankCardJob.cancel()
-        super.onCleared()
-    }
 
-    fun saveCard() {
-        viewModelScope.launch {
-            _state.value = ViewModelState.Loading
-            delay(100)
-            when (bankCardId) {
-                null -> editBankCardUseCase.addBankCard(bankCard.value.mapToBankCard())
-                else -> editBankCardUseCase.updateBankCard(bankCard.value.mapToBankCard())
+    override suspend fun actor(action: BankCardEditingAction) {
+        when (action) {
+            is BankCardEditingAction.ClickButtonBack -> push(BankCardEditingEvent.NavigateBack)
+
+            is BankCardEditingAction.ShowSnackbar -> {
+                push(BankCardEditingEvent.ShowSnackbar(action.message))
             }
-            _state.value = ViewModelState.Editing
+
+            is BankCardEditingAction.Save -> {
+                state = ScreenState.Loading
+                delay(100)
+                saveCard(bankCard)
+                    .onSuccess {
+                        bankCard.id = it
+                        action.onSuccess()
+                    }
+                    .onFailure { throwable ->
+                        messageHandler.getExceptionMessage(throwable)
+                            ?.takeIf { it.isNotBlank() }
+                            ?.let { push(BankCardEditingEvent.ShowSnackbar(it)) }
+                    }
+                state = ScreenState.Showing
+            }
+
+            is BankCardEditingAction.OpenDialog -> {
+                push(BankCardEditingEvent.ChangeOpenedDialog(action.type))
+            }
+
+            is BankCardEditingAction.CloseDialog -> {
+                push(BankCardEditingEvent.ChangeOpenedDialog(null))
+            }
+            BankCardEditingAction.ShowPaymentSystemSelection -> showPaymentSystemSelection = true
+
+            BankCardEditingAction.HidePaymentSystemSelection -> showPaymentSystemSelection = false
+
         }
     }
 
-
-    fun getPaymentSystemByNumber(number: String): PaymentSystem? {
-        return PaymentSystem.entries.find { number.startsWith(it.prefix) }
+    private suspend fun saveCard(card: ComposableBankCard): Result<Long> {
+        return when {
+            !card.haveChanges -> Result.success(card.id!!)
+            card.id == null -> editBankCardUseCase.addBankCard(bankCard.mapToBankCard())
+            else -> editBankCardUseCase.updateBankCard(bankCard.mapToBankCard()).map { card.id!! }
+        }
     }
 
     @AssistedFactory

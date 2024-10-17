@@ -6,7 +6,7 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.cashbacks.domain.model.AppExceptionMessage
+import com.cashbacks.domain.model.MessageHandler
 import com.cashbacks.domain.model.Settings
 import com.cashbacks.domain.usecase.cashbacks.DeleteExpiredCashbacksUseCase
 import com.cashbacks.domain.usecase.settings.SettingsUseCase
@@ -19,7 +19,7 @@ import javax.inject.Inject
 class MainViewModel @Inject constructor(
     settingsUseCase: SettingsUseCase,
     private val deleteExpiredCashbacksUseCase: DeleteExpiredCashbacksUseCase,
-    private val exceptionMessage: AppExceptionMessage
+    private val messageHandler: MessageHandler
 ) : ViewModel() {
 
     private val _settings = mutableStateOf(Settings())
@@ -52,7 +52,7 @@ class MainViewModel @Inject constructor(
             deleteExpiredCashbacksUseCase.deleteExpiredCashbacks(
                 nowDate = nowDate,
                 onSuccess = success,
-                onFailure = { exceptionMessage.getMessage(it)?.let(failure) }
+                onFailure = { messageHandler.getExceptionMessage(it)?.let(failure) }
             )
         }
     }

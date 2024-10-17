@@ -41,7 +41,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -66,34 +65,27 @@ import com.cashbacks.app.model.ColorDesignMapper.isDark
 import com.cashbacks.app.ui.composables.Header
 import com.cashbacks.app.ui.composables.ModalBottomSheet
 import com.cashbacks.app.ui.composables.ModalSheetItems.IconTextItem
-import com.cashbacks.app.ui.managment.ScreenEvents
-import com.cashbacks.app.ui.managment.ViewModelState
+import com.cashbacks.app.ui.features.settings.mvi.SettingsAction
+import com.cashbacks.app.ui.features.settings.mvi.SettingsEvent
+import com.cashbacks.app.ui.managment.ScreenState
 import com.cashbacks.app.util.LoadingInBox
 import com.cashbacks.app.util.animate
 import com.cashbacks.domain.R
 import com.cashbacks.domain.model.ColorDesign
-import com.cashbacks.domain.model.Settings
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     viewModel: SettingsViewModel,
-    popBackStack: () -> Unit
+    navigateBack: () -> Unit
 ) {
     val snackbarHostState = remember(::SnackbarHostState)
-    val scope = rememberCoroutineScope()
 
-    val showSnackbar = { message: String ->
-        scope.launch {
-            snackbarHostState.showSnackbar(message)
-        }
-    }
-
-    LaunchedEffect(key1 = true) {
-        viewModel.eventsFlow.collect { event ->
-            if (event is ScreenEvents.ShowSnackbar) {
-                showSnackbar(event.message)
+    LaunchedEffect(Unit) {
+        viewModel.eventFlow.collect { event ->
+            when (event) {
+                is SettingsEvent.NavigateBack -> navigateBack()
+                is SettingsEvent.ShowSnackbar -> snackbarHostState.showSnackbar(event.message)
             }
         }
     }
@@ -109,8 +101,13 @@ fun SettingsScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = popBackStack) {
-                        Icon(imageVector = Icons.Rounded.ArrowBackIosNew, contentDescription = "open menu")
+                    IconButton(
+                        onClick = { viewModel.push(SettingsAction.ClickButtonBack) }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.ArrowBackIosNew,
+                            contentDescription = "navigate back"
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
@@ -140,7 +137,7 @@ fun SettingsScreen(
             SettingsContent(viewModel = viewModel)
 
             AnimatedVisibility(
-                visible = viewModel.state.value == ViewModelState.Loading,
+                visible = viewModel.state == ScreenState.Loading,
                 enter = fadeIn(tween(durationMillis = 50)),
                 exit = fadeOut(tween(durationMillis = 50))
             ) {
@@ -171,7 +168,7 @@ private fun SettingsContent(viewModel: SettingsViewModel) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
-                    .clickable(enabled = viewModel.state.value != ViewModelState.Loading) {
+                    .clickable(enabled = viewModel.state != ScreenState.Loading) {
                         isSheetOpen = true
                     }
                     .clip(MaterialTheme.shapes.small)
@@ -202,7 +199,7 @@ private fun SettingsContent(viewModel: SettingsViewModel) {
                                 fontSynthesis = FontSynthesis.Weight
                             ),
                         ) {
-                            val currentDesign = viewModel.settings.value.colorDesign
+                            val currentDesign = viewModel.settings.colorDesign
                             append(currentDesign.getTitle(context.resources).lowercase())
                             if (currentDesign == ColorDesign.System) {
                                 val textToAppend = when {
@@ -237,16 +234,15 @@ private fun SettingsContent(viewModel: SettingsViewModel) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             item {
                 SwitchItem(
-                    isChecked = viewModel.settings.value.dynamicColor,
+                    isChecked = viewModel.settings.dynamicColor,
                     header = Header(
                         title = stringResource(R.string.dynamic_color),
                         subtitle = stringResource(R.string.dynamic_color_desc)
                     ),
-                    enabled = viewModel.state.value != ViewModelState.Loading
-                ) {
-                    viewModel.updateSettingsProperty(
-                        property = Settings::dynamicColor,
-                        value = it
+                    enabled = viewModel.state != ScreenState.Loading
+                ) { isChecked ->
+                    viewModel.push(
+                        SettingsAction.UpdateSetting { it.copy(dynamicColor = isChecked) }
                     )
                 }
             }
@@ -255,11 +251,12 @@ private fun SettingsContent(viewModel: SettingsViewModel) {
 
     if (isSheetOpen) {
         ThemeBottomSheet(
-            currentDesign = viewModel.settings.value.colorDesign,
-            updateDesign = {
-                viewModel.updateSettingsProperty(
-                    property = Settings::colorDesign,
-                    value = it.name
+            currentDesign = viewModel.settings.colorDesign,
+            updateDesign = { newDesign ->
+                viewModel.push(
+                    SettingsAction.UpdateSetting {
+                        it.copy(colorDesign = newDesign)
+                    }
                 )
             },
             onClose = { isSheetOpen = false }

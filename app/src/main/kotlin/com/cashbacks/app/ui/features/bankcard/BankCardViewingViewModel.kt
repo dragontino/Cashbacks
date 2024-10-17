@@ -1,52 +1,104 @@
 package com.cashbacks.app.ui.features.bankcard
 
-import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.viewModelScope
-import com.cashbacks.app.ui.managment.ViewModelState
+import com.cashbacks.app.mvi.MviViewModel
+import com.cashbacks.app.ui.features.bankcard.mvi.BankCardViewingAction
+import com.cashbacks.app.ui.features.bankcard.mvi.BankCardViewingEvent
+import com.cashbacks.app.ui.managment.ScreenState
 import com.cashbacks.app.util.AnimationDefaults
-import com.cashbacks.app.viewmodel.EventsViewModel
-import com.cashbacks.domain.model.BankCard
+import com.cashbacks.domain.model.BasicBankCard
+import com.cashbacks.domain.model.FullBankCard
+import com.cashbacks.domain.model.MessageHandler
 import com.cashbacks.domain.usecase.cards.DeleteBankCardUseCase
 import com.cashbacks.domain.usecase.cards.GetBankCardUseCase
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 
 class BankCardViewingViewModel @AssistedInject constructor(
     private val getBankCardUseCase: GetBankCardUseCase,
     private val deleteBankCardUseCase: DeleteBankCardUseCase,
+    private val messageHandler: MessageHandler,
     @Assisted val cardId: Long
-) : EventsViewModel() {
+) : MviViewModel<BankCardViewingAction, BankCardViewingEvent>() {
 
-    private val _state = mutableStateOf(ViewModelState.Viewing)
-    val state = derivedStateOf { _state.value }
+    var state by mutableStateOf(ScreenState.Showing)
+        private set
 
-    private val _bankCard = mutableStateOf(BankCard())
-    val bankCard = derivedStateOf { _bankCard.value }
+    var bankCard by mutableStateOf(FullBankCard())
+        private set
+
+    override suspend fun bootstrap() {
+        state = ScreenState.Loading
+        delay(AnimationDefaults.SCREEN_DELAY_MILLIS + 40L)
+        getBankCardUseCase.fetchBankCardById(
+            cardId,
+            onFailure = { throwable ->
+                messageHandler.getExceptionMessage(throwable)
+                    ?.takeIf { it.isNotBlank() }
+                    ?.let { push(BankCardViewingEvent.ShowSnackbar(it)) }
+            }
+        ).onEach {
+            bankCard = it
+            if (state == ScreenState.Loading) {
+                state = ScreenState.Showing
+            }
+        }.launchIn(viewModelScope)
+    }
 
 
-    fun refreshCard() {
-        viewModelScope.launch {
-            _state.value = ViewModelState.Loading
-            delay(AnimationDefaults.SCREEN_DELAY_MILLIS + 40L)
-            getBankCardUseCase
-                .getBankCardById(cardId)
-                ?.let { _bankCard.value = it }
-            _state.value = ViewModelState.Viewing
+    override suspend fun actor(action: BankCardViewingAction) {
+        when (action) {
+            is BankCardViewingAction.ClickButtonBack -> push(BankCardViewingEvent.NavigateBack)
+
+            is BankCardViewingAction.ShowSnackbar -> {
+                push(BankCardViewingEvent.ShowSnackbar(action.message))
+            }
+
+            is BankCardViewingAction.Delete -> {
+                state = ScreenState.Loading
+                delay(100)
+                deleteCard(bankCard)
+                    .onSuccess { action.onSuccess() }
+                    .onFailure { throwable ->
+                        messageHandler.getExceptionMessage(throwable)
+                            ?.takeIf { it.isNotBlank() }
+                            ?.let { push(BankCardViewingEvent.ShowSnackbar(it)) }
+                    }
+                state = ScreenState.Showing
+            }
+
+            BankCardViewingAction.Edit -> {
+                push(
+                    event = BankCardViewingEvent.NavigateToEditingBankCard(
+                        args = BankCardArgs(id = bankCard.id, isEditing = true),
+                    ),
+                )
+            }
+
+            is BankCardViewingAction.OpenDialog -> {
+                push(BankCardViewingEvent.ChangeOpenedDialog(action.type))
+            }
+
+            is BankCardViewingAction.CloseDialog -> {
+                push(BankCardViewingEvent.ChangeOpenedDialog(null))
+            }
+
+            is BankCardViewingAction.CopyText -> {
+                push(BankCardViewingEvent.CopyText(action.text))
+            }
         }
     }
 
 
-    fun deleteCard() {
-        viewModelScope.launch {
-            _state.value = ViewModelState.Loading
-            delay(100)
-            deleteBankCardUseCase.deleteBankCard(bankCard.value)
-            _state.value = ViewModelState.Viewing
-        }
+    private suspend fun deleteCard(card: BasicBankCard): Result<Unit> {
+        return deleteBankCardUseCase.deleteBankCard(card)
     }
 
 

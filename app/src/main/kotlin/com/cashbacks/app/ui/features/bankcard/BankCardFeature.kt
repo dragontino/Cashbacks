@@ -95,7 +95,7 @@ class BankCardFeature(private val application: App) : FeatureApi {
                             launchSingleTop = true
                         }
                     },
-                    popBackStack = navController::popBackStack
+                    navigateBack = navController::popBackStack
                 )
             }
 
@@ -123,7 +123,7 @@ class BankCardFeature(private val application: App) : FeatureApi {
 
                 BankCardEditingScreen(
                     viewModel = viewModel(factory = vmFactory),
-                    popBackStack = navController::popBackStack
+                    navigateBack = navController::popBackStack
                 )
             }
         }

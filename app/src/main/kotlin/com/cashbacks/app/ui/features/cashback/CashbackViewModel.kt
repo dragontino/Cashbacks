@@ -1,41 +1,41 @@
 package com.cashbacks.app.ui.features.cashback
 
-import android.content.res.Resources
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
 import com.cashbacks.app.model.ComposableCashback
-import com.cashbacks.app.model.ComposableCategoryCashback
-import com.cashbacks.app.model.ComposableShopCashback
-import com.cashbacks.app.ui.managment.ViewModelState
-import com.cashbacks.app.viewmodel.EventsViewModel
-import com.cashbacks.domain.model.AppExceptionMessage
-import com.cashbacks.domain.model.BankCard
+import com.cashbacks.app.mvi.MviViewModel
+import com.cashbacks.app.ui.features.bankcard.BankCardArgs
+import com.cashbacks.app.ui.features.cashback.mvi.CashbackAction
+import com.cashbacks.app.ui.features.cashback.mvi.CashbackEvent
+import com.cashbacks.app.ui.features.shop.ShopArgs
+import com.cashbacks.app.ui.managment.ScreenState
 import com.cashbacks.domain.model.BasicBankCard
+import com.cashbacks.domain.model.BasicCategory
 import com.cashbacks.domain.model.Cashback
+import com.cashbacks.domain.model.CashbackOwner
 import com.cashbacks.domain.model.Category
-import com.cashbacks.domain.model.CategoryNotSelectedException
-import com.cashbacks.domain.model.CategoryShop
+import com.cashbacks.domain.model.FullCashback
+import com.cashbacks.domain.model.MessageHandler
+import com.cashbacks.domain.model.PrimaryBankCard
 import com.cashbacks.domain.model.Shop
-import com.cashbacks.domain.model.ShopNotSelectedException
 import com.cashbacks.domain.usecase.cards.FetchBankCardsUseCase
 import com.cashbacks.domain.usecase.cashbacks.DeleteCashbacksUseCase
 import com.cashbacks.domain.usecase.cashbacks.EditCashbackUseCase
 import com.cashbacks.domain.usecase.categories.AddCategoryUseCase
 import com.cashbacks.domain.usecase.categories.FetchCategoriesUseCase
 import com.cashbacks.domain.usecase.categories.GetCategoryUseCase
-import com.cashbacks.domain.usecase.shops.FetchAllShopsUseCase
+import com.cashbacks.domain.usecase.shops.FetchCategoryShopsUseCase
 import com.cashbacks.domain.usecase.shops.GetShopUseCase
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.stateIn
 
 class CashbackViewModel @AssistedInject constructor(
     private val editCashbackUseCase: EditCashbackUseCase,
@@ -43,135 +43,207 @@ class CashbackViewModel @AssistedInject constructor(
     private val fetchCategoriesUseCase: FetchCategoriesUseCase,
     private val getCategoryUseCase: GetCategoryUseCase,
     private val getShopUseCase: GetShopUseCase,
-    private val fetchAllShopsUseCase: FetchAllShopsUseCase,
+    private val fetchCategoryShopsUseCase: FetchCategoryShopsUseCase,
     private val fetchBankCardsUseCase: FetchBankCardsUseCase,
     private val addCategoryUseCase: AddCategoryUseCase,
-    private val exceptionMessage: AppExceptionMessage,
-    @Assisted("cashback") internal val cashbackId: Long?,
-    @Assisted internal val ownerType: CashbackOwner,
-    @Assisted("owner") internal val ownerId: Long?
-) : EventsViewModel() {
+    private val messageHandler: MessageHandler,
+    @Assisted("cashback") private val initialCashbackId: Long?,
+    @Assisted val ownerType: CashbackOwnerType,
+    @Assisted("owner") private val initialOwnerId: Long?
+) : MviViewModel<CashbackAction, CashbackEvent>() {
 
-    private val _state = mutableStateOf(ViewModelState.Loading)
-    val state = derivedStateOf { _state.value }
-
-    private val _cashback = mutableStateOf(ComposableCashback(ownerType))
-    val cashback = derivedStateOf { _cashback.value }
+    var state by mutableStateOf(ScreenState.Showing)
+    internal val cashback = ComposableCashback(ownerType).apply { id = initialCashbackId }
 
     var showBankCardsSelection by mutableStateOf(false)
-    var showOwnersSelection by mutableStateOf(false)
+        private set
 
-    var addingCategoryState by mutableStateOf(false)
+    var showOwnersSelection by mutableStateOf(false)
+        private set
+
+    var isCreatingCategory by mutableStateOf(false)
+        private set
 
     var showErrors by mutableStateOf(false)
         private set
 
 
-    init {
-        viewModelScope.launch {
-            delay(100)
-            when {
-                cashbackId != null -> getCashback(cashbackId)?.let { _cashback.value = it }
-                ownerId != null -> updateOwner(cashback.value, ownerId)
-            }
-            _state.value = ViewModelState.Viewing
+    val ownersStateFlow: StateFlow<List<CashbackOwner>?> by lazy {
+        val baseFlow = when (ownerType) {
+            CashbackOwnerType.Category -> fetchCategoriesUseCase.fetchAllCategories()
+            CashbackOwnerType.Shop -> fetchCategoryShopsUseCase.fetchAllShops()
         }
+        return@lazy baseFlow.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5000L),
+            initialValue = null
+        )
     }
 
 
-    private suspend fun getCashback(id: Long): ComposableCashback? {
-        val result = editCashbackUseCase.getCashbackById(id)
-        result.exceptionOrNull()?.let(exceptionMessage::getMessage)?.let(::showSnackbar)
-        return result.getOrNull()?.let(::ComposableCashback)
+    val bankCardsStateFlow: StateFlow<List<BasicBankCard>?> by lazy {
+        fetchBankCardsUseCase
+            .fetchBankCards()
+            .map { it.map(PrimaryBankCard::getBasicInfo) }
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5000L),
+                initialValue = null
+            )
     }
 
-
-    private suspend fun updateOwner(cashback: ComposableCashback, ownerId: Long) {
-        val result = when (cashback) {
-            is ComposableCategoryCashback -> getCategoryUseCase
-                .getCategoryById(ownerId)
-                .also { cashback.category = it.getOrNull() }
-
-            is ComposableShopCashback -> getShopUseCase
-                .getShopById(ownerId)
-                .also { cashback.shop = it.getOrNull() }
-        }
-
-        result.exceptionOrNull()?.let(exceptionMessage::getMessage)?.let(::showSnackbar)
-    }
-
-
-    fun getAllCategories(): LiveData<List<Category>> {
-        return fetchCategoriesUseCase.fetchAllCategories().asLiveData(timeoutInMs = 200)
-    }
-
-    fun getAllShops(): LiveData<List<Shop>> {
-        return fetchAllShopsUseCase.fetchAllShops()
-            .map { it.map(CategoryShop::asShop) }
-            .asLiveData(timeoutInMs = 200)
-    }
-
-    fun addCategory(name: String) {
-        viewModelScope.launch {
-            val currentState = state.value
-            _state.value = ViewModelState.Loading
-            delay(100)
-            val result = addCategoryUseCase.addCategory(Category(name = name))
-            result.exceptionOrNull()?.let(exceptionMessage::getMessage)?.let(::showSnackbar)
-            result.getOrNull()?.let {
-                val newCategory = Category(id = it, name = name)
-                with(cashback.value as ComposableCategoryCashback) {
-                    updateValue(::category, newCategory)
+    override suspend fun bootstrap() {
+        state = ScreenState.Loading
+        delay(100)
+        when {
+            initialCashbackId != null -> {
+                getCashback(initialCashbackId).onSuccess {
+                    cashback.updateCashback(it)
+                }.onFailure { throwable ->
+                    messageHandler.getExceptionMessage(throwable)
+                        ?.takeIf { it.isNotBlank() }
+                        ?.let { push(CashbackEvent.ShowSnackbar(it)) }
                 }
             }
-            _state.value = currentState
-        }
-    }
 
-    fun getAllBankCards(): LiveData<List<BasicBankCard>> {
-        return fetchBankCardsUseCase
-            .fetchBankCards()
-            .map { it.map(BankCard::getBasicInfo) }
-            .asLiveData(timeoutInMs = 200)
-    }
-
-
-    fun saveInfo(resources: Resources, onSuccess: () -> Unit) {
-        showErrors = true
-        cashback.value.updateErrors(resources)
-
-        if (cashback.value.haveErrors) {
-            cashback.value.errorMessage?.let(::showSnackbar)
-            return
-        }
-
-        viewModelScope.launch {
-            _state.value = ViewModelState.Loading
-            delay(300)
-            val result = saveCashback()
-            _state.value = ViewModelState.Viewing
-            result.exceptionOrNull()?.let(exceptionMessage::getMessage)?.let(::showSnackbar)
-            if (result.isSuccess) onSuccess()
-        }
-    }
-
-
-    suspend fun saveCashback(): Result<Unit> {
-        when (val cashback = cashback.value) {
-            is ComposableCategoryCashback -> {
-                val categoryId = cashback.category?.id ?: return Result.failure(CategoryNotSelectedException)
-                return saveCashbackInCategory(categoryId, cashback.mapToCashback())
+            initialOwnerId != null -> {
+                getOwner(type = ownerType, ownerId = initialOwnerId)
+                    .onSuccess { cashback.owner = it }
+                    .onFailure { throwable ->
+                        messageHandler.getExceptionMessage(throwable)
+                            ?.takeIf { it.isNotBlank() }
+                            ?.let { push(CashbackEvent.ShowSnackbar(it)) }
+                    }
             }
-            is ComposableShopCashback -> {
-                val shopId = cashback.shop?.id ?: return Result.failure(ShopNotSelectedException)
-                return saveCashbackInShop(shopId, cashback.mapToCashback())
+        }
+        state = ScreenState.Showing
+    }
+
+
+    private suspend fun getCashback(id: Long): Result<FullCashback> {
+        return editCashbackUseCase.getCashbackById(id)
+    }
+
+
+    private suspend fun getOwner(type: CashbackOwnerType, ownerId: Long): Result<CashbackOwner> {
+        return when (type) {
+            CashbackOwnerType.Category -> getCategoryUseCase.getCategoryById(ownerId)
+            CashbackOwnerType.Shop -> getShopUseCase.getShopById(ownerId)
+        }
+    }
+
+
+    override suspend fun actor(action: CashbackAction) {
+        when (action) {
+            is CashbackAction.ClickButtonBack -> push(CashbackEvent.NavigateBack)
+
+            is CashbackAction.UpdateCashbackErrorMessage -> {
+                cashback.updateErrorMessage(action.error, messageHandler)
             }
+
+            is CashbackAction.StartCreatingCategory -> isCreatingCategory = true
+
+            is CashbackAction.CancelCreatingCategory -> isCreatingCategory = false
+
+            is CashbackAction.AddCategory -> {
+                isCreatingCategory = false
+                state = ScreenState.Loading
+                delay(100)
+                addCategory(action.name)
+                    .onSuccess {
+                        cashback.updateValue(
+                            property = cashback::owner,
+                            newValue = BasicCategory(id = it, name = action.name)
+                        )
+                    }
+                    .onFailure { throwable ->
+                        messageHandler.getExceptionMessage(throwable)
+                            ?.takeIf { it.isNotBlank() }
+                            ?.let { push(CashbackEvent.ShowSnackbar(it)) }
+                    }
+                state = ScreenState.Showing
+            }
+
+            is CashbackAction.CreateShop -> push(CashbackEvent.NavigateToShop(ShopArgs()))
+
+            is CashbackAction.CreateBankCard -> push(
+                event = CashbackEvent.NavigateToBankCard(BankCardArgs())
+            )
+
+            is CashbackAction.SaveData -> {
+                if (!cashback.haveChanges) return action.onSuccess()
+
+                showErrors = true
+                cashback.updateAllErrors(messageHandler)
+
+                if (cashback.haveErrors) {
+                    cashback.errorMessage?.let { push(CashbackEvent.ShowSnackbar(it)) }
+                } else {
+                    state = ScreenState.Loading
+                    delay(300)
+                    saveCashback(cashback = cashback.mapToCashback()!!)
+                        .onSuccess { action.onSuccess() }
+                        .onFailure { throwable ->
+                            messageHandler.getExceptionMessage(throwable)
+                                ?.takeIf { it.isNotBlank() }
+                                ?.let { push(CashbackEvent.ShowSnackbar(it)) }
+                        }
+                    state = ScreenState.Showing
+                }
+            }
+
+            is CashbackAction.DeleteData -> {
+                state = ScreenState.Loading
+                delay(100)
+                val cashback = cashback.mapToCashback() ?: return action.onSuccess()
+
+                deleteCashback(cashback)
+                    .onSuccess { action.onSuccess() }
+                    .onFailure { throwable ->
+                        messageHandler.getExceptionMessage(throwable)
+                            ?.takeIf { it.isNotBlank() }
+                            ?.let { push(CashbackEvent.ShowSnackbar(it)) }
+                    }
+
+                delay(100)
+                state = ScreenState.Showing
+            }
+
+            is CashbackAction.ShowOwnersSelection -> showOwnersSelection = true
+
+            is CashbackAction.HideOwnersSelection -> showOwnersSelection = false
+
+            is CashbackAction.ShowBankCardsSelection -> showBankCardsSelection = true
+
+            is CashbackAction.HideBankCardsSelection -> showBankCardsSelection = false
+
+            is CashbackAction.HideAllSelections -> {
+                showOwnersSelection = false
+                showBankCardsSelection = false
+            }
+
+            is CashbackAction.ShowDialog -> push(CashbackEvent.OpenDialog(action.type))
+
+            is CashbackAction.HideDialog -> push(CashbackEvent.CloseDialog)
+        }
+    }
+
+
+    private suspend fun addCategory(name: String): Result<Long> {
+        return addCategoryUseCase.addCategory(BasicCategory(name = name))
+    }
+
+
+    private suspend fun saveCashback(cashback: FullCashback): Result<Unit> {
+        return when (cashback.owner) {
+            is Category -> saveCashbackInCategory(cashback.owner.id, cashback)
+            is Shop -> saveCashbackInShop(cashback.owner.id, cashback)
         }
     }
 
 
     private suspend fun saveCashbackInCategory(categoryId: Long, cashback: Cashback): Result<Unit> {
-        return when (cashbackId) {
+        return when (initialCashbackId) {
             null -> editCashbackUseCase.addCashbackToCategory(categoryId, cashback)
             else -> editCashbackUseCase.updateCashbackInCategory(categoryId, cashback)
         }.map {}
@@ -179,26 +251,15 @@ class CashbackViewModel @AssistedInject constructor(
 
 
     private suspend fun saveCashbackInShop(shopId: Long, cashback: Cashback): Result<Unit> {
-        return when (cashbackId) {
+        return when (initialCashbackId) {
             null -> editCashbackUseCase.addCashbackToShop(shopId, cashback)
             else -> editCashbackUseCase.updateCashbackInShop(shopId, cashback)
         }.map {}
     }
 
 
-    fun deleteCashback() {
-        viewModelScope.launch {
-            val currentState = _state.value
-            _state.value = ViewModelState.Loading
-            delay(100)
-            deleteCashbacksUseCase
-                .deleteCashback(cashback.value.mapToCashback())
-                .exceptionOrNull()
-                ?.let(exceptionMessage::getMessage)
-                ?.let(::showSnackbar)
-            delay(100)
-            _state.value = currentState
-        }
+    private suspend fun deleteCashback(cashback: Cashback): Result<Unit> {
+        return deleteCashbacksUseCase.deleteCashback(cashback)
     }
 
 
@@ -206,7 +267,7 @@ class CashbackViewModel @AssistedInject constructor(
     interface Factory {
         fun create(
             @Assisted("cashback") id: Long?,
-            @Assisted ownerType: CashbackOwner,
+            @Assisted ownerType: CashbackOwnerType,
             @Assisted("owner") ownerId: Long?,
         ): CashbackViewModel
     }

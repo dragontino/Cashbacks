@@ -35,7 +35,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -54,96 +53,82 @@ import com.cashbacks.app.ui.composables.CollapsingToolbarScaffold
 import com.cashbacks.app.ui.composables.ConfirmDeletionDialog
 import com.cashbacks.app.ui.composables.DataTextField
 import com.cashbacks.app.ui.composables.EditableTextFieldDefaults
-import com.cashbacks.app.ui.composables.OnLifecycleEvent
+import com.cashbacks.app.ui.features.bankcard.mvi.BankCardViewingAction
+import com.cashbacks.app.ui.features.bankcard.mvi.BankCardViewingEvent
 import com.cashbacks.app.ui.managment.DialogType
-import com.cashbacks.app.ui.managment.ScreenEvents
-import com.cashbacks.app.ui.managment.ViewModelState
+import com.cashbacks.app.ui.managment.ScreenState
 import com.cashbacks.app.ui.theme.CashbacksTheme
 import com.cashbacks.app.util.LoadingInBox
 import com.cashbacks.app.util.animate
 import com.cashbacks.domain.R
-import com.cashbacks.domain.model.BankCard
-import kotlinx.coroutines.launch
+import com.cashbacks.domain.model.BasicBankCard
+import com.cashbacks.domain.model.FullBankCard
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BankCardViewingScreen(
+internal fun BankCardViewingScreen(
     viewModel: BankCardViewingViewModel,
     navigateToBankCard: (args: BankCardArgs) -> Unit,
-    popBackStack: () -> Unit
+    navigateBack: () -> Unit
 ) {
     val scrollState = rememberScrollState()
     val snackbarState = remember(::SnackbarHostState)
-    val scope = rememberCoroutineScope()
 
     val clipboardManager = LocalClipboardManager.current
-    val context = LocalContext.current
-
-    val showSnackbar = remember {
-        fun(message: String) {
-            scope.launch { snackbarState.showSnackbar(message) }
-        }
-    }
     var dialogType: DialogType? by rememberSaveable { mutableStateOf(null) }
-    LaunchedEffect(key1 = true) {
-        viewModel.eventsFlow.collect { event ->
+
+    LaunchedEffect(Unit) {
+        viewModel.eventFlow.collect { event ->
             when (event) {
-                is ScreenEvents.OpenDialog -> dialogType = event.type
-                ScreenEvents.CloseDialog -> dialogType = null
-                is ScreenEvents.Navigate -> (event.args as? BankCardArgs)
-                    ?.let(navigateToBankCard)
-                    ?: popBackStack()
-                is ScreenEvents.ShowSnackbar -> event.message.let(showSnackbar)
+                is BankCardViewingEvent.NavigateBack -> navigateBack()
+                is BankCardViewingEvent.NavigateToEditingBankCard -> navigateToBankCard(event.args)
+                is BankCardViewingEvent.ShowSnackbar -> snackbarState.showSnackbar(event.message)
+                is BankCardViewingEvent.CopyText -> clipboardManager.setText(event.text)
+                is BankCardViewingEvent.ChangeOpenedDialog -> dialogType = event.openedDialogType
             }
-        }
-    }
-
-
-    val onCopy = remember {
-        fun (text: String) {
-            clipboardManager.setText(AnnotatedString(text))
-            showSnackbar(context.getString(R.string.text_is_copied))
         }
     }
 
     when (val type = dialogType) {
         is DialogType.ConfirmDeletion<*> -> {
+            val card = type.value as BasicBankCard
             ConfirmDeletionDialog(
-                text = stringResource(R.string.confirm_card_deletion, (type.value as BankCard).name),
+                text = stringResource(R.string.confirm_card_deletion, card.name),
                 onConfirm = remember {
                     fun () {
-                        viewModel.deleteCard()
-                        popBackStack()
+                        viewModel.push(
+                            BankCardViewingAction.Delete {
+                                viewModel.push(BankCardViewingAction.ClickButtonBack)
+                            }
+                        )
                     }
                 },
-                onClose = viewModel::closeDialog
+                onClose = { viewModel.push(BankCardViewingAction.CloseDialog) }
             )
         }
         else -> {}
     }
 
-    OnLifecycleEvent(onStart = viewModel::refreshCard)
-
 
     Crossfade(
-        targetState = viewModel.state.value,
+        targetState = viewModel.state,
         animationSpec = tween(durationMillis = 300, easing = LinearEasing),
         label = "state animation"
     ) { state ->
         when (state) {
-            ViewModelState.Loading -> LoadingInBox()
-            else -> CollapsingToolbarScaffold(
+            ScreenState.Loading -> LoadingInBox()
+            ScreenState.Showing -> CollapsingToolbarScaffold(
                 topBar = {
                     CenterAlignedTopAppBar(
                         title = {
                             Text(
-                                text = viewModel.bankCard.value.name,
+                                text = viewModel.bankCard.name,
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold
                             )
                         },
                         navigationIcon = {
-                            IconButton(onClick = popBackStack) {
+                            IconButton(onClick = navigateBack) {
                                 Icon(
                                     imageVector = Icons.Rounded.ArrowBackIosNew,
                                     contentDescription = null,
@@ -155,8 +140,10 @@ fun BankCardViewingScreen(
                             IconButton(
                                 onClick = {
                                     viewModel.onItemClick {
-                                        viewModel.openDialog(
-                                            DialogType.ConfirmDeletion(viewModel.bankCard.value)
+                                        viewModel.push(
+                                            BankCardViewingAction.OpenDialog(
+                                                DialogType.ConfirmDeletion(viewModel.bankCard)
+                                            )
                                         )
                                     }
                                 }
@@ -169,11 +156,7 @@ fun BankCardViewingScreen(
                             }
 
                             IconButton(
-                                onClick = {
-                                    navigateToBankCard(
-                                        BankCardArgs.Existing(id = viewModel.cardId, isEditing = true)
-                                    )
-                                }
+                                onClick = { viewModel.push(BankCardViewingAction.Edit) }
                             ) {
                                 Icon(
                                     imageVector = Icons.Outlined.Edit,
@@ -203,8 +186,8 @@ fun BankCardViewingScreen(
                 }
             ) {
                 ScreenContent(
-                    bankCard = viewModel.bankCard.value,
-                    onCopy = onCopy,
+                    bankCard = viewModel.bankCard,
+                    pushAction = viewModel::push,
                     scrollState = scrollState,
                     modifier = Modifier.fillMaxSize()
                 )
@@ -217,11 +200,13 @@ fun BankCardViewingScreen(
 
 @Composable
 private fun ScreenContent(
-    bankCard: BankCard,
-    onCopy: (String) -> Unit,
+    bankCard: FullBankCard,
+    pushAction: (BankCardViewingAction) -> Unit,
     modifier: Modifier = Modifier,
     scrollState: ScrollState = rememberScrollState()
 ) {
+    val context = LocalContext.current
+
     Column(
         verticalArrangement = Arrangement.spacedBy(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -233,7 +218,14 @@ private fun ScreenContent(
     ) {
         BankCardCompose(
             bankCard = bankCard,
-            onCopy = onCopy,
+            onCopy = { part, text ->
+                pushAction(BankCardViewingAction.CopyText(AnnotatedString(text)))
+                val snackbarText = context.getString(
+                    R.string.card_part_text_is_copied,
+                    part.getDescription(context)
+                )
+                pushAction(BankCardViewingAction.ShowSnackbar(snackbarText))
+            },
             modifier = Modifier
                 .padding(horizontal = 4.dp)
                 .fillMaxWidth()
@@ -244,7 +236,14 @@ private fun ScreenContent(
             heading = stringResource(R.string.card_name),
             trailingActions = {
                 IconButton(
-                    onClick = { onCopy(bankCard.name) }
+                    onClick = {
+                        pushAction(BankCardViewingAction.CopyText(AnnotatedString(bankCard.name)))
+                        pushAction(
+                            BankCardViewingAction.ShowSnackbar(
+                                context.getString(R.string.text_is_copied)
+                            )
+                        )
+                    }
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.ContentCopy,
@@ -273,7 +272,16 @@ private fun ScreenContent(
                     )
                 }
 
-                IconButton(onClick = { onCopy(bankCard.pin) }) {
+                IconButton(
+                    onClick = {
+                        pushAction(BankCardViewingAction.CopyText(AnnotatedString(bankCard.pin)))
+                        pushAction(
+                            BankCardViewingAction.ShowSnackbar(
+                                context.getString(R.string.text_is_copied)
+                            )
+                        )
+                    }
+                ) {
                     Icon(
                         imageVector = Icons.Outlined.ContentCopy,
                         contentDescription = "copy card's pin code"
@@ -289,7 +297,16 @@ private fun ScreenContent(
                 text = bankCard.comment,
                 heading = stringResource(R.string.comment),
                 trailingActions = {
-                    IconButton(onClick = { onCopy(bankCard.comment) }) {
+                    IconButton(
+                        onClick = {
+                            pushAction(BankCardViewingAction.CopyText(AnnotatedString(bankCard.comment)))
+                            pushAction(
+                                BankCardViewingAction.ShowSnackbar(
+                                    context.getString(R.string.text_is_copied)
+                                )
+                            )
+                        }
+                    ) {
                         Icon(
                             imageVector = Icons.Outlined.ContentCopy,
                             contentDescription = "copy card comment"
@@ -308,8 +325,8 @@ private fun ScreenContentPreview() {
     CashbacksTheme(isDarkTheme = false) {
         Column(modifier = Modifier.background(MaterialTheme.colorScheme.background)) {
             ScreenContent(
-                bankCard = BankCard(number = "4444555566667777"),
-                onCopy = {}
+                bankCard = FullBankCard(number = "4444555566667777"),
+                pushAction = {}
             )
         }
     }

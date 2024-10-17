@@ -36,14 +36,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -53,21 +52,23 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.cashbacks.app.ui.composables.BankCardCompose
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.cashbacks.app.ui.composables.BasicFloatingActionButton
 import com.cashbacks.app.ui.composables.CollapsingToolbarScaffold
 import com.cashbacks.app.ui.composables.EmptyList
 import com.cashbacks.app.ui.features.bankcard.BankCardArgs
 import com.cashbacks.app.ui.features.home.HomeTopAppBar
 import com.cashbacks.app.ui.features.home.HomeTopAppBarState
+import com.cashbacks.app.ui.features.home.cards.mvi.CardsAction
+import com.cashbacks.app.ui.features.home.cards.mvi.CardsEvent
 import com.cashbacks.app.ui.managment.ListState
-import com.cashbacks.app.ui.managment.ScreenEvents
 import com.cashbacks.app.ui.theme.CashbacksTheme
 import com.cashbacks.app.util.LoadingInBox
+import com.cashbacks.app.util.OnClick
 import com.cashbacks.app.util.animate
 import com.cashbacks.app.util.reversed
 import com.cashbacks.domain.R
-import com.cashbacks.domain.model.BankCard
-import kotlinx.coroutines.launch
+import com.cashbacks.domain.model.PrimaryBankCard
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -79,29 +80,43 @@ internal fun CardsScreen(
     navigateToCard: (args: BankCardArgs) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val scope = rememberCoroutineScope()
 
-    val topBarState = rememberTopAppBarState()
-    val lazyListState = rememberLazyListState()
     val snackbarHostState = remember(::SnackbarHostState)
 
-    val showSnackbar = remember {
-        fun(message: String) {
-            scope.launch { snackbarHostState.showSnackbar(message) }
-        }
-    }
-
-    LaunchedEffect(key1 = true) {
-        viewModel.eventsFlow.collect { event ->
-            if (event is ScreenEvents.Navigate) {
-                (event.args as? BankCardArgs)?.let(navigateToCard)
-            } else if (event is ScreenEvents.ShowSnackbar) {
-                event.message.let(showSnackbar)
+    LaunchedEffect(Unit) {
+        viewModel.eventFlow.collect { event ->
+            when (event) {
+                is CardsEvent.NavigateToBankCard -> navigateToCard(event.args)
+                is CardsEvent.ShowSnackbar -> snackbarHostState.showSnackbar(event.message)
+                is CardsEvent.OpenNavigationDrawer -> openDrawer()
             }
         }
     }
 
-    val fabPaddingDp = rememberSaveable { mutableFloatStateOf(0f) }
+    CardsScreenContent(
+        snackbarHostState = snackbarHostState,
+        viewModel = viewModel,
+        title = title,
+        bottomPadding = bottomPadding,
+        modifier = modifier
+    )
+}
+
+
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun CardsScreenContent(
+    snackbarHostState: SnackbarHostState,
+    viewModel: CardsViewModel,
+    title: String,
+    bottomPadding: Dp,
+    modifier: Modifier = Modifier
+) {
+    val topBarState = rememberTopAppBarState()
+    val lazyListState = rememberLazyListState()
+    val fabHeightPx = rememberSaveable { mutableFloatStateOf(0f) }
+
 
     CollapsingToolbarScaffold(
         topBar = {
@@ -110,9 +125,11 @@ internal fun CardsScreen(
                 query = viewModel.query.value,
                 onQueryChange = viewModel.query::value::set,
                 state = viewModel.appBarState,
-                onStateChange = viewModel::appBarState::set,
+                onStateChange = {
+                    viewModel.push(CardsAction.UpdateAppBarState(it))
+                },
                 searchPlaceholder = stringResource(R.string.search_cards_placeholder),
-                onNavigationIconClick = openDrawer
+                onNavigationIconClick = { viewModel.push(CardsAction.ClickNavigationIcon) }
             )
         },
         topBarState = topBarState,
@@ -122,18 +139,16 @@ internal fun CardsScreen(
             HomeTopAppBarState.TopBar -> MaterialTheme.colorScheme.primary
         },
         floatingActionButtons = {
-            AnimatedVisibility(visible = !viewModel.isSearch) {
+            AnimatedVisibility(visible = viewModel.appBarState is HomeTopAppBarState.TopBar) {
                 BasicFloatingActionButton(icon = Icons.Rounded.Add) {
-                    navigateToCard(BankCardArgs.New)
+                    viewModel.push(CardsAction.CreateBankCard)
                 }
             }
         },
         fabModifier = Modifier
             .padding(bottom = bottomPadding)
             .windowInsetsPadding(WindowInsets.tappableElement.only(WindowInsetsSides.End))
-            .graphicsLayer {
-                fabPaddingDp.floatValue = size.height.toDp().value
-            },
+            .onGloballyPositioned { fabHeightPx.floatValue = it.size.height.toFloat() },
         snackbarHost = {
             SnackbarHost(snackbarHostState) {
                 Snackbar(
@@ -148,35 +163,50 @@ internal fun CardsScreen(
             .then(modifier)
             .fillMaxSize()
     ) {
+
+        val cardsState = viewModel.cardsFlow.collectAsStateWithLifecycle()
         Crossfade(
-            targetState = viewModel.state.value,
+            targetState = ListState.fromList(cardsState.value),
             label = "loading animation",
             animationSpec = tween(durationMillis = 150, easing = LinearEasing),
             modifier = Modifier.fillMaxSize(),
-        ) { state ->
-            when (state) {
-                ListState.Loading -> LoadingInBox(
-                    modifier = Modifier.padding(bottom = bottomPadding)
-                )
-                ListState.Empty -> EmptyList(
-                    text = when {
-                        viewModel.isSearch -> {
-                            when {
-                                viewModel.query.value.isBlank() -> stringResource(R.string.empty_search_query)
-                                else -> stringResource(R.string.empty_search_results)
+        ) { listState ->
+            when (listState) {
+                is ListState.Loading -> {
+                    LoadingInBox(modifier = Modifier.padding(bottom = bottomPadding))
+                }
+                ListState.Empty -> {
+                    EmptyList(
+                        text = when (val appBarState = viewModel.appBarState) {
+                            is HomeTopAppBarState.Search -> {
+                                if (appBarState.query.isBlank()) {
+                                    stringResource(R.string.empty_search_query)
+                                } else {
+                                    stringResource(R.string.empty_search_results)
+                                }
                             }
-                        }
-                        else -> stringResource(R.string.empty_bank_cards_list)
-                    },
-                    modifier = Modifier.padding(bottom = bottomPadding)
-                )
-                ListState.Stable -> CardsContentScreen(
-                    cards = viewModel.cards,
-                    state = lazyListState,
-                    navigateToCard = { viewModel.navigateTo(it) },
-                    showSnackbar = viewModel::showSnackbar,
-                    bottomPadding = bottomPadding + fabPaddingDp.floatValue.dp
-                )
+
+                            is HomeTopAppBarState.TopBar -> stringResource(R.string.empty_bank_cards_list)
+                        },
+                        modifier = Modifier.padding(
+                            bottom = with(LocalDensity.current) {
+                                bottomPadding + fabHeightPx.floatValue.toDp()
+                            }
+                        )
+                    )
+                }
+
+                is ListState.Stable -> {
+                    CardsContentScreen(
+                        cards = listState.data,
+                        state = lazyListState,
+                        bottomPadding = with(LocalDensity.current) {
+                            (bottomPadding + fabHeightPx.floatValue.toDp()).animate()
+                        },
+                        pushAction = viewModel::push,
+                        onItemClick = viewModel::onItemClick
+                    )
+                }
             }
         }
     }
@@ -186,11 +216,11 @@ internal fun CardsScreen(
 
 @Composable
 private fun CardsContentScreen(
-    cards: List<BankCard>,
+    cards: List<PrimaryBankCard>,
     state: LazyListState,
-    navigateToCard: (args: BankCardArgs) -> Unit,
-    showSnackbar: (String) -> Unit,
-    bottomPadding: Dp
+    bottomPadding: Dp,
+    pushAction: (CardsAction) -> Unit,
+    onItemClick: (OnClick) -> Unit
 ) {
     val clipboardManager = LocalClipboardManager.current
     val context = LocalContext.current
@@ -227,10 +257,17 @@ private fun CardsContentScreen(
 
                 BankCardCompose(
                     bankCard = bankCard,
-                    onCopy = remember {
-                        {
-                            clipboardManager.setText(AnnotatedString(it))
-                            showSnackbar(context.getString(R.string.text_is_copied))
+                    onCopy = { part, text ->
+                        onItemClick {
+                            clipboardManager.setText(AnnotatedString(text))
+                            pushAction(
+                                CardsAction.ShowSnackbar(
+                                    context.getString(
+                                        R.string.card_part_text_is_copied,
+                                        part.getDescription(context)
+                                    )
+                                )
+                            )
                         }
                     },
                     modifier = Modifier
@@ -242,7 +279,9 @@ private fun CardsContentScreen(
 
                 TextButton(
                     onClick = {
-                        navigateToCard(BankCardArgs.Existing(id = bankCard.id, isEditing = false))
+                        pushAction(
+                            CardsAction.OpenBankCardDetails(cardId = bankCard.id)
+                        )
                     },
                     shape = MaterialTheme.shapes.medium,
                     modifier = Modifier
@@ -267,12 +306,12 @@ private fun CardsContentScreenPreview() {
     CashbacksTheme(isDarkTheme = false) {
         CardsContentScreen(
             cards = listOf(
-                BankCard(id = 0, number = "4422222211113333")
+                PrimaryBankCard(id = 0, number = "4422222211113333")
             ),
             state = rememberLazyListState(),
-            navigateToCard = {},
-            showSnackbar = {},
-            bottomPadding = 40.dp
+            bottomPadding = 40.dp,
+            pushAction = {},
+            onItemClick = {}
         )
     }
 }

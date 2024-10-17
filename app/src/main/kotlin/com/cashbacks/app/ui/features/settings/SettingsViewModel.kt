@@ -1,14 +1,17 @@
 package com.cashbacks.app.ui.features.settings
 
-import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.viewModelScope
-import com.cashbacks.app.ui.managment.ViewModelState
-import com.cashbacks.app.viewmodel.EventsViewModel
+import com.cashbacks.app.mvi.MviViewModel
+import com.cashbacks.app.ui.features.settings.mvi.SettingsAction
+import com.cashbacks.app.ui.features.settings.mvi.SettingsEvent
+import com.cashbacks.app.ui.managment.ScreenState
+import com.cashbacks.domain.model.MessageHandler
 import com.cashbacks.domain.model.Settings
 import com.cashbacks.domain.usecase.settings.SettingsUseCase
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -16,25 +19,51 @@ import javax.inject.Inject
 import kotlin.reflect.KProperty1
 
 class SettingsViewModel @Inject constructor(
-    private val useCase: SettingsUseCase
-) : EventsViewModel() {
+    private val useCase: SettingsUseCase,
+    private val messageHandler: MessageHandler
+) : MviViewModel<SettingsAction, SettingsEvent>() {
 
-    private val _settings = mutableStateOf(Settings())
-    val settings = derivedStateOf { _settings.value }
+    var settings by mutableStateOf(Settings())
+        private set
 
-    private val _state = mutableStateOf(ViewModelState.Loading)
-    val state = derivedStateOf { _state.value }
+    var state by mutableStateOf(ScreenState.Loading)
+        private set
 
-    init {
-        flow {
-            emit(ViewModelState.Loading)
-            delay(250)
-            emit(ViewModelState.Viewing)
-        }.onEach { _state.value = it }.launchIn(viewModelScope)
+    override suspend fun bootstrap() {
+        state = ScreenState.Loading
+        delay(250)
 
-        useCase.fetchSettings()
-            .onEach { _settings.value = it }
-            .launchIn(viewModelScope)
+        useCase.fetchSettings(
+            onFailure = { throwable ->
+                messageHandler.getExceptionMessage(throwable)
+                    ?.takeIf { it.isNotBlank() }
+                    ?.let { push(SettingsEvent.ShowSnackbar(it)) }
+            }
+        ).onEach {
+            settings = it
+            if (state == ScreenState.Loading) {
+                state = ScreenState.Showing
+            }
+        }.launchIn(viewModelScope)
+    }
+
+    override suspend fun actor(action: SettingsAction) {
+        when (action) {
+            is SettingsAction.ClickButtonBack -> push(SettingsEvent.NavigateBack)
+            is SettingsAction.UpdateSetting -> {
+                val updatedValue = action.function(settings)
+                if (updatedValue != settings) {
+                    state = ScreenState.Loading
+                    delay(200)
+                    useCase.updateSettings(updatedValue)
+                        .onFailure { throwable ->
+                            messageHandler.getExceptionMessage(throwable)
+                                ?.takeIf { it.isNotBlank() }
+                                ?.let { push(SettingsEvent.ShowSnackbar(it)) }
+                        }
+                }
+            }
+        }
     }
 
 
@@ -53,14 +82,13 @@ class SettingsViewModel @Inject constructor(
         value: Any
     ) {
         viewModelScope.launch {
-            _state.value = ViewModelState.Loading
+            state = ScreenState.Loading
             delay(200)
             useCase.updateSettingsProperty(
                 name = property.name,
-                value = value,
-                errorMessage = ::showSnackbar
+                value = value
             )
-            _state.value = ViewModelState.Viewing
+            state = ScreenState.Showing
         }
     }
 }

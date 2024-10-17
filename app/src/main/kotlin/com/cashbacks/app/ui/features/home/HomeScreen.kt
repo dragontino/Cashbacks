@@ -79,7 +79,7 @@ internal fun HomeScreen(
     appName: String,
     appVersion: String,
     navigateToSettings: () -> Unit,
-    navigateToCategory: (args: CategoryArgs) -> Unit,
+    navigateToCategory: (args: CategoryArgs, isEditing: Boolean) -> Unit,
     navigateToShop: (args: ShopArgs) -> Unit,
     navigateToCashback: (args: CashbackArgs) -> Unit,
     navigateToCard: (args: BankCardArgs) -> Unit,
@@ -100,8 +100,12 @@ internal fun HomeScreen(
     }
     val currentDestination = remember {
         derivedStateOf {
-            HomeDestination.values
-                .find { it.route == currentRoute.value }
+            listOf(
+                HomeDestination.Categories,
+                HomeDestination.Shops,
+                HomeDestination.Cashbacks,
+                HomeDestination.Cards
+            ).find {  currentRoute.value == it.route }
                 ?: HomeDestination.Categories
         }
     }
@@ -129,7 +133,7 @@ internal fun HomeScreen(
         }
     }
 
-    val bottomPaddingDp = rememberSaveable { mutableFloatStateOf(0f) }
+    val bottomHeightPx = rememberSaveable { mutableFloatStateOf(0f) }
 
 
     ModalNavigationDrawer(
@@ -182,11 +186,13 @@ internal fun HomeScreen(
                 ) {
                     CategoriesScreen(
                         viewModel = viewModel { provideCategoriesViewModel() },
-                        title = HomeDestination.Categories.title,
-                        bottomPadding = bottomPaddingDp.floatValue.dp.animate(),
+                        title = HomeDestination.Categories.screenTitle,
+                        bottomPadding = with(LocalDensity.current) {
+                            bottomHeightPx.floatValue.toDp().animate()
+                        },
                         openDrawer = openDrawer,
                         navigateToCategory = navigateToCategory,
-                        popBackStack = { context.getActivity()?.finish() }
+                        navigateBack = { context.getActivity()?.finish() }
                     )
                 }
 
@@ -209,11 +215,13 @@ internal fun HomeScreen(
                 ) {
                     ShopsScreen(
                         viewModel = viewModel { provideShopsViewModel() },
-                        title = HomeDestination.Shops.title,
-                        bottomPadding = bottomPaddingDp.floatValue.dp,
+                        title = HomeDestination.Shops.screenTitle,
+                        bottomPadding = with(LocalDensity.current) {
+                            bottomHeightPx.floatValue.toDp().animate()
+                        },
                         openDrawer = openDrawer,
                         navigateToShop = navigateToShop,
-                        popBackStack = navController::popBackStack
+                        navigateBack = navController::popBackStack
                     )
                 }
 
@@ -236,11 +244,13 @@ internal fun HomeScreen(
                 ) {
                     CashbacksScreen(
                         viewModel = viewModel { provideCashbacksViewModel() },
-                        title = HomeDestination.Cashbacks.title,
-                        bottomPadding = bottomPaddingDp.floatValue.dp,
+                        title = HomeDestination.Cashbacks.screenTitle,
+                        bottomPadding = with(LocalDensity.current) {
+                            bottomHeightPx.floatValue.toDp().animate()
+                        },
                         openDrawer = openDrawer,
                         navigateToCashback = navigateToCashback,
-                        popBackStack = navController::popBackStack
+                        navigateBack = navController::popBackStack
                     )
                 }
 
@@ -251,8 +261,10 @@ internal fun HomeScreen(
                 ) {
                     CardsScreen(
                         viewModel = viewModel { provideCardsViewModel() },
-                        title = HomeDestination.Cards.title,
-                        bottomPadding = bottomPaddingDp.floatValue.dp,
+                        title = HomeDestination.Cards.screenTitle,
+                        bottomPadding = with(LocalDensity.current) {
+                            bottomHeightPx.floatValue.toDp().animate()
+                        },
                         openDrawer = openDrawer,
                         navigateToCard = navigateToCard
                     )
@@ -270,8 +282,8 @@ internal fun HomeScreen(
                     }
                 },
                 modifier = Modifier
-                    .graphicsLayer {
-                        bottomPaddingDp.floatValue = size.height.toDp().value
+                    .onGloballyPositioned {
+                        bottomHeightPx.floatValue = it.size.height.toFloat()
                     }
                     .zIndex(1.2f)
                     .align(Alignment.BottomCenter)
@@ -311,28 +323,29 @@ private fun BottomBar(
                         label = "bottom bar icon anim",
                         animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)
                     ) {
-                        when (it) {
-                            selectedDestination -> destination.selectedIcon.Icon(
-                                modifier = Modifier.height(35.dp)
-                            )
-
-                            else -> destination.unselectedIcon.Icon(
-                                modifier = Modifier.height(35.dp)
-                            )
-                        }
+                        Icon(
+                            imageVector = when(it) {
+                                selectedDestination -> it.selectedIcon
+                                else -> it.unselectedIcon
+                            },
+                            contentDescription = null,
+                            modifier = Modifier.height(35.dp)
+                        )
                     }
                 },
                 label = {
                     Text(
-                        text = destination.tabText,
+                        text = destination.tabTitle,
                         style = MaterialTheme.typography.bodyMedium,
+                        fontFamily = FontFamily(VerdanaFont),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                 },
                 colors = NavigationBarItemDefaults.colors(
                     selectedIconColor = MaterialTheme.colorScheme.primary.animate(),
-                    selectedTextColor = MaterialTheme.colorScheme.onBackground.animate(),
+                    selectedTextColor = MaterialTheme.colorScheme.primary.animate(),
+                    indicatorColor = Color.Transparent,
                     unselectedIconColor = MaterialTheme.colorScheme.onBackground.animate(),
                     unselectedTextColor = MaterialTheme.colorScheme.onBackground.animate()
                 ),
@@ -343,55 +356,66 @@ private fun BottomBar(
 }
 
 
-private sealed class HomeDestination(
-    val route: String,
-    @StringRes val titleRes: Int,
-    @StringRes override val tabTitleRes: Int,
-    override val selectedIcon: AppBarIcon,
-    override val unselectedIcon: AppBarIcon
-) : AppBarItem {
+private sealed class HomeDestination(val route: String) : AppBarItem {
 
-    data object Categories : HomeDestination(
-        route = "categories",
-        titleRes = R.string.categories_title,
-        tabTitleRes = R.string.categories,
-        selectedIcon = Icons.Rounded.Category.asAppBarIcon(),
-        unselectedIcon = Icons.Outlined.Category.asAppBarIcon()
-    )
+    @get:Composable
+    abstract val screenTitle: String
 
-    data object Shops : HomeDestination(
-        route = "shops",
-        titleRes = R.string.shops_title,
-        tabTitleRes = R.string.shops,
-        selectedIcon = Icons.Rounded.Store.asAppBarIcon(),
-        unselectedIcon = Icons.Outlined.Store.asAppBarIcon()
-    )
 
-    data object Cashbacks : HomeDestination(
-        route = "cashbacks",
-        titleRes = R.string.cashbacks_title,
-        tabTitleRes = R.string.cashbacks,
-        selectedIcon = AppBarIcon { painterResource(R.drawable.cashback_filled) },
-        unselectedIcon = AppBarIcon { painterResource(R.drawable.cashback_outlined) }
-    )
+    data object Categories : HomeDestination(route = "categories") {
 
-    data object Cards : HomeDestination(
-        route = "cards",
-        titleRes = R.string.bank_cards_title,
-        tabTitleRes = R.string.bank_cards,
-        selectedIcon = Icons.Rounded.Payments.asAppBarIcon(),
-        unselectedIcon = Icons.Outlined.Payments.asAppBarIcon()
-    )
+        override val screenTitle: String
+            @Composable get() = stringResource(R.string.categories_title)
 
-    val title: String
-        @Composable
-        get() = stringResource(titleRes)
+        override val tabTitle: String
+            @Composable get() = stringResource(R.string.categories)
 
-    val tabText: String
-        @Composable
-        get() = stringResource(tabTitleRes)
+        override val selectedIcon: ImageVector
+            @Composable get() = Icons.Rounded.Category
 
-    companion object {
-        val values by lazy { arrayOf(Categories, Shops, Cashbacks, Cards) }
+        override val unselectedIcon: ImageVector
+            @Composable get() = Icons.Outlined.Category
+    }
+
+    data object Shops : HomeDestination(route = "shops") {
+        override val screenTitle: String
+            @Composable get() = stringResource(R.string.shops_title)
+
+        override val tabTitle: String
+            @Composable get() = stringResource(R.string.shops)
+
+        override val selectedIcon: ImageVector
+            @Composable get() = Icons.Rounded.Store
+
+        override val unselectedIcon: ImageVector
+            @Composable get() = Icons.Outlined.Store
+    }
+
+    data object Cashbacks : HomeDestination(route = "cashbacks") {
+        override val screenTitle: String
+            @Composable get() = stringResource(R.string.cashbacks_title)
+
+        override val tabTitle: String
+            @Composable get() = stringResource(R.string.cashbacks)
+
+        override val selectedIcon: ImageVector
+            @Composable get() = ImageVector.vectorResource(R.drawable.cashback_filled)
+
+        override val unselectedIcon: ImageVector
+            @Composable get() = ImageVector.vectorResource(R.drawable.cashback_outlined)
+    }
+
+    data object Cards : HomeDestination(route = "cards") {
+        override val screenTitle: String
+            @Composable get() = stringResource(R.string.bank_cards_title)
+
+        override val tabTitle: String
+            @Composable get() = stringResource(R.string.bank_cards)
+
+        override val selectedIcon: ImageVector
+            @Composable get() = Icons.Rounded.Payments
+
+        override val unselectedIcon: ImageVector
+            @Composable get() = Icons.Outlined.Payments
     }
 }

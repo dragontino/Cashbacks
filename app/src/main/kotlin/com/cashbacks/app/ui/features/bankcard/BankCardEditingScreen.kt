@@ -28,6 +28,7 @@ import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Snackbar
@@ -40,7 +41,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -59,48 +59,40 @@ import com.cashbacks.app.ui.composables.CollapsingToolbarScaffold
 import com.cashbacks.app.ui.composables.ConfirmExitWithSaveDataDialog
 import com.cashbacks.app.ui.composables.EditableTextField
 import com.cashbacks.app.ui.composables.EditableTextFieldDefaults
+import com.cashbacks.app.ui.features.bankcard.mvi.BankCardEditingAction
+import com.cashbacks.app.ui.features.bankcard.mvi.BankCardEditingEvent
 import com.cashbacks.app.ui.managment.DialogType
-import com.cashbacks.app.ui.managment.ScreenEvents
-import com.cashbacks.app.ui.managment.ViewModelState
+import com.cashbacks.app.ui.managment.ScreenState
 import com.cashbacks.app.ui.theme.DarkerGray
 import com.cashbacks.app.util.LoadingInBox
 import com.cashbacks.app.util.animate
 import com.cashbacks.domain.R
 import com.cashbacks.domain.model.PaymentSystem
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BankCardEditingScreen(
+internal fun BankCardEditingScreen(
     viewModel: BankCardEditingViewModel,
-    popBackStack: () -> Unit
+    navigateBack: () -> Unit
 ) {
     val scrollState = rememberScrollState()
     val snackbarState = remember(::SnackbarHostState)
-    val scope = rememberCoroutineScope()
     var dialogType: DialogType? by rememberSaveable { mutableStateOf(null) }
 
-    val showSnackbar = remember {
-        fun(message: String) {
-            scope.launch { snackbarState.showSnackbar(message) }
-        }
-    }
-
-    LaunchedEffect(key1 = true) {
-        viewModel.eventsFlow.collect { event ->
+    LaunchedEffect(Unit) {
+        viewModel.eventFlow.collect { event ->
             when (event) {
-                is ScreenEvents.Navigate -> popBackStack()
-                is ScreenEvents.ShowSnackbar -> showSnackbar(event.message)
-                is ScreenEvents.OpenDialog -> dialogType = event.type
-                ScreenEvents.CloseDialog -> dialogType = null
+                is BankCardEditingEvent.ShowSnackbar -> snackbarState.showSnackbar(event.message)
+                is BankCardEditingEvent.ChangeOpenedDialog -> dialogType = event.openedDialogType
+                is BankCardEditingEvent.NavigateBack -> navigateBack()
             }
         }
     }
 
     val onBackPress = remember {
         fun () = when {
-            viewModel.bankCard.value.haveChanges -> viewModel.openDialog(DialogType.Save)
-            else -> viewModel.navigateTo(null)
+            viewModel.bankCard.haveChanges -> viewModel. push(BankCardEditingAction.OpenDialog(DialogType.Save))
+            else -> viewModel.push(BankCardEditingAction.ClickButtonBack)
         }
     }
 
@@ -108,20 +100,30 @@ fun BankCardEditingScreen(
 
     if (dialogType == DialogType.Save) {
         ConfirmExitWithSaveDataDialog(
-            onConfirm = viewModel::saveCard,
-            onDismiss = popBackStack,
-            onClose = viewModel::closeDialog
+            onConfirm = {
+                viewModel.push(
+                    BankCardEditingAction.Save {
+                        viewModel.push(BankCardEditingAction.ClickButtonBack)
+                    }
+                )
+            },
+            onDismiss = {
+                viewModel.push(BankCardEditingAction.ClickButtonBack)
+            },
+            onClose = {
+                viewModel.push(BankCardEditingAction.CloseDialog)
+            }
         )
     }
 
     Crossfade(
-        targetState = viewModel.state.value,
+        targetState = viewModel.state,
         animationSpec = tween(durationMillis = 300, easing = LinearEasing),
         label = "state animation"
     ) { state ->
         when (state) {
-            ViewModelState.Loading -> LoadingInBox()
-            else -> {
+            ScreenState.Loading -> LoadingInBox()
+            ScreenState.Showing -> {
                 CollapsingToolbarScaffold(
                     topBar = {
                         CenterAlignedTopAppBar(
@@ -136,7 +138,7 @@ fun BankCardEditingScreen(
                                 IconButton(onClick = onBackPress) {
                                     Icon(
                                         imageVector = when {
-                                            viewModel.bankCard.value.haveChanges -> Icons.Rounded.Close
+                                            viewModel.bankCard.haveChanges -> Icons.Rounded.Close
                                             else -> Icons.Rounded.ArrowBackIosNew
                                         },
                                         contentDescription = null,
@@ -147,8 +149,11 @@ fun BankCardEditingScreen(
                             actions = {
                                 IconButton(
                                     onClick = {
-                                        viewModel.saveCard()
-                                        viewModel.navigateTo(null)
+                                        viewModel.push(
+                                            BankCardEditingAction.Save {
+                                                viewModel.push(BankCardEditingAction.ClickButtonBack)
+                                            }
+                                        )
                                     },
                                 ) {
                                     Icon(
@@ -196,8 +201,6 @@ private fun BankCardEditingContent(
     state: ScrollState,
     modifier: Modifier = Modifier,
 ) {
-    val bankCard = viewModel.bankCard.value
-
     Column(
         verticalArrangement = Arrangement.spacedBy(16.dp),
         modifier = modifier
@@ -208,8 +211,8 @@ private fun BankCardEditingContent(
     )
     {
         EditableTextField(
-            text = bankCard.name,
-            onTextChange = { bankCard.updateValue(bankCard::name, it) },
+            text = viewModel.bankCard.name,
+            onTextChange = { viewModel.bankCard.updateValue(viewModel.bankCard::name, it) },
             label = stringResource(R.string.card_name)
         )
 
@@ -222,24 +225,24 @@ private fun BankCardEditingContent(
         )
 
         EditableTextField(
-            value = bankCard.number,
-            onValueChange = {
-                bankCard.updateNumber(it)
-                bankCard.updateValue(
-                    property = bankCard::paymentSystem,
-                    newValue = viewModel.getPaymentSystemByNumber(it.text)
-                )
-            },
+            value = viewModel.bankCard.number,
+            onValueChange = { viewModel.bankCard.updateNumber(it) },
             label = stringResource(R.string.card_number),
             keyboardType = KeyboardType.Decimal
         )
 
         ExposedDropdownMenuBox(
-                expanded = viewModel.showPaymentSystemSelection,
-                onExpandedChange = viewModel::showPaymentSystemSelection::set
-            ) {
+            expanded = viewModel.showPaymentSystemSelection,
+            onExpandedChange = { isExpanded ->
+                val action = when {
+                    isExpanded -> BankCardEditingAction.ShowPaymentSystemSelection
+                    else -> BankCardEditingAction.HidePaymentSystemSelection
+                }
+                viewModel.push(action)
+            }
+        ) {
             OutlinedTextField(
-                value = bankCard.paymentSystem.title,
+                value = viewModel.bankCard.paymentSystem.title,
                 onValueChange = {},
                 readOnly = true,
                 textStyle = MaterialTheme.typography.bodyMedium,
@@ -250,8 +253,8 @@ private fun BankCardEditingContent(
                     )
                 },
                 trailingIcon = {
-                    bankCard.paymentSystem?.let {
-                        PaymentSystemMapper.PaymentSystemImage(
+                    viewModel.bankCard.paymentSystem?.let {
+                        PaymentSystemUtils.PaymentSystemImage(
                             paymentSystem = it,
                             modifier = Modifier.padding(horizontal = 12.dp)
                         )
@@ -260,7 +263,7 @@ private fun BankCardEditingContent(
                 colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
                 shape = MaterialTheme.shapes.medium,
                 modifier = Modifier
-                    .menuAnchor()
+                    .menuAnchor(MenuAnchorType.PrimaryNotEditable)
                     .padding(bottom = 16.dp)
                     .padding(horizontal = 16.dp)
                     .fillMaxWidth()
@@ -268,7 +271,9 @@ private fun BankCardEditingContent(
 
             ExposedDropdownMenu(
                 expanded = viewModel.showPaymentSystemSelection,
-                onDismissRequest = { viewModel.showPaymentSystemSelection = false },
+                onDismissRequest = {
+                    viewModel.push(BankCardEditingAction.HidePaymentSystemSelection)
+                },
                 modifier = Modifier
                     .align(Alignment.CenterHorizontally)
                     .padding(horizontal = 16.dp)
@@ -284,7 +289,7 @@ private fun BankCardEditingContent(
                             )
                         },
                         leadingIcon = {
-                            if (bankCard.paymentSystem == paymentSystem) {
+                            if (viewModel.bankCard.paymentSystem == paymentSystem) {
                                 Icon(
                                     imageVector = Icons.Rounded.Check,
                                     contentDescription = null
@@ -300,8 +305,8 @@ private fun BankCardEditingContent(
                             }
                         },
                         onClick = {
-                            bankCard.paymentSystem = paymentSystem
-                            viewModel.showPaymentSystemSelection = false
+                            viewModel.bankCard.paymentSystem = paymentSystem
+                            viewModel.push(BankCardEditingAction.HidePaymentSystemSelection)
                         },
                         contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding,
                         colors = MenuDefaults.itemColors(
@@ -314,27 +319,27 @@ private fun BankCardEditingContent(
         }
 
         EditableTextField(
-            text = bankCard.holder,
+            text = viewModel.bankCard.holder,
             onTextChange = {
-                bankCard.updateValue(bankCard::holder, it.uppercase())
+                viewModel.bankCard.updateValue(viewModel.bankCard::holder, it.uppercase())
             },
             label = stringResource(R.string.card_holder),
             keyboardCapitalization = KeyboardCapitalization.Characters
         )
 
         EditableTextField(
-            value = bankCard.validityPeriod,
-            onValueChange = bankCard::updateValidityPeriod,
+            value = viewModel.bankCard.validityPeriod,
+            onValueChange = viewModel.bankCard::updateValidityPeriod,
             label = stringResource(R.string.validity_period),
             keyboardType = KeyboardType.Number
         )
         
         var isCvvVisible by rememberSaveable { mutableStateOf(false) }
         EditableTextField(
-            text = bankCard.cvv,
+            text = viewModel.bankCard.cvv,
             onTextChange = {
                 if (it.length <= 3) {
-                    bankCard.updateValue(bankCard::cvv, it)
+                    viewModel.bankCard.updateValue(viewModel.bankCard::cvv, it)
                 }
             },
             label = stringResource(R.string.cvv),
@@ -356,10 +361,10 @@ private fun BankCardEditingContent(
 
         var isPinVisible by rememberSaveable { mutableStateOf(false) }
         EditableTextField(
-            text = bankCard.pin,
+            text = viewModel.bankCard.pin,
             onTextChange = {
                 if (it.length <= 4) {
-                    bankCard.updateValue(bankCard::pin, it)
+                    viewModel.bankCard.updateValue(viewModel.bankCard::pin, it)
                 }
             },
             label = stringResource(R.string.pin),
@@ -388,8 +393,8 @@ private fun BankCardEditingContent(
         )
 
         EditableTextField(
-            text = bankCard.comment,
-            onTextChange = { bankCard.updateValue(bankCard::comment, it) },
+            text = viewModel.bankCard.comment,
+            onTextChange = { viewModel.bankCard.updateValue(viewModel.bankCard::comment, it) },
             label = stringResource(R.string.comment),
             singleLine = false,
             imeAction = ImeAction.Default

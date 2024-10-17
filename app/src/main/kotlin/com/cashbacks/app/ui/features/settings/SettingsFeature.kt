@@ -33,7 +33,7 @@ class SettingsFeature(private val application: App) : FeatureApi {
         ) {
             SettingsScreen(
                 viewModel = viewModel { application.appComponent.settingsViewModel() },
-                popBackStack = navController::popBackStack
+                navigateBack = navController::popBackStack
             )
         }
     }

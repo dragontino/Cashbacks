@@ -35,21 +35,20 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.cashbacks.app.ui.composables.BasicFloatingActionButton
 import com.cashbacks.app.ui.composables.CollapsingToolbarScaffold
 import com.cashbacks.app.ui.composables.ConfirmDeletionDialog
@@ -57,10 +56,12 @@ import com.cashbacks.app.ui.composables.EmptyList
 import com.cashbacks.app.ui.composables.ShopComposable
 import com.cashbacks.app.ui.features.home.HomeTopAppBar
 import com.cashbacks.app.ui.features.home.HomeTopAppBarState
+import com.cashbacks.app.ui.features.home.shops.mvi.ShopsAction
+import com.cashbacks.app.ui.features.home.shops.mvi.ShopsEvent
 import com.cashbacks.app.ui.features.shop.ShopArgs
 import com.cashbacks.app.ui.managment.DialogType
 import com.cashbacks.app.ui.managment.ListState
-import com.cashbacks.app.ui.managment.ScreenEvents
+import com.cashbacks.app.ui.managment.ViewModelState
 import com.cashbacks.app.util.LoadingInBox
 import com.cashbacks.app.util.animate
 import com.cashbacks.app.util.floatingActionButtonEnterAnimation
@@ -68,63 +69,57 @@ import com.cashbacks.app.util.floatingActionButtonExitAnimation
 import com.cashbacks.app.util.keyboardAsState
 import com.cashbacks.app.util.reversed
 import com.cashbacks.domain.R
+import com.cashbacks.domain.model.BasicCategoryShop
 import com.cashbacks.domain.model.Shop
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
-fun ShopsScreen(
+internal fun ShopsScreen(
     viewModel: ShopsViewModel,
     title: String,
     bottomPadding: Dp,
     openDrawer: () -> Unit,
     navigateToShop: (args: ShopArgs) -> Unit,
-    popBackStack: () -> Unit,
+    navigateBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     BackHandler {
-        when {
-            viewModel.isEditing.value -> viewModel.isEditing.value = false
-            else -> viewModel.navigateTo(null)
+        when (viewModel.viewModelState) {
+            ViewModelState.Editing -> viewModel.push(ShopsAction.FinishEdit)
+            ViewModelState.Viewing -> viewModel.push(ShopsAction.ClickButtonBack)
         }
     }
 
     val topAppBarState = rememberTopAppBarState()
     val lazyListState = rememberLazyListState()
     val snackbarHostState = remember(::SnackbarHostState)
-    val scope = rememberCoroutineScope()
     val keyboardState = keyboardAsState()
+    val dialogType = rememberSaveable { mutableStateOf<DialogType?>(null) }
 
-    val showSnackbar = remember {
-        fun(message: String) {
-            scope.launch { snackbarHostState.showSnackbar(message) }
-        }
-    }
-
-    var dialogType: DialogType? by rememberSaveable { mutableStateOf(null) }
-    LaunchedEffect(key1 = true) {
-        viewModel.eventsFlow.collect { event ->
+    LaunchedEffect(Unit) {
+        viewModel.eventFlow.onEach { event ->
             when (event) {
-                is ScreenEvents.OpenDialog -> dialogType = event.type
-                ScreenEvents.CloseDialog -> dialogType = null
-                is ScreenEvents.Navigate -> (event.args as? ShopArgs)
-                    ?.let(navigateToShop)
-                    ?: popBackStack()
-                is ScreenEvents.ShowSnackbar -> event.message.let(showSnackbar)
+                is ShopsEvent.OpenDialog -> dialogType.value = event.type
+                is ShopsEvent.CloseDialog -> dialogType.value = null
+                is ShopsEvent.NavigateBack -> navigateBack()
+                is ShopsEvent.NavigateToShop -> navigateToShop(event.args)
+                is ShopsEvent.ShowSnackbar -> snackbarHostState.showSnackbar(event.message)
             }
-        }
+        }.launchIn(this)
     }
 
-    dialogType.takeIf { it is DialogType.ConfirmDeletion<*> }?.let { type ->
+    dialogType.value.takeIf { it is DialogType.ConfirmDeletion<*> }?.let { type ->
         val shop = (type as DialogType.ConfirmDeletion<*>).value as Shop
         ConfirmDeletionDialog(
             text = stringResource(R.string.confirm_shop_deletion, shop.name),
-            onConfirm = { viewModel.deleteShop(shop) },
-            onClose = viewModel::closeDialog
+            onConfirm = { viewModel.push(ShopsAction.DeleteShop(shop)) },
+            onClose = { viewModel.push(ShopsAction.CloseDialog) }
         )
     }
 
-    val fabPaddingDp = rememberSaveable { mutableFloatStateOf(0f) }
+    val fabHeightPx = rememberSaveable { mutableFloatStateOf(0f) }
 
     CollapsingToolbarScaffold(
         topBar = {
@@ -156,24 +151,24 @@ fun ShopsScreen(
         },
         floatingActionButtons = {
             AnimatedVisibility(
-                visible = viewModel.isEditing.value && !keyboardState.value,
+                visible = viewModel.viewModelState == ViewModelState.Editing && !keyboardState.value,
                 enter = floatingActionButtonEnterAnimation(),
                 exit = floatingActionButtonExitAnimation()
             ) {
                 BasicFloatingActionButton(icon = Icons.Rounded.Add) {
-                    viewModel.navigateTo(ShopArgs.New)
+                    viewModel.push(ShopsAction.NavigateToShop(ShopArgs()))
                 }
             }
 
             AnimatedVisibility(visible = !keyboardState.value) {
                 BasicFloatingActionButton(
-                    icon = when {
-                        viewModel.isEditing.value -> Icons.Rounded.EditOff
-                        else -> Icons.Rounded.Edit
+                    icon = when (viewModel.viewModelState) {
+                        ViewModelState.Editing -> Icons.Rounded.EditOff
+                        ViewModelState.Viewing -> Icons.Rounded.Edit
                     },
                     onClick = {
                         viewModel.onItemClick {
-                            viewModel.isEditing.value = !viewModel.isEditing.value
+                            viewModel.push(ShopsAction.SwitchEdit)
                         }
                     }
                 )
@@ -182,46 +177,59 @@ fun ShopsScreen(
         fabModifier = Modifier
             .windowInsetsPadding(WindowInsets.tappableElement.only(WindowInsetsSides.End))
             .padding(bottom = bottomPadding)
-            .graphicsLayer {
-                fabPaddingDp.floatValue = size.height.toDp().value
-            },
+            .onGloballyPositioned { fabHeightPx.floatValue = it.size.height.toFloat() },
         contentWindowInsets = WindowInsets.ime.only(WindowInsetsSides.Bottom),
         modifier = Modifier
             .then(modifier)
             .fillMaxSize()
     ) {
+
+        val shopsState = viewModel.shopsFlow.collectAsStateWithLifecycle()
         Crossfade(
-            targetState = viewModel.state.value,
+            targetState = ListState.fromList(shopsState.value),
             label = "loading animation",
             animationSpec = tween(durationMillis = 100, easing = FastOutSlowInEasing),
             modifier = Modifier.fillMaxSize()
-        ) { state ->
-            when (state) {
-                ListState.Loading -> LoadingInBox(
-                    modifier = Modifier.padding(bottom = bottomPadding)
-                )
-                ListState.Empty -> EmptyList(
-                    text = when {
-                        !viewModel.isEditing.value -> stringResource(R.string.empty_shops_list_viewing)
-                        viewModel.isSearch -> {
-                            when {
-                                viewModel.query.value.isBlank() -> stringResource(R.string.empty_search_query)
-                                else -> stringResource(R.string.empty_search_results)
+        ) { listState ->
+            when (listState) {
+                is ListState.Loading -> {
+                    LoadingInBox(modifier = Modifier.padding(bottom = bottomPadding))
+                }
+                is ListState.Empty -> {
+                    EmptyList(
+                        text = when (val appBarState = viewModel.appBarState) {
+                            is HomeTopAppBarState.Search -> {
+                                when {
+                                    appBarState.query.isBlank() -> stringResource(R.string.empty_search_query)
+                                    else -> stringResource(R.string.empty_search_results)
+                                }
                             }
+
+                            is HomeTopAppBarState.TopBar -> {
+                                when (viewModel.viewModelState) {
+                                    ViewModelState.Viewing -> stringResource(R.string.empty_shops_list_viewing)
+                                    ViewModelState.Editing -> stringResource(R.string.empty_shops_list_editing)
+                                }
+                            }
+                        },
+                        icon = Icons.Rounded.DataArray,
+                        iconModifier = Modifier.scale(2.5f),
+                        modifier = Modifier
+                            .padding(bottom = bottomPadding)
+                            .fillMaxSize()
+                    )
+                }
+
+                is ListState.Stable -> {
+                    ShopsList(
+                        shopList = listState.data,
+                        viewModel = viewModel,
+                        state = lazyListState,
+                        bottomPadding = with(LocalDensity.current) {
+                            (bottomPadding + fabHeightPx.floatValue.toDp()).animate()
                         }
-                        else -> stringResource(R.string.empty_shops_list_editing)
-                    },
-                    icon = Icons.Rounded.DataArray,
-                    iconModifier = Modifier.scale(2.5f),
-                    modifier = Modifier
-                        .padding(bottom = bottomPadding)
-                        .fillMaxSize()
-                )
-                ListState.Stable -> ShopsList(
-                    viewModel = viewModel,
-                    state = lazyListState,
-                    bottomPadding = (bottomPadding + fabPaddingDp.floatValue.dp).animate()
-                )
+                    )
+                }
             }
         }
     }
@@ -231,6 +239,7 @@ fun ShopsScreen(
 
 @Composable
 private fun ShopsList(
+    shopList: List<BasicCategoryShop>,
     viewModel: ShopsViewModel,
     state: LazyListState,
     bottomPadding: Dp
@@ -242,37 +251,40 @@ private fun ShopsList(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.fillMaxSize()
     ) {
-        itemsIndexed(viewModel.shops) { index, shop ->
-            ShopComposable(
-                categoryShop = shop,
-                isEditing = viewModel.isEditing.value,
+        itemsIndexed(shopList) { index, shop ->
+            MaxCashbackOwnerComposable(
+                cashbackOwner = shop,
+                isEditing = viewModel.viewModelState == ViewModelState.Editing,
                 isSwiped = viewModel.selectedShopIndex == index,
                 onSwipe = { isSwiped ->
-                    viewModel.selectedShopIndex = when {
-                        isSwiped -> index
-                        else -> null
-                    }
+                    viewModel.push(ShopsAction.SwipeShop(isSwiped, index))
                 },
                 onClick = {
                     viewModel.onItemClick {
-                        viewModel.selectedShopIndex = -1
-                        viewModel.navigateTo(
-                            ShopArgs.Existing(shop.id, isEditing = false)
+                        viewModel.push(
+                            ShopsAction.SwipeShop(isOpened = false)
+                        )
+                        viewModel.push(
+                            ShopsAction.NavigateToShop(ShopArgs(shop.id, isEditing = false))
                         )
                     }
                 },
                 onEdit = {
                     viewModel.onItemClick {
-                        viewModel.selectedShopIndex = -1
-                        viewModel.navigateTo(
-                            ShopArgs.Existing(shop.id, isEditing = true)
+                        viewModel.push(
+                            ShopsAction.SwipeShop(isOpened = false)
+                        )
+                        viewModel.push(
+                            ShopsAction.NavigateToShop(ShopArgs(shop.id, isEditing = true))
                         )
                     }
                 },
                 onDelete = {
                     viewModel.onItemClick {
-                        viewModel.selectedShopIndex = -1
-                        viewModel.openDialog(DialogType.ConfirmDeletion(shop.asShop()))
+                        viewModel.push(ShopsAction.SwipeShop(isOpened = false))
+                        viewModel.push(
+                            ShopsAction.OpenDialog(DialogType.ConfirmDeletion(shop))
+                        )
                     }
                 }
             )

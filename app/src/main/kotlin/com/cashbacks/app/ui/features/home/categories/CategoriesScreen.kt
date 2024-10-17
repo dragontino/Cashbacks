@@ -2,6 +2,7 @@ package com.cashbacks.app.ui.features.home.categories
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
@@ -81,9 +82,11 @@ import com.cashbacks.app.util.keyboardAsState
 import com.cashbacks.app.util.reversed
 import com.cashbacks.app.util.smoothScrollToItem
 import com.cashbacks.domain.R
+import com.cashbacks.domain.model.BasicCategory
 import com.cashbacks.domain.model.Category
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -91,66 +94,59 @@ internal fun CategoriesScreen(
     viewModel: CategoriesViewModel,
     title: String,
     openDrawer: () -> Unit,
-    navigateToCategory: (args: CategoryArgs) -> Unit,
-    popBackStack: () -> Unit,
+    navigateToCategory: (args: CategoryArgs, isEditing: Boolean) -> Unit,
+    navigateBack: () -> Unit,
     bottomPadding: Dp,
     modifier: Modifier = Modifier
 ) {
     BackHandler {
-        when {
-            viewModel.isEditing.value -> viewModel.isEditing.value = false
-            else -> popBackStack()
+        val action = when (viewModel.viewModelState) {
+            ViewModelState.Editing -> CategoriesAction.FinishEdit
+            else -> CategoriesAction.ClickButtonBack
         }
+        viewModel.push(action)
     }
 
     val snackbarHostState = remember(::SnackbarHostState)
-    val scope = rememberCoroutineScope()
-
     val lazyListState = rememberLazyListState()
     val keyboardState = keyboardAsState()
-    var dialogType: DialogType? by rememberSaveable { mutableStateOf(null) }
-
-    val showSnackbar = remember {
-        fun(message: String) {
-            scope.launch {
-                if (message.isNotBlank()) snackbarHostState.showSnackbar(message)
-            }
-        }
-    }
+    val dialogType = rememberSaveable { mutableStateOf<DialogType?>(null) }
 
     LaunchedEffect(Unit) {
-        snapshotFlow { keyboardState.value }.collect { isKeyboardOpen ->
-            if (!isKeyboardOpen) {
-                viewModel.addingCategoriesState = false
+        viewModel.eventFlow.onEach { event ->
+            when (event) {
+                is CategoriesEvent.NavigateBack -> navigateBack()
+                is CategoriesEvent.NavigateToCategory -> navigateToCategory(event.args, event.isEditing)
+                is CategoriesEvent.ShowSnackbar -> snackbarHostState.showSnackbar(event.message)
+                is CategoriesEvent.OpenDialog -> dialogType.value = event.type
+                is CategoriesEvent.CloseDialog -> dialogType.value = null
+                is CategoriesEvent.ScrollToEnd -> {
+                    delay(700)
+                    lazyListState.smoothScrollToItem(lazyListState.layoutInfo.totalItemsCount)
+                }
             }
-        }
+        }.launchIn(this)
+
+        snapshotFlow { keyboardState.value }.onEach { isKeyboardOpen ->
+            if (!isKeyboardOpen) {
+                viewModel.push(CategoriesAction.FinishCreatingCategory)
+            }
+        }.launchIn(this)
     }
 
-    LaunchedEffect(key1 = true) {
-        viewModel.eventsFlow.collect { event ->
-            when (event) {
-                is ScreenEvents.OpenDialog -> dialogType = event.type
-                ScreenEvents.CloseDialog -> dialogType = null
-                is ScreenEvents.Navigate -> (event.args as? CategoryArgs)
-                    ?.let(navigateToCategory)
-                    ?: popBackStack()
-                is ScreenEvents.ShowSnackbar -> event.message.let(showSnackbar)
-            }
-        }
-    }
-    dialogType.takeIf { it is DialogType.ConfirmDeletion<*> }?.let { type ->
-        val category = (type as DialogType.ConfirmDeletion<*>).value as Category
+    if (dialogType.value is DialogType.ConfirmDeletion<*>) {
+        val category = (dialogType.value as DialogType.ConfirmDeletion<*>).value as Category
         ConfirmDeletionDialog(
             text = stringResource(
                 R.string.confirm_category_deletion,
                 category.name
             ),
-            onConfirm = { viewModel.deleteCategory(category) },
-            onClose = viewModel::closeDialog
+            onConfirm = { viewModel.push(CategoriesAction.DeleteCategory(category)) },
+            onClose = { viewModel.push(CategoriesAction.CloseDialog) }
         )
     }
 
-    val fabOffsetPx = rememberSaveable { mutableFloatStateOf(0f) }
+    val fabHeightPx = rememberSaveable { mutableFloatStateOf(0f) }
 
 
     Box(contentAlignment = Alignment.Center) {
@@ -183,9 +179,9 @@ internal fun CategoriesScreen(
             },
             floatingActionButtons = {
                 AnimatedVisibility(
-                    visible = viewModel.isEditing.value
-                            && viewModel.appBarState != HomeTopAppBarState.Search
-                            && !viewModel.addingCategoriesState,
+                    visible = viewModel.viewModelState == ViewModelState.Editing
+                            && viewModel.appBarState !is HomeTopAppBarState.Search
+                            && !viewModel.isCreatingCategory,
                     enter = floatingActionButtonEnterAnimation(),
                     exit = floatingActionButtonExitAnimation()
                 ) {
@@ -200,16 +196,20 @@ internal fun CategoriesScreen(
                     }
                 }
                 AnimatedVisibility(visible = !viewModel.addingCategoriesState && !keyboardState.value) {
+                            viewModel.push(CategoriesAction.StartCreatingCategory)
+                            viewModel.push(CategoriesAction.ScrollToEnd)
+                        }
+                    }
+                }
+                AnimatedVisibility(visible = !viewModel.isCreatingCategory && !keyboardState.value) {
                     BasicFloatingActionButton(
-                        icon = when {
-                            viewModel.isEditing.value -> Icons.Rounded.EditOff
-                            else -> Icons.Rounded.Edit
+                        icon = when (viewModel.viewModelState) {
+                            ViewModelState.Editing -> Icons.Rounded.EditOff
+                            ViewModelState.Viewing -> Icons.Rounded.Edit
                         },
-                        onClick = remember {
-                            fun() {
-                                viewModel.onItemClick {
-                                    viewModel.isEditing.value = !viewModel.isEditing.value
-                                }
+                        onClick = {
+                            viewModel.onItemClick {
+                                viewModel.push(CategoriesAction.SwitchEdit)
                             }
                         }
                     )
@@ -217,49 +217,66 @@ internal fun CategoriesScreen(
             },
             contentWindowInsets = WindowInsets.ime.only(WindowInsetsSides.Bottom),
             fabModifier = Modifier
-                .onGloballyPositioned { fabOffsetPx.floatValue = it.size.height.toFloat() }
+                .onGloballyPositioned { fabHeightPx.floatValue = it.size.height.toFloat() }
                 .windowInsetsPadding(WindowInsets.tappableElement.only(WindowInsetsSides.End))
                 .padding(bottom = bottomPadding),
             modifier = modifier.fillMaxSize()
         ) {
-            when (viewModel.state.value) {
-                ListState.Loading -> LoadingInBox(
-                    modifier = Modifier.padding(bottom = bottomPadding)
-                )
 
-                ListState.Empty -> EmptyList(
-                    text = when {
-                        !viewModel.isEditing.value -> stringResource(R.string.empty_categories_list_viewing)
-                        viewModel.isSearch -> {
-                            when {
-                                viewModel.query.value.isBlank() -> stringResource(R.string.empty_search_query)
-                                else -> stringResource(R.string.empty_search_results)
-                            }
-                        }
-
-                        else -> stringResource(R.string.empty_categories_list_editing)
-                    },
-                    icon = Icons.Rounded.DataArray,
-                    iconModifier = Modifier.scale(2.5f),
-                    modifier = Modifier
-                        .padding(bottom = bottomPadding)
-                        .align(Alignment.Center)
-                        .fillMaxSize()
-                )
-
-                ListState.Stable -> CategoriesList(
-                    lazyListState = lazyListState,
-                    viewModel = viewModel,
-                    bottomPadding = with(LocalDensity.current) {
-                        (bottomPadding + fabOffsetPx.floatValue.toDp()).animate()
+            val categoriesState = viewModel.categoriesFlow.collectAsStateWithLifecycle()
+            Crossfade(
+                targetState = ListState.fromList(categoriesState.value),
+                label = "Content loading animation",
+                animationSpec = tween(durationMillis = 100, easing = FastOutSlowInEasing)
+            ) { listState ->
+                when (listState) {
+                    is ListState.Loading -> {
+                        LoadingInBox(
+                            modifier = Modifier.padding(bottom = bottomPadding)
+                        )
                     }
-                )
+
+                    is ListState.Empty -> {
+                        EmptyList(
+                            text = when (val appBarState = viewModel.appBarState) {
+                                is HomeTopAppBarState.Search -> {
+                                    when {
+                                        appBarState.query.isBlank() -> stringResource(R.string.empty_search_query)
+                                        else -> stringResource(R.string.empty_search_results)
+                                    }
+                                }
+
+                                is HomeTopAppBarState.TopBar -> {
+                                    when (viewModel.viewModelState) {
+                                        ViewModelState.Viewing -> stringResource(R.string.empty_categories_list_viewing)
+                                        ViewModelState.Editing -> stringResource(R.string.empty_categories_list_editing)
+                                    }
+                                }
+                            },
+                            icon = Icons.Rounded.DataArray,
+                            iconModifier = Modifier.scale(2.5f),
+                            modifier = Modifier
+                                .padding(bottom = bottomPadding)
+                                .align(Alignment.Center)
+                                .fillMaxSize()
+                        )
+                    }
+
+                    is ListState.Stable -> CategoriesList(
+                        lazyListState = lazyListState,
+                        categoriesList = listState.data,
+                        viewModel = viewModel,
+                        bottomPadding = with(LocalDensity.current) {
+                            (bottomPadding + fabHeightPx.floatValue.toDp()).animate()
+                        }
+                    )
+                }
             }
         }
 
 
         AnimatedVisibility(
-            visible = viewModel.addingCategoriesState,
+            visible = viewModel.isCreatingCategory,
             enter = expandVertically(
                 animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing),
                 expandFrom = Alignment.Bottom
@@ -271,8 +288,7 @@ internal fun CategoriesScreen(
             modifier = Modifier.align(Alignment.BottomCenter)
         ) {
             NewNameTextField(placeholder = stringResource(R.string.category_placeholder)) { name ->
-                viewModel.addCategory(name)
-                viewModel.addingCategoriesState = false
+                viewModel.push(CategoriesAction.AddCategory(name))
             }
         }
     }
@@ -283,6 +299,7 @@ internal fun CategoriesScreen(
 @Composable
 private fun CategoriesList(
     lazyListState: LazyListState,
+    categoriesList: List<BasicCategory>,
     viewModel: CategoriesViewModel,
     bottomPadding: Dp
 ) {
@@ -297,28 +314,49 @@ private fun CategoriesList(
             CategoryComposable(
                 category = category,
                 isEditing = viewModel.isEditing.value,
+        itemsIndexed(categoriesList) { index, category ->
+                isEditing = viewModel.viewModelState == ViewModelState.Editing,
                 isSwiped = viewModel.selectedCategoryIndex == index,
                 onSwipe = { isSwiped ->
-                    viewModel.selectedCategoryIndex = when {
-                        isSwiped -> index
-                        else -> null
-                    }
+                    viewModel.push(
+                        CategoriesAction.SwipeCategory(
+                            position = index,
+                            isOpened = isSwiped
+                        )
+                    )
                 },
                 onClick = {
                     viewModel.onItemClick {
-                        viewModel.navigateTo(CategoryArgs.Viewing(id = category.id))
+                        viewModel.push(
+                            CategoriesAction.SwipeCategory(isOpened = false)
+                        )
+                        viewModel.push(
+                            CategoriesAction.NavigateToCategory(CategoryArgs(id = category.id))
+                        )
                     }
                 },
                 onEdit = {
-                    viewModel.selectedCategoryIndex = -1
-                    viewModel.navigateTo(CategoryArgs.Editing(id = category.id))
+                    viewModel.onItemClick {
+                        viewModel.push(
+                            CategoriesAction.SwipeCategory(isOpened = false)
+                        )
+                        viewModel.push(
+                            CategoriesAction.NavigateToCategory(
+                                args = CategoryArgs(id = category.id),
+                                isEditing = true
+                            )
+                        )
+                    }
                 },
-                onDelete = remember {
-                    fun() {
-                        viewModel.onItemClick {
-                            viewModel.selectedCategoryIndex = -1
-                            viewModel.openDialog(DialogType.ConfirmDeletion(category))
-                        }
+                onDelete = {
+                    viewModel.onItemClick {
+                        viewModel.push(
+                            CategoriesAction.SwipeCategory(isOpened = false)
+                        )
+
+                        viewModel.push(
+                            CategoriesAction.OpenDialog(DialogType.ConfirmDeletion(category))
+                        )
                     }
                 }
             )

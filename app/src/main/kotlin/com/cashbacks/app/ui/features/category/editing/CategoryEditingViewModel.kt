@@ -1,17 +1,17 @@
 package com.cashbacks.app.ui.features.category.editing
 
 import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
-import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
 import com.cashbacks.app.model.ComposableCategory
+import com.cashbacks.app.ui.features.category.CategoryArgs
 import com.cashbacks.app.ui.features.category.CategoryViewModel
-import com.cashbacks.app.ui.managment.ViewModelState
+import com.cashbacks.app.ui.features.category.mvi.CategoryAction
+import com.cashbacks.app.ui.features.category.mvi.CategoryEvent
 import com.cashbacks.app.util.AnimationDefaults
-import com.cashbacks.domain.model.AppExceptionMessage
-import com.cashbacks.domain.model.Shop
+import com.cashbacks.domain.model.BasicShop
+import com.cashbacks.domain.model.Category
+import com.cashbacks.domain.model.MessageHandler
 import com.cashbacks.domain.usecase.cashbacks.DeleteCashbacksUseCase
 import com.cashbacks.domain.usecase.cashbacks.FetchCashbacksUseCase
 import com.cashbacks.domain.usecase.categories.DeleteCategoryUseCase
@@ -24,106 +24,134 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
+import kotlin.random.Random
 
 class CategoryEditingViewModel @AssistedInject constructor(
     private val getCategoryUseCase: GetCategoryUseCase,
     private val addShopUseCase: AddShopUseCase,
     private val updateCategoryUseCase: UpdateCategoryUseCase,
     private val deleteCategoryUseCase: DeleteCategoryUseCase,
-    fetchShopsFromCategoryUseCase: FetchShopsFromCategoryUseCase,
-    fetchCashbacksUseCase: FetchCashbacksUseCase,
+    private val fetchShopsFromCategoryUseCase: FetchShopsFromCategoryUseCase,
+    private val fetchCashbacksUseCase: FetchCashbacksUseCase,
     deleteShopUseCase: DeleteShopUseCase,
     deleteCashbacksUseCase: DeleteCashbacksUseCase,
-    exceptionMessage: AppExceptionMessage,
+    exceptionMessage: MessageHandler,
     @Assisted categoryId: Long,
-) : CategoryViewModel<ComposableCategory>(
+) : CategoryViewModel(
     deleteShopUseCase = deleteShopUseCase,
     deleteCashbacksUseCase = deleteCashbacksUseCase,
     exceptionMessage = exceptionMessage,
-    categoryId = categoryId,
-    defaultVMState = ViewModelState.Editing
+    categoryId = categoryId
 ) {
-    private val _category = mutableStateOf(ComposableCategory())
-    override val category = derivedStateOf { _category.value }
+    val category by lazy { ComposableCategory(id = categoryId) }
 
-    val shopsLiveData = fetchShopsFromCategoryUseCase
-        .fetchAllShopsFromCategory(categoryId)
-        .asLiveData()
+    private val _isCreatingShop = mutableStateOf(false)
+    val isCreatingShop = derivedStateOf { _isCreatingShop.value }
 
-    val cashbacksLiveData = fetchCashbacksUseCase
-        .fetchCashbacksFromCategory(categoryId)
-        .asLiveData()
+    override suspend fun bootstrap() {
+        fetchShopsFromCategoryUseCase.fetchAllShopsFromCategory(categoryId)
+            .onEach { category.shops = it }
+            .launchIn(viewModelScope)
 
-    val addingShopState = mutableStateOf(false)
+        fetchCashbacksUseCase.fetchCashbacksFromCategory(categoryId)
+            .onEach { category.cashbacks = it }
+            .launchIn(viewModelScope)
 
-    var selectedShopIndex: Int? by mutableStateOf(null)
-
-    var selectedCashbackIndex: Int? by mutableStateOf(null)
-
-
-    init {
-        viewModelScope.launch {
+        loadContent {
             delay(AnimationDefaults.SCREEN_DELAY_MILLIS + 40L)
-            val result = getCategoryUseCase.getCategoryById(categoryId)
-            result.exceptionOrNull()
-                ?.let(exceptionMessage::getMessage)
-                ?.let(::showSnackbar)
+            getCategoryUseCase.getCategoryById(categoryId)
+                .onSuccess { category.update(it) }
+                .onFailure { throwable ->
+                exceptionMessage.getExceptionMessage(throwable)
+                    ?.takeIf { it.isNotBlank() }
+                    ?.let { push(CategoryEvent.ShowSnackbar(it)) }
+            }
+        }
+    }
 
-            result.getOrNull()?.let {
-                _category.value = ComposableCategory(it)
+
+    override suspend fun actor(action: CategoryAction) {
+        when (action) {
+            is CategoryAction.NavigateToCategoryViewing -> {
+                push(
+                    event = CategoryEvent.NavigateToCategoryViewingScreen(
+                        args = CategoryArgs(id = categoryId, startTab = action.startTab)
+                    )
+                )
             }
 
-            innerState.value = ViewModelState.Editing
-        }
-    }
-
-
-    fun save(onSuccess: () -> Unit = {}) {
-        viewModelScope.launch {
-            innerState.value = ViewModelState.Loading
-            delay(300)
-            when {
-                category.value.isChanged -> updateCategory(onSuccess)
-                else -> onSuccess()
+            is CategoryAction.SaveCategory -> {
+                loadContent {
+                    delay(300)
+                    saveCategory(category)
+                        .onSuccess { action.onSuccess() }
+                        .onFailure { throwable ->
+                            exceptionMessage.getExceptionMessage(throwable)
+                                ?.takeIf { it.isNotBlank() }
+                                ?.let { push(CategoryEvent.ShowSnackbar(it)) }
+                        }
+                }
             }
-            innerState.value = ViewModelState.Editing
+
+            is CategoryAction.DeleteCategory -> {
+                loadContent {
+                    delay(100)
+                    deleteCategory(category.mapToCategory())
+                        .onSuccess { action.onSuccess() }
+                        .onFailure { throwable ->
+                            exceptionMessage.getExceptionMessage(throwable)
+                                ?.takeIf { it.isNotBlank() }
+                                ?.let { push(CategoryEvent.ShowSnackbar(it)) }
+                        }
+                    delay(100)
+                }
+            }
+
+            is CategoryAction.SaveShop -> {
+                loadContent {
+                    delay(100)
+                    saveShop(name = action.name)
+                        .onSuccess { push(CategoryAction.FinishCreateShop) }
+                        .onFailure { throwable ->
+                            exceptionMessage.getExceptionMessage(throwable)
+                                ?.takeIf { it.isNotBlank() }
+                                ?.let { push(CategoryEvent.ShowSnackbar(it)) }
+                        }
+                    delay(100)
+                }
+            }
+
+            is CategoryAction.StartCreateShop -> _isCreatingShop.value = true
+
+            is CategoryAction.FinishCreateShop -> _isCreatingShop.value = false
+
+            else -> super.actor(action)
         }
     }
 
-    private suspend fun updateCategory(onSuccess: () -> Unit) {
-        val result = updateCategoryUseCase.updateCategory(
-            category = category.value.mapToCategory(),
-            exceptionMessage = { exceptionMessage.getMessage(it)?.let(::showSnackbar) }
-        )
-        if (result.isSuccess) onSuccess()
-    }
 
-
-    fun deleteCategory() {
-        viewModelScope.launch {
-            innerState.value = ViewModelState.Loading
-            delay(100)
-            deleteCategoryUseCase
-                .deleteCategory(category.value.mapToCategory())
-                .exceptionOrNull()
-                ?.message
-                ?.let(::showSnackbar)
-            delay(100)
-            innerState.value = ViewModelState.Editing
+    private suspend fun saveCategory(category: ComposableCategory): Result<Unit> {
+        return when {
+            category.haveChanges -> updateCategory(category.mapToCategory())
+            else -> Result.success(Unit)
         }
     }
 
+    private suspend fun updateCategory(category: Category): Result<Unit> {
+        return updateCategoryUseCase.updateCategory(category)
+    }
 
-    fun saveShop(name: String) {
-        viewModelScope.launch {
-            innerState.value = ViewModelState.Loading
-            delay(100)
-            val shop = Shop(id = 0, name = name, maxCashback = null)
-            addShopUseCase.addShopToCategory(categoryId, shop)
-            delay(100)
-            innerState.value = ViewModelState.Editing
-        }
+
+    private suspend fun deleteCategory(category: Category): Result<Unit> {
+         return deleteCategoryUseCase.deleteCategory(category)
+    }
+
+
+    private suspend fun saveShop(name: String): Result<Long> {
+        val shop = BasicShop(id = Random.nextLong(), name = name)
+        return addShopUseCase.addShop(categoryId, shop)
     }
 
 

@@ -78,15 +78,6 @@ class CashbackFeature(private val application: App) : FeatureApi {
 
             CashbackScreen(
                 viewModel = viewModel(factory = vmFactory),
-                navigateToCategory = {
-                    val route = application.appComponent
-                        .categoryFeature()
-                        .createDestinationRoute(it)
-                    navController.navigate(route) {
-                        popUpTo(Cashback.destinationRoute)
-                        launchSingleTop = true
-                    }
-                },
                 navigateToShop = {
                     val route = application.appComponent
                         .shopFeature()
@@ -105,7 +96,7 @@ class CashbackFeature(private val application: App) : FeatureApi {
                         launchSingleTop = true
                     }
                 },
-                popBackStack = navController::popBackStack
+                navigateBack = navController::popBackStack
             )
         }
     }

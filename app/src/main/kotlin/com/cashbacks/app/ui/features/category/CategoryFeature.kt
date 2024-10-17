@@ -22,6 +22,7 @@ import com.cashbacks.app.ui.features.category.viewing.CategoryViewingScreen
 import com.cashbacks.app.ui.features.home.HomeFeature
 import com.cashbacks.app.ui.navigation.Feature
 import com.cashbacks.app.ui.navigation.FeatureApi
+import com.cashbacks.app.ui.navigation.FeatureArguments
 import com.cashbacks.app.ui.navigation.enterScreenTransition
 import com.cashbacks.app.ui.navigation.exitScreenTransition
 import com.cashbacks.app.util.getEnum
@@ -145,8 +146,7 @@ class CategoryFeature(private val application: App) : FeatureApi {
                     object : ViewModelProvider.Factory {
                         @Suppress("UNCHECKED_CAST")
                         override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                            return application.appComponent.categoryViewerViewModel().create(
-                                categoryId = backStackEntry.arguments?.getLong(Category.Args.ID) ?: 0
+                            return application.appComponent.categoryViewingViewModel().create(
                             ) as T
                         }
                     }
@@ -159,7 +159,7 @@ class CategoryFeature(private val application: App) : FeatureApi {
                         defaultValue = TabItem.Shops
                     ),
                     navigateToCategory = {
-                        val route = createDestinationRoute(it)
+                        val route = createDestinationRoute(args = it, isEditing = true)
                         navController.navigate(route) {
                             popUpTo(Category.Viewing.destinationRoute)
                             launchSingleTop = true
@@ -181,7 +181,7 @@ class CategoryFeature(private val application: App) : FeatureApi {
                             launchSingleTop = true
                         }
                     },
-                    popBackStack = navController::popBackStack
+                    navigateBack = navController::popBackStack
                 )
             }
 
@@ -200,8 +200,7 @@ class CategoryFeature(private val application: App) : FeatureApi {
                     object : ViewModelProvider.Factory {
                         @Suppress("UNCHECKED_CAST")
                         override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                            return application.appComponent.categoryEditorViewModel().create(
-                                categoryId = backStackEntry.arguments?.getLong(Category.Args.ID) ?: 0
+                            return application.appComponent.categoryEditingViewModel().create(
                             ) as T
                         }
                     }
@@ -239,7 +238,7 @@ class CategoryFeature(private val application: App) : FeatureApi {
                             launchSingleTop = true
                         }
                     },
-                    popBackStack = navController::popBackStack
+                    navigateBack = navController::popBackStack
                 )
             }
         }

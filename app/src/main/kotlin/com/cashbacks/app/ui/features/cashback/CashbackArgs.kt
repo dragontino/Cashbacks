@@ -1,51 +1,45 @@
 package com.cashbacks.app.ui.features.cashback
 
-import android.content.res.Resources
-import com.cashbacks.domain.R
+import android.os.Parcelable
+import kotlinx.parcelize.Parcelize
 
-sealed class CashbackArgs(
+@Parcelize
+data class CashbackArgs internal constructor(
     val cashbackId: Long?,
-    val ownerType: CashbackOwner,
-    val ownerId: Long?
-) {
+    val ownerId: Long?,
+    val ownerType: CashbackOwnerType,
+) : Parcelable {
 
-    object Category {
-        class New(categoryId: Long?) : CashbackArgs(
+    companion object {
+        fun fromCategory(categoryId: Long?) = CashbackArgs(
             cashbackId = null,
-            ownerType = CashbackOwner.Category,
             ownerId = categoryId,
+            ownerType = CashbackOwnerType.Category
         )
 
-        class Existing(cashbackId: Long, categoryId: Long) : CashbackArgs(
+        fun fromCategory(cashbackId: Long, categoryId: Long) = CashbackArgs(
             cashbackId = cashbackId,
-            ownerType = CashbackOwner.Category,
-            ownerId = categoryId
+            ownerId = categoryId,
+            ownerType = CashbackOwnerType.Category
         )
-    }
 
-    object Shop {
-        class New(shopId: Long?) : CashbackArgs(
+
+        fun fromShop(shopId: Long?) = CashbackArgs(
             cashbackId = null,
-            ownerType = CashbackOwner.Shop,
+            ownerType = CashbackOwnerType.Shop,
             ownerId = shopId
         )
 
-        class Existing(cashbackId: Long, shopId: Long) : CashbackArgs(
+        fun fromShop(cashbackId: Long, shopId: Long) = CashbackArgs(
             cashbackId = cashbackId,
-            ownerType = CashbackOwner.Shop,
+            ownerType = CashbackOwnerType.Shop,
             ownerId = shopId
         )
     }
 }
 
 
-enum class CashbackOwner {
-    Category {
-        override fun getTitle(resources: Resources) = resources.getString(R.string.category_title)
-    },
-    Shop {
-        override fun getTitle(resources: Resources) = resources.getString(R.string.shop)
-    };
-
-    abstract fun getTitle(resources: Resources): String
+enum class CashbackOwnerType {
+    Category,
+    Shop
 }

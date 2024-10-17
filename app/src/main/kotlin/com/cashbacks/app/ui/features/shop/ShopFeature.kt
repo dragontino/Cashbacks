@@ -59,9 +59,8 @@ class ShopFeature(private val application: App) : FeatureApi {
                     @Suppress("UNCHECKED_CAST")
                     override fun <T : ViewModel> create(modelClass: Class<T>): T {
                         return application.appComponent.shopViewModel().create(
-                            application = application,
-                            shopId = it.arguments?.getString(Shop.Args.SHOP_ID)?.toLongOrNull(),
-                            isEditing = it.arguments?.getBoolean(Shop.Args.IS_EDITING) ?: false
+                            shopId = it.arguments?.getString(ShopArguments.ID)?.toLongOrNull(),
+                            isEditing = it.arguments?.getBoolean(ShopArguments.EDITING) ?: false
                         ) as T
                     }
                 }
@@ -69,7 +68,7 @@ class ShopFeature(private val application: App) : FeatureApi {
 
             ShopScreen(
                 viewModel = viewModel(factory = vmFactory),
-                popBackStack = navController::popBackStack,
+                navigateBack = navController::popBackStack,
                 navigateToCashback = {
                     val route = application.appComponent
                         .cashbackFeature()
