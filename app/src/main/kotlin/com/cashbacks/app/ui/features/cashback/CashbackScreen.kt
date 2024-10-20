@@ -38,6 +38,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuAnchorType
+import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -166,7 +167,7 @@ internal fun CashbackScreen(
             )
         }
 
-        is DialogType.DatePicker -> {
+        is DatePicker -> {
             DatePickerDialog(
                 date = type.date,
                 onConfirm = {
@@ -177,7 +178,14 @@ internal fun CashbackScreen(
                         )
                     }
                 },
-                onClose = { viewModel.push(CashbackAction.HideDialog) }
+                onClose = { viewModel.push(CashbackAction.HideDialog) },
+                isDateSelectable = { date ->
+                    val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
+                    when (type) {
+                        is StartDatePicker -> date <= today
+                        is EndDatePicker -> date >= today
+                    }
+                }
             )
         }
         DialogType.Save -> {
@@ -575,16 +583,52 @@ private fun CashbackContent(
 }
 
 
+private sealed interface DatePicker : DialogType {
+    val date: LocalDate?
+}
+
+
+@Parcelize
+private data class StartDatePicker(
+    override val date: @WriteWith<LocalDateParceler> LocalDate?
+) : DatePicker
+
+
+@Parcelize
+private data class EndDatePicker(
+    override val date: @WriteWith<LocalDateParceler> LocalDate?
+) : DatePicker
+
+
+
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DatePickerDialog(
     date: LocalDate?,
     onConfirm: (LocalDate?) -> Unit,
-    onClose: () -> Unit
+    onClose: () -> Unit,
+    modifier: Modifier = Modifier,
+    isDateSelectable: (LocalDate) -> Boolean = { true }
 ) {
-    val datePickerState = rememberDatePickerState(initialSelectedDateMillis = date?.epochMillis)
+    val datePickerState = rememberDatePickerState(
+        initialSelectedDateMillis = date?.epochMillis(),
+        selectableDates = object : SelectableDates {
+            override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+                val date = LocalDate(epochMillis = utcTimeMillis, timeZone = TimeZone.UTC)
+                return isDateSelectable(date)
+            }
+        }
+    )
+
+    val confirmEnabled = remember {
+        derivedStateOf {
+            datePickerState.selectedDateMillis?.let { isDateSelectable(LocalDate(it)) } == true
+        }
+    }
 
     DatePickerDialog(
+        modifier = modifier,
         onDismissRequest = onClose,
         confirmButton = {
             TextButton(
@@ -598,10 +642,13 @@ private fun DatePickerDialog(
                     containerColor = Color.Transparent,
                     contentColor = MaterialTheme.colorScheme.primary.animate()
                 ),
+                enabled = confirmEnabled.value,
             ) {
                 Text(
                     text = stringResource(R.string.save),
-                    style = MaterialTheme.typography.bodyMedium
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontFamily = FontFamily(VerdanaFont),
+                    fontWeight = FontWeight.Bold
                 )
             }
         },
@@ -615,7 +662,9 @@ private fun DatePickerDialog(
             ) {
                 Text(
                     text = stringResource(R.string.cancel),
-                    style = MaterialTheme.typography.bodyMedium
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontFamily = FontFamily(VerdanaFont),
+                    fontWeight = FontWeight.Bold
                 )
             }
         },
@@ -624,6 +673,7 @@ private fun DatePickerDialog(
         colors = DatePickerDefaults.colors(
             containerColor = MaterialTheme.colorScheme.surface.animate(),
             titleContentColor = MaterialTheme.colorScheme.background.animate(),
+            navigationContentColor = Color.Transparent
         )
     ) {
         DatePicker(state = datePickerState)

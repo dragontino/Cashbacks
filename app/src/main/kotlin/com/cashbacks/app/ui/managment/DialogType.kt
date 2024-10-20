@@ -1,11 +1,13 @@
 package com.cashbacks.app.ui.managment
 
-import java.time.LocalDate
+import android.os.Parcelable
+import kotlinx.parcelize.Parcelize
 
-sealed interface DialogType {
-    data class ConfirmDeletion<T : Any>(val value: T) : DialogType
+interface DialogType : Parcelable {
 
+    @Parcelize
+    data class ConfirmDeletion<T : Parcelable>(val value: T) : DialogType
+
+    @Parcelize
     data object Save : DialogType
-
-    data class DatePicker(val date: LocalDate?) : DialogType
 }
