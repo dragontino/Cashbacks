@@ -28,11 +28,17 @@ import com.cashbacks.app.ui.navigation.exitScreenTransition
 import com.cashbacks.app.util.getEnum
 
 class CategoryFeature(private val application: App) : FeatureApi {
-    private sealed class Category(type: String) : Feature {
+    private object CategoryArguments : FeatureArguments {
+        const val ID = "id"
+        const val START_TAB = "start"
+        override fun toStringArray() = arrayOf(ID, START_TAB)
+    }
+
+    private sealed class Category(type: String) : Feature<CategoryArguments>() {
         data object Viewing : Category("viewing")
         data object Editing : Category("editing")
 
-        override val args = Args
+        override val arguments = CategoryArguments
 
         override val baseRoute: String = buildString {
             append(ROOT)
@@ -40,27 +46,22 @@ class CategoryFeature(private val application: App) : FeatureApi {
             append(type.substring(1..<type.length))
         }
 
-        fun createUrl(id: Long, startTab: TabItem): String {
-            return "$baseRoute/$id/$startTab"
-        }
-
-        object Args : Feature.Args {
-            const val ID = "id"
-            const val START_TAB = "start"
-            override fun toStringArray() = arrayOf(ID, START_TAB)
-        }
-
         companion object {
             const val ROOT = "category"
         }
     }
 
-    internal fun createDestinationRoute(categoryArgs: CategoryArgs): String {
+    internal fun createDestinationRoute(isEditing: Boolean, args: CategoryArgs): String {
         val route = when {
-            categoryArgs.isEditing -> Category.Editing
+            isEditing -> Category.Editing
             else -> Category.Viewing
         }
-        return route.createUrl(categoryArgs.id, categoryArgs.startTab)
+        return route.createUrl {
+            mapOf(
+                ID to args.id,
+                START_TAB to args.startTab
+            )
+        }
     }
 
 
@@ -133,11 +134,11 @@ class CategoryFeature(private val application: App) : FeatureApi {
             composable(
                 route = Category.Viewing.destinationRoute,
                 arguments = listOf(
-                    navArgument(Category.Args.ID) {
+                    navArgument(CategoryArguments.ID) {
                         type = NavType.LongType
                     },
-                    navArgument(Category.Args.START_TAB) {
-                        type = NavType.EnumType(TabItem::class.java)
+                    navArgument(CategoryArguments.START_TAB) {
+                        type = NavType.EnumType(CategoryTabItemType::class.java)
                     }
                 )
             ) { backStackEntry ->
@@ -147,6 +148,7 @@ class CategoryFeature(private val application: App) : FeatureApi {
                         @Suppress("UNCHECKED_CAST")
                         override fun <T : ViewModel> create(modelClass: Class<T>): T {
                             return application.appComponent.categoryViewingViewModel().create(
+                                categoryId = backStackEntry.arguments?.getLong(CategoryArguments.ID) ?: 0
                             ) as T
                         }
                     }
@@ -155,7 +157,7 @@ class CategoryFeature(private val application: App) : FeatureApi {
                 CategoryViewingScreen(
                     viewModel = viewModel(factory = vmFactory),
                     startTab = backStackEntry.arguments.getEnum(
-                        key = Category.Args.START_TAB,
+                        key = CategoryArguments.START_TAB,
                         defaultValue = CategoryTabItemType.Cashbacks
                     ),
                     navigateToCategory = {
@@ -188,10 +190,10 @@ class CategoryFeature(private val application: App) : FeatureApi {
             composable(
                 route = Category.Editing.destinationRoute,
                 arguments = listOf(
-                    navArgument(Category.Args.ID) {
+                    navArgument(CategoryArguments.ID) {
                         type = NavType.LongType
                     },
-                    navArgument(Category.Args.START_TAB) {
+                    navArgument(CategoryArguments.START_TAB) {
                         type = NavType.EnumType(CategoryTabItemType::class.java)
                     }
                 )
@@ -201,6 +203,7 @@ class CategoryFeature(private val application: App) : FeatureApi {
                         @Suppress("UNCHECKED_CAST")
                         override fun <T : ViewModel> create(modelClass: Class<T>): T {
                             return application.appComponent.categoryEditingViewModel().create(
+                                categoryId = backStackEntry.arguments?.getLong(CategoryArguments.ID) ?: 0
                             ) as T
                         }
                     }
@@ -209,11 +212,11 @@ class CategoryFeature(private val application: App) : FeatureApi {
                 CategoryEditingScreen(
                     viewModel = viewModel(factory = vmFactory),
                     startTab = backStackEntry.arguments.getEnum(
-                        key = Category.Args.START_TAB,
+                        key = CategoryArguments.START_TAB,
                         defaultValue = CategoryTabItemType.Cashbacks
                     ),
                     navigateToCategory = {
-                        val route = createDestinationRoute(it)
+                        val route = createDestinationRoute(args = it, isEditing = false)
                         val homeRoute = HomeFeature.Home.destinationRoute
                         navController.navigate(route) {
                             popUpTo(homeRoute)

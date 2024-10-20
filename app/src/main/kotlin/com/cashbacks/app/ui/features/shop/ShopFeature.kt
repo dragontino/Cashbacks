@@ -14,24 +14,29 @@ import androidx.navigation.navArgument
 import com.cashbacks.app.app.App
 import com.cashbacks.app.ui.navigation.Feature
 import com.cashbacks.app.ui.navigation.FeatureApi
+import com.cashbacks.app.ui.navigation.FeatureArguments
 import com.cashbacks.app.ui.navigation.enterScreenTransition
 import com.cashbacks.app.ui.navigation.exitScreenTransition
 
 class ShopFeature(private val application: App) : FeatureApi {
-    object Shop : Feature {
-        object Args : Feature.Args {
-            const val SHOP_ID = "shopId"
-            const val IS_EDITING = "isEditing"
-            override fun toStringArray() = arrayOf(SHOP_ID, IS_EDITING)
+    private object ShopArguments : FeatureArguments {
+        const val ID = "Id"
+        const val EDITING = "IsEditing"
+        override fun toStringArray() = arrayOf(ID, EDITING)
 
-        }
-
-        override val baseRoute = "shop"
-        override val args = Args
     }
 
-    fun createDestinationRoute(args: ShopArgs) =
-        "${Shop.baseRoute}/${args.shopId}/${args.isEditing}"
+    private object Shop : Feature<ShopArguments>() {
+        override val baseRoute = "shop"
+        override val arguments = ShopArguments
+    }
+
+    fun createDestinationRoute(args: ShopArgs) = Shop.createUrl {
+        mapOf(
+            ID to args.shopId,
+            EDITING to args.isEditing
+        )
+    }
 
     override fun registerGraph(
         navGraphBuilder: NavGraphBuilder,
@@ -45,11 +50,11 @@ class ShopFeature(private val application: App) : FeatureApi {
             popEnterTransition = { enterScreenTransition(expandFrom = Alignment.Start) },
             popExitTransition = { exitScreenTransition(shrinkTowards = Alignment.End) },
             arguments = listOf(
-                navArgument(Shop.Args.SHOP_ID) {
+                navArgument(ShopArguments.ID) {
                     type = NavType.StringType
                     nullable = true
                 },
-                navArgument(Shop.Args.IS_EDITING) {
+                navArgument(ShopArguments.EDITING) {
                     type = NavType.BoolType
                 }
             )

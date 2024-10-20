@@ -12,7 +12,7 @@ import com.cashbacks.app.ui.navigation.enterScreenTransition
 import com.cashbacks.app.ui.navigation.exitScreenTransition
 
 class HomeFeature(private val application: App) : FeatureApi {
-    object Home : Feature {
+    object Home : Feature<Nothing>() {
         override val baseRoute = "home"
     }
 
@@ -29,6 +29,7 @@ class HomeFeature(private val application: App) : FeatureApi {
             HomeScreen(
                 appName = application.name,
                 appVersion = application.version,
+                modifier = modifier,
                 navigateToSettings = {
                     val route = application.appComponent.settingsFeature().createDestinationRoute()
                     navController.navigate(route) {
@@ -39,7 +40,7 @@ class HomeFeature(private val application: App) : FeatureApi {
                 navigateToCategory = { args, isEditing ->
                     val route = application.appComponent
                         .categoryFeature()
-                        .createDestinationRoute(it)
+                        .createDestinationRoute(isEditing, args)
                     navController.navigate(route) {
                         popUpTo(Home.destinationRoute)
                         launchSingleTop = true

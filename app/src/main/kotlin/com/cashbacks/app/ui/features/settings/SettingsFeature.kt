@@ -13,12 +13,12 @@ import com.cashbacks.app.ui.navigation.enterScreenTransition
 import com.cashbacks.app.ui.navigation.exitScreenTransition
 
 class SettingsFeature(private val application: App) : FeatureApi {
-    object Settings : Feature {
+    private object Settings : Feature<Nothing>() {
         override val baseRoute = "settings"
     }
 
     fun createDestinationRoute(): String {
-        return Settings.destinationRoute
+        return Settings.createUrl()
     }
 
     override fun registerGraph(

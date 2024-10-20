@@ -14,27 +14,31 @@ import androidx.navigation.navArgument
 import com.cashbacks.app.app.App
 import com.cashbacks.app.ui.navigation.Feature
 import com.cashbacks.app.ui.navigation.FeatureApi
+import com.cashbacks.app.ui.navigation.FeatureArguments
 import com.cashbacks.app.ui.navigation.enterScreenTransition
 import com.cashbacks.app.ui.navigation.exitScreenTransition
 import com.cashbacks.app.util.getEnum
 
 class CashbackFeature(private val application: App) : FeatureApi {
-    private object Cashback : Feature {
-        object Args : Feature.Args {
-            const val OWNER_TYPE = "parentType"
-            const val OWNER_ID = "parentId"
-            const val CASHBACK_ID = "cashbackId"
+    private object CashbackArguments : FeatureArguments {
+        const val OWNER_TYPE = "parentType"
+        const val OWNER_ID = "parentId"
+        const val ID = "cashbackId"
 
-            override fun toStringArray() = arrayOf(OWNER_TYPE, OWNER_ID, CASHBACK_ID)
-        }
-
-
-        override val baseRoute = "cashback"
-        override val args = Args
+        override fun toStringArray() = arrayOf(OWNER_TYPE, OWNER_ID, ID)
     }
 
-    fun createDestinationRoute(args: CashbackArgs): String {
-        return "${Cashback.baseRoute}/${args.ownerType}/${args.ownerId}/${args.cashbackId}"
+    private object Cashback : Feature<CashbackArguments>() {
+        override val baseRoute = "cashback"
+        override val arguments = CashbackArguments
+    }
+
+    fun createDestinationRoute(args: CashbackArgs): String = Cashback.createUrl {
+        mapOf(
+            ID to args.cashbackId,
+            OWNER_ID to args.ownerId,
+            OWNER_TYPE to args.ownerType
+        )
     }
 
 
@@ -50,14 +54,14 @@ class CashbackFeature(private val application: App) : FeatureApi {
             popEnterTransition = { enterScreenTransition(Alignment.Start) },
             popExitTransition = { exitScreenTransition(Alignment.End) },
             arguments = listOf(
-                navArgument(Cashback.Args.OWNER_TYPE) {
-                    type = NavType.EnumType(CashbackOwner::class.java)
+                navArgument(CashbackArguments.OWNER_TYPE) {
+                    type = NavType.EnumType(CashbackOwnerType::class.java)
                 },
-                navArgument(Cashback.Args.OWNER_ID) {
+                navArgument(CashbackArguments.OWNER_ID) {
                     type = NavType.StringType
                     nullable = true
                 },
-                navArgument(Cashback.Args.CASHBACK_ID) {
+                navArgument(CashbackArguments.ID) {
                     type = NavType.StringType
                     nullable = true
                 }
@@ -68,9 +72,12 @@ class CashbackFeature(private val application: App) : FeatureApi {
                     @Suppress("UNCHECKED_CAST")
                     override fun <T : ViewModel> create(modelClass: Class<T>): T {
                         return application.appComponent.cashbackViewModel().create(
-                            id = it.arguments?.getString(Cashback.Args.CASHBACK_ID)?.toLong(),
-                            ownerType = it.arguments.getEnum(Cashback.Args.OWNER_TYPE, CashbackOwner.Category),
-                            ownerId = it.arguments?.getString(Cashback.Args.OWNER_ID)?.toLongOrNull()
+                            id = it.arguments?.getString(CashbackArguments.ID)?.toLong(),
+                            ownerType = it.arguments.getEnum(
+                                key = CashbackArguments.OWNER_TYPE,
+                                defaultValue = CashbackOwnerType.Category
+                            ),
+                            ownerId = it.arguments?.getString(CashbackArguments.OWNER_ID)?.toLongOrNull()
                         ) as T
                     }
                 }

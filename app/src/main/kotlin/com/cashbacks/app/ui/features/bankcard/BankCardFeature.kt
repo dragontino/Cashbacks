@@ -15,43 +15,39 @@ import androidx.navigation.navArgument
 import com.cashbacks.app.app.App
 import com.cashbacks.app.ui.navigation.Feature
 import com.cashbacks.app.ui.navigation.FeatureApi
+import com.cashbacks.app.ui.navigation.FeatureArguments
 import com.cashbacks.app.ui.navigation.enterScreenTransition
 import com.cashbacks.app.ui.navigation.exitScreenTransition
 
 class BankCardFeature(private val application: App) : FeatureApi {
-    private sealed class BankCard(type: String) : Feature {
+    private object CardArguments : FeatureArguments {
+        const val ID = "id"
+        override fun toStringArray() = arrayOf(ID)
+    }
+
+    private sealed class BankCard(type: String) : Feature<CardArguments>() {
         data object Viewing : BankCard("viewing")
         data object Editing : BankCard("editing")
 
-        override val args = Args
+        override val arguments = CardArguments
         override val baseRoute: String = buildString {
-            append(Root)
+            append(ROOT)
             append(type[0].uppercase())
             append(type.substring(1..<type.length))
         }
 
-        fun createUrl(id: Long?): String {
-            return "$baseRoute/$id"
-        }
-
-        object Args : Feature.Args {
-            const val Id = "id"
-            override fun toStringArray() = arrayOf(Id)
-
-        }
-
         companion object {
-            const val Root = "bankCard"
+            const val ROOT = "bankCard"
         }
     }
 
 
     fun createDestinationRoute(args: BankCardArgs): String {
         val route = when {
-            args.isEditing || args.id == null -> BankCard.Editing
+            args.isEditing || args.cardId == null -> BankCard.Editing
             else -> BankCard.Viewing
         }
-        return route.createUrl(args.id)
+        return route.createUrl { mapOf(ID to args.cardId) }
     }
 
     override fun registerGraph(
@@ -60,7 +56,7 @@ class BankCardFeature(private val application: App) : FeatureApi {
         modifier: Modifier
     ) {
         navGraphBuilder.navigation(
-            route = BankCard.Root,
+            route = BankCard.ROOT,
             startDestination = BankCard.Viewing.destinationRoute,
             enterTransition = { enterScreenTransition(expandFrom = Alignment.End) },
             exitTransition = { exitScreenTransition(shrinkTowards = Alignment.Start) },
@@ -70,7 +66,7 @@ class BankCardFeature(private val application: App) : FeatureApi {
             composable(
                 route = BankCard.Viewing.destinationRoute,
                 arguments = listOf(
-                    navArgument(BankCard.Args.Id) {
+                    navArgument(CardArguments.ID) {
                         type = NavType.LongType
                     }
                 )
@@ -80,7 +76,7 @@ class BankCardFeature(private val application: App) : FeatureApi {
                         @Suppress("UNCHECKED_CAST")
                         override fun <T : ViewModel> create(modelClass: Class<T>): T {
                             return application.appComponent.bankCardViewerViewModel().create(
-                                cardId = it.arguments?.getLong(BankCard.Args.Id) ?: 0
+                                cardId = it.arguments?.getLong(CardArguments.ID) ?: 0
                             ) as T
                         }
                     }
@@ -102,7 +98,7 @@ class BankCardFeature(private val application: App) : FeatureApi {
             composable(
                 route = BankCard.Editing.destinationRoute,
                 arguments = listOf(
-                    navArgument(BankCard.Args.Id) {
+                    navArgument(CardArguments.ID) {
                         type = NavType.StringType
                         nullable = true
                     }
@@ -114,7 +110,7 @@ class BankCardFeature(private val application: App) : FeatureApi {
                         override fun <T : ViewModel> create(modelClass: Class<T>): T {
                             return application.appComponent.bankCardEditorViewModel().create(
                                 bankCardId = it.arguments
-                                    ?.getString(BankCard.Args.Id)
+                                    ?.getString(CardArguments.ID)
                                     ?.toLongOrNull()
                             ) as T
                         }
