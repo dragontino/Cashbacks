@@ -156,7 +156,7 @@ class CategoryFeature(private val application: App) : FeatureApi {
                     viewModel = viewModel(factory = vmFactory),
                     startTab = backStackEntry.arguments.getEnum(
                         key = Category.Args.START_TAB,
-                        defaultValue = TabItem.Shops
+                        defaultValue = CategoryTabItemType.Cashbacks
                     ),
                     navigateToCategory = {
                         val route = createDestinationRoute(args = it, isEditing = true)
@@ -192,7 +192,7 @@ class CategoryFeature(private val application: App) : FeatureApi {
                         type = NavType.LongType
                     },
                     navArgument(Category.Args.START_TAB) {
-                        type = NavType.EnumType(TabItem::class.java)
+                        type = NavType.EnumType(CategoryTabItemType::class.java)
                     }
                 )
             ) { backStackEntry ->
@@ -210,7 +210,7 @@ class CategoryFeature(private val application: App) : FeatureApi {
                     viewModel = viewModel(factory = vmFactory),
                     startTab = backStackEntry.arguments.getEnum(
                         key = Category.Args.START_TAB,
-                        defaultValue = TabItem.Shops
+                        defaultValue = CategoryTabItemType.Cashbacks
                     ),
                     navigateToCategory = {
                         val route = createDestinationRoute(it)

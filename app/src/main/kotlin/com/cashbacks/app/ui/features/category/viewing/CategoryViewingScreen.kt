@@ -56,7 +56,10 @@ import com.cashbacks.app.ui.composables.MaxCashbackOwnerComposable
 import com.cashbacks.app.ui.composables.PrimaryTabsLayout
 import com.cashbacks.app.ui.features.cashback.CashbackArgs
 import com.cashbacks.app.ui.features.category.CategoryArgs
-import com.cashbacks.app.ui.features.category.TabItem
+import com.cashbacks.app.ui.features.category.CategoryTabItem
+import com.cashbacks.app.ui.features.category.CategoryTabItemType
+import com.cashbacks.app.ui.features.category.mvi.CategoryAction
+import com.cashbacks.app.ui.features.category.mvi.CategoryEvent
 import com.cashbacks.app.ui.features.shop.ShopArgs
 import com.cashbacks.app.ui.managment.DialogType
 import com.cashbacks.app.ui.managment.ListState
@@ -219,7 +222,7 @@ internal fun CategoryViewingScreen(
 private fun CategoryViewerContent(
     viewModel: CategoryViewingViewModel,
     pagerState: PagerState,
-    tabPages: List<TabItem>,
+    tabPages: List<CategoryTabItem>,
     bottomPadding: Dp,
     modifier: Modifier = Modifier
 ) {
@@ -236,17 +239,15 @@ private fun CategoryViewerContent(
             pages = tabPages
         ) { _, page ->
             ListContentTabPage(
-                items = when (page) {
-                    TabItem.Shops -> viewModel.shopsLiveData.observeAsState().value
-                    TabItem.Cashbacks -> viewModel.cashbacksLiveData.observeAsState().value
-                },
                 contentState = ListState.fromList(
                     when (page) {
+                        CategoryTabItem.Shops -> viewModel.category.shops
+                        CategoryTabItem.Cashbacks -> viewModel.category.cashbacks
                     }
                 ),
                 placeholderText = when (page) {
-                    TabItem.Shops -> stringResource(R.string.empty_shops_list_viewing)
-                    TabItem.Cashbacks -> stringResource(R.string.empty_cashbacks_list_editing)
+                    CategoryTabItem.Cashbacks -> stringResource(R.string.empty_cashbacks_list_editing)
+                    CategoryTabItem.Shops -> stringResource(R.string.empty_shops_list_viewing)
                 },
                 bottomSpacing = bottomPadding,
                 modifier = Modifier.padding(8.dp)

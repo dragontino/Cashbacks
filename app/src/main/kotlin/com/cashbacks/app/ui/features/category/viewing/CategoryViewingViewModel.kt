@@ -53,7 +53,7 @@ class CategoryViewingViewModel @AssistedInject constructor(
     override suspend fun actor(action: CategoryAction) {
         if (action is CategoryAction.Viewing) {
             when (action) {
-                is CategoryAction.Editing -> return
+                is CategoryAction.Editing -> super.actor(action)
                 is CategoryAction.NavigateToCategoryEditing -> {
                     val args = CategoryArgs(id = categoryId, startTab = action.startTab)
                     push(CategoryEvent.NavigateToCategoryEditingScreen(args))

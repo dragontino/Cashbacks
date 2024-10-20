@@ -8,6 +8,8 @@ import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -44,6 +46,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -53,23 +56,23 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.cashbacks.app.model.ShopError
 import com.cashbacks.app.ui.composables.BasicFloatingActionButton
 import com.cashbacks.app.ui.composables.CashbackComposable
 import com.cashbacks.app.ui.composables.CollapsingToolbarScaffold
@@ -81,10 +84,11 @@ import com.cashbacks.app.ui.composables.DropdownMenuListContent
 import com.cashbacks.app.ui.composables.EditableTextField
 import com.cashbacks.app.ui.composables.EmptyList
 import com.cashbacks.app.ui.composables.NewNameTextField
-import com.cashbacks.app.ui.composables.OnLifecycleEvent
 import com.cashbacks.app.ui.features.cashback.CashbackArgs
+import com.cashbacks.app.ui.features.shop.mvi.ShopAction
+import com.cashbacks.app.ui.features.shop.mvi.ShopEvent
 import com.cashbacks.app.ui.managment.DialogType
-import com.cashbacks.app.ui.managment.ScreenEvents
+import com.cashbacks.app.ui.managment.ScreenState
 import com.cashbacks.app.ui.managment.ViewModelState
 import com.cashbacks.app.util.LoadingInBox
 import com.cashbacks.app.util.animate
@@ -95,7 +99,8 @@ import com.cashbacks.domain.R
 import com.cashbacks.domain.model.Cashback
 import com.cashbacks.domain.model.Category
 import com.cashbacks.domain.model.Shop
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable

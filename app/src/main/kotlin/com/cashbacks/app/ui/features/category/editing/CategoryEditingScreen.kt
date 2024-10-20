@@ -75,7 +75,10 @@ import com.cashbacks.app.ui.composables.OnLifecycleEvent
 import com.cashbacks.app.ui.composables.SecondaryTabsLayout
 import com.cashbacks.app.ui.features.cashback.CashbackArgs
 import com.cashbacks.app.ui.features.category.CategoryArgs
-import com.cashbacks.app.ui.features.category.TabItem
+import com.cashbacks.app.ui.features.category.CategoryTabItem
+import com.cashbacks.app.ui.features.category.CategoryTabItemType
+import com.cashbacks.app.ui.features.category.mvi.CategoryAction
+import com.cashbacks.app.ui.features.category.mvi.CategoryEvent
 import com.cashbacks.app.ui.features.shop.ShopArgs
 import com.cashbacks.app.ui.managment.DialogType
 import com.cashbacks.app.ui.managment.ListState
@@ -98,7 +101,7 @@ import kotlinx.coroutines.flow.onEach
 @Composable
 internal fun CategoryEditingScreen(
     viewModel: CategoryEditingViewModel,
-    startTab: TabItem,
+    startTab: CategoryTabItemType,
     navigateToCategory: (args: CategoryArgs) -> Unit,
     navigateToShop: (args: ShopArgs) -> Unit,
     navigateToCashback: (args: CashbackArgs) -> Unit,
@@ -227,14 +230,17 @@ internal fun CategoryEditingScreen(
 @Composable
 private fun CategoryEditingScreenContent(
     viewModel: CategoryEditingViewModel,
-    startTab: TabItem,
+    startTab: CategoryTabItemType,
     snackbarState: SnackbarHostState
 ) {
     val fabPaddingDp = rememberSaveable { mutableFloatStateOf(0f) }
     val keyboardIsVisibleState = keyboardAsState()
 
-    val tabItems = TabItem.entries
-    val pagerState = rememberPagerState(initialPage = tabItems.indexOf(startTab)) { tabItems.size }
+    val tabItems = listOf(CategoryTabItem.Cashbacks, CategoryTabItem.Shops)
+    val pagerState = rememberPagerState(
+        initialPage = tabItems.indexOfFirst { it.type == startTab },
+        pageCount = { tabItems.size },
+    )
     val listStates = List(tabItems.size) { rememberLazyListState() }
 
     val currentScreen = remember(pagerState.currentPage) {
@@ -340,11 +346,11 @@ private fun CategoryEditingScreenContent(
                                         action = CategoryAction.NavigateToCashback(null)
                                     )
 
-                            TabItem.Shops -> viewModel.addingShopState.value = true
+                                    CategoryTabItem.Shops -> viewModel.push(CategoryAction.StartCreateShop)
+                                }
+                            }
                         }
                     }
-                }
-            }
 
                     AnimatedVisibility(visible = !keyboardIsVisibleState.value) {
                         BasicFloatingActionButton(icon = Icons.Rounded.Save) {
