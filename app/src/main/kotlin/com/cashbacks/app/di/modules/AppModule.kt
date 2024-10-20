@@ -1,22 +1,22 @@
 package com.cashbacks.app.di.modules
 
 import com.cashbacks.app.app.App
-import com.cashbacks.app.model.AppExceptionMessageImpl
+import com.cashbacks.app.model.MessageHandlerImpl
 import com.cashbacks.app.ui.features.bankcard.BankCardFeature
 import com.cashbacks.app.ui.features.cashback.CashbackFeature
 import com.cashbacks.app.ui.features.category.CategoryFeature
 import com.cashbacks.app.ui.features.home.HomeFeature
 import com.cashbacks.app.ui.features.settings.SettingsFeature
 import com.cashbacks.app.ui.features.shop.ShopFeature
-import com.cashbacks.domain.model.AppExceptionMessage
+import com.cashbacks.domain.model.MessageHandler
 import dagger.Module
 import dagger.Provides
 
 @Module
 class AppModule(private val application: App) {
     @Provides
-    fun providesAppExceptionMessage(): AppExceptionMessage {
-        return AppExceptionMessageImpl(application)
+    fun providesAppExceptionMessage(): MessageHandler {
+        return MessageHandlerImpl(application)
     }
 
     @Provides

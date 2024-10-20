@@ -1,7 +1,6 @@
 package com.cashbacks.domain.usecase.shops
 
 import com.cashbacks.domain.model.BasicCategoryShop
-import com.cashbacks.domain.model.CategoryShop
 import com.cashbacks.domain.repository.ShopRepository
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext

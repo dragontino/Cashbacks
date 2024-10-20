@@ -6,7 +6,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOn
 
-class FetchCategoryShopsUseCase(
+class FetchAllShopsUseCase(
     private val repository: ShopRepository,
     private val dispatcher: CoroutineDispatcher
 ) {

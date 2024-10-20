@@ -552,8 +552,8 @@ private fun CashbackContent(
                     ) {
                         val date = viewModel.cashback.expirationDate
                             .takeIf { it.isNotBlank() }
-                        viewModel.push(CashbackAction.ShowDialog(DialogType.DatePicker(date)))
                             ?.parseToDate(Cashback.DateFormat)
+                        viewModel.push(CashbackAction.ShowDialog(EndDatePicker(date)))
                     }
                     .fillMaxWidth()
             )

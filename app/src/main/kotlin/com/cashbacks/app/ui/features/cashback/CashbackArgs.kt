@@ -4,7 +4,7 @@ import android.os.Parcelable
 import kotlinx.parcelize.Parcelize
 
 @Parcelize
-data class CashbackArgs internal constructor(
+data class CashbackArgs(
     val cashbackId: Long?,
     val ownerId: Long?,
     val ownerType: CashbackOwnerType,

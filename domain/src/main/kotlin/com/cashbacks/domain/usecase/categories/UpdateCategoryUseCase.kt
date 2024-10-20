@@ -2,7 +2,6 @@ package com.cashbacks.domain.usecase.categories
 
 import android.util.Log
 import com.cashbacks.domain.model.Category
-import com.cashbacks.domain.model.FullCategory
 import com.cashbacks.domain.repository.CategoryRepository
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext

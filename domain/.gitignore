@@ -1,3 +1,4 @@
 /build
 /src/test/
-/src/main/res/*
+/src/main/res/values/*
+/src/main/res/values-ru/*

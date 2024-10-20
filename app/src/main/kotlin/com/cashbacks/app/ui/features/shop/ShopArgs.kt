@@ -4,7 +4,7 @@ import android.os.Parcelable
 import kotlinx.parcelize.Parcelize
 
 @Parcelize
-data class ShopArgs internal constructor(
+data class ShopArgs(
     val shopId: Long?,
     val isEditing: Boolean
 ) : Parcelable {

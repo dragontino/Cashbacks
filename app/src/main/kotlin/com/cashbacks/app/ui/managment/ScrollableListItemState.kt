@@ -79,20 +79,20 @@ class ScrollableListItemState(
     }
 
     companion object {
-        private const val minOffsetKey = "minOffset"
-        private const val contentOffsetKey = "contentOffset"
+        private const val MIN_OFFSET_KEY = "minOffset"
+        private const val CONTENT_OFFSET_KEY = "contentOffset"
 
         internal val Saver: Saver<ScrollableListItemState, *> = Saver(
             save = {
                 mapOf(
-                    minOffsetKey to it.minOffset.floatValue,
-                    contentOffsetKey to it.contentOffset.floatValue
+                    MIN_OFFSET_KEY to it.minOffset.floatValue,
+                    CONTENT_OFFSET_KEY to it.contentOffset.floatValue
                 )
             },
             restore = {
                 ScrollableListItemState(
-                    minOffset = it[minOffsetKey] ?: 0f,
-                    initialOffset = it[contentOffsetKey] ?: 0f
+                    minOffset = it[MIN_OFFSET_KEY] ?: 0f,
+                    initialOffset = it[CONTENT_OFFSET_KEY] ?: 0f
                 )
             }
         )

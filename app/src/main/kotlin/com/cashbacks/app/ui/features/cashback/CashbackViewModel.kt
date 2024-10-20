@@ -26,7 +26,7 @@ import com.cashbacks.domain.usecase.cashbacks.EditCashbackUseCase
 import com.cashbacks.domain.usecase.categories.AddCategoryUseCase
 import com.cashbacks.domain.usecase.categories.FetchCategoriesUseCase
 import com.cashbacks.domain.usecase.categories.GetCategoryUseCase
-import com.cashbacks.domain.usecase.shops.FetchCategoryShopsUseCase
+import com.cashbacks.domain.usecase.shops.FetchAllShopsUseCase
 import com.cashbacks.domain.usecase.shops.GetShopUseCase
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
@@ -43,7 +43,7 @@ class CashbackViewModel @AssistedInject constructor(
     private val fetchCategoriesUseCase: FetchCategoriesUseCase,
     private val getCategoryUseCase: GetCategoryUseCase,
     private val getShopUseCase: GetShopUseCase,
-    private val fetchCategoryShopsUseCase: FetchCategoryShopsUseCase,
+    private val fetchAllShopsUseCase: FetchAllShopsUseCase,
     private val fetchBankCardsUseCase: FetchBankCardsUseCase,
     private val addCategoryUseCase: AddCategoryUseCase,
     private val messageHandler: MessageHandler,
@@ -71,7 +71,7 @@ class CashbackViewModel @AssistedInject constructor(
     val ownersStateFlow: StateFlow<List<CashbackOwner>?> by lazy {
         val baseFlow = when (ownerType) {
             CashbackOwnerType.Category -> fetchCategoriesUseCase.fetchAllCategories()
-            CashbackOwnerType.Shop -> fetchCategoryShopsUseCase.fetchAllShops()
+            CashbackOwnerType.Shop -> fetchAllShopsUseCase.fetchAllShops()
         }
         return@lazy baseFlow.stateIn(
             scope = viewModelScope,
