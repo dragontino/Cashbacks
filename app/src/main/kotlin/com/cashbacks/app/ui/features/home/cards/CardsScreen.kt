@@ -131,11 +131,7 @@ private fun CardsScreenContent(
             )
         },
         topBarState = topBarState,
-        contentState = lazyListState,
-        topBarContainerColor = when (viewModel.appBarState) {
-            HomeTopAppBarState.Search -> Color.Unspecified
-            HomeTopAppBarState.TopBar -> MaterialTheme.colorScheme.primary
-        },
+        topBarScrollEnabled = viewModel.appBarState is HomeTopAppBarState.TopBar,
         floatingActionButtons = {
             AnimatedVisibility(visible = viewModel.appBarState is HomeTopAppBarState.TopBar) {
                 BasicFloatingActionButton(icon = Icons.Rounded.Add) {

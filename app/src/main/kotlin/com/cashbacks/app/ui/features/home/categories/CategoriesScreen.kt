@@ -142,7 +142,6 @@ internal fun CategoriesScreen(
 
     Box(contentAlignment = Alignment.Center) {
         CollapsingToolbarScaffold(
-            contentState = lazyListState,
             topBar = {
                 HomeTopAppBar(
                     title = title,
@@ -154,10 +153,7 @@ internal fun CategoriesScreen(
                     onNavigationIconClick = openDrawer
                 )
             },
-            topBarContainerColor = when (viewModel.appBarState) {
-                HomeTopAppBarState.Search -> Color.Unspecified
-                HomeTopAppBarState.TopBar -> MaterialTheme.colorScheme.primary
-            },
+            topBarScrollEnabled = viewModel.appBarState is HomeTopAppBarState.TopBar,
             snackbarHost = {
                 SnackbarHost(snackbarHostState) {
                     Snackbar(

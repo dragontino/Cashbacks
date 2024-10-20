@@ -1,6 +1,6 @@
 package com.cashbacks.app.ui.composables
 
-import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
@@ -33,6 +33,7 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import kotlinx.coroutines.launch
@@ -74,11 +75,8 @@ fun CollapsingToolbarScaffold(
                 }
             }
 
-            override fun onPostScroll(
-                consumed: Offset,
-                available: Offset,
-                source: NestedScrollSource
-            ): Offset {
+
+            override suspend fun onPostFling(consumed: Velocity, available: Velocity): Velocity {
                 scope.launch {
                     animate(
                         initialValue = topBarState.heightOffset,
@@ -86,7 +84,7 @@ fun CollapsingToolbarScaffold(
                             topBarState.collapsedFraction < .5f -> 0f
                             else -> topBarState.heightOffsetLimit
                         },
-                        animationSpec = tween(durationMillis = 100, easing = FastOutSlowInEasing)
+                        animationSpec = tween(durationMillis = 300, easing = LinearEasing)
                     ) { value, _ ->
                         topBarState.heightOffset = value
                     }
@@ -99,12 +97,12 @@ fun CollapsingToolbarScaffold(
                             topBarState.overlappedFraction < .5f -> 0f
                             else -> topBarState.heightOffsetLimit
                         },
-                        animationSpec = tween(durationMillis = 100, easing = FastOutSlowInEasing)
+                        animationSpec = tween(durationMillis = 300, easing = LinearEasing)
                     ) { value, _ ->
                         topBarState.contentOffset = value
                     }
                 }
-                return Offset.Zero
+                return Velocity.Zero
             }
         }
     }

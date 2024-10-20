@@ -47,6 +47,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -55,8 +56,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -79,10 +80,12 @@ import com.cashbacks.app.ui.features.shop.ShopArgs
 import com.cashbacks.app.ui.managment.DialogType
 import com.cashbacks.app.ui.managment.ScreenState
 import com.cashbacks.app.ui.theme.CashbacksTheme
+import com.cashbacks.app.ui.theme.VerdanaFont
 import com.cashbacks.app.util.LoadingInBox
 import com.cashbacks.app.util.animate
 import com.cashbacks.app.util.keyboardAsState
 import com.cashbacks.domain.R
+import com.cashbacks.domain.model.Cashback
 import com.cashbacks.domain.util.LocalDate
 import com.cashbacks.domain.util.epochMillis
 import com.cashbacks.domain.util.parseToDate
@@ -313,7 +316,6 @@ private fun CashbackContent(
                 )
             )
         },
-        contentState = scrollState,
         snackbarHost = {
             SnackbarHost(hostState = snackbarHostState) {
                 Snackbar(

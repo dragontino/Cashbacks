@@ -114,13 +114,6 @@ internal fun ShopScreen(
     val keyboardState = keyboardAsState()
     var dialogType by rememberSaveable { mutableStateOf<DialogType?>(null) }
 
-    OnLifecycleEvent(
-        onDestroy = {
-            if (viewModel.state.value == ViewModelState.Editing) {
-                scope.launch { viewModel.saveShop() }
-            }
-        }
-    )
 
     BackHandler(
         enabled = viewModel.viewModelState == ViewModelState.Editing && viewModel.shop.haveChanges
@@ -199,7 +192,9 @@ internal fun ShopScreen(
 
 
     Box(
-        modifier = Modifier.imePadding().fillMaxSize(),
+        modifier = Modifier
+            .imePadding()
+            .fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
         ShopScreenScaffold(
@@ -218,8 +213,7 @@ internal fun ShopScreen(
             modifier = Modifier.align(Alignment.BottomCenter)
         ) {
             NewNameTextField(placeholder = stringResource(R.string.category_placeholder)) { name ->
-                viewModel.addCategory(name)
-                viewModel.addingCategoryState = false
+                viewModel.push(ShopAction.AddCategory(name))
             }
         }
     }
@@ -229,13 +223,13 @@ internal fun ShopScreen(
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
-fun ShopScreenScaffold(
+internal fun ShopScreenScaffold(
     viewModel: ShopViewModel,
     snackbarHostState: SnackbarHostState
 ) {
     val lazyListState = rememberLazyListState()
     val keyboardIsVisibleState = keyboardAsState()
-    val context = LocalContext.current
+    val fabHeightPx = rememberSaveable { mutableFloatStateOf(0f) }
 
     CollapsingToolbarScaffold(
         topBar = {
@@ -301,14 +295,13 @@ fun ShopScreenScaffold(
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = Color.Transparent,
+                    containerColor = MaterialTheme.colorScheme.primary.animate(),
                     titleContentColor = MaterialTheme.colorScheme.onPrimary.animate(),
                     navigationIconContentColor = MaterialTheme.colorScheme.onPrimary.animate(),
                     actionIconContentColor = MaterialTheme.colorScheme.onPrimary.animate()
                 )
             )
         },
-        contentState = lazyListState,
         snackbarHost = {
             SnackbarHost(snackbarHostState) {
                 Snackbar(

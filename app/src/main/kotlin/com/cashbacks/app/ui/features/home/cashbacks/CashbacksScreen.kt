@@ -209,11 +209,7 @@ private fun CashbacksScreenContent(
             )
         },
         topBarState = topBarState,
-        contentState = lazyListState,
-        topBarContainerColor = when (viewModel.appBarState) {
-            HomeTopAppBarState.Search -> Color.Unspecified
-            HomeTopAppBarState.TopBar -> MaterialTheme.colorScheme.primary
-        },
+        topBarScrollEnabled = viewModel.appBarState is HomeTopAppBarState.TopBar,
         snackbarHost = {
             SnackbarHost(snackbarHostState) {
                 Snackbar(

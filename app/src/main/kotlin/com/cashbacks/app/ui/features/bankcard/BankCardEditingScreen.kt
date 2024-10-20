@@ -46,15 +46,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import com.cashbacks.app.model.PaymentSystemMapper
-import com.cashbacks.app.model.PaymentSystemMapper.title
+import com.cashbacks.app.model.PaymentSystemUtils
+import com.cashbacks.app.model.PaymentSystemUtils.title
 import com.cashbacks.app.ui.composables.CollapsingToolbarScaffold
 import com.cashbacks.app.ui.composables.ConfirmExitWithSaveDataDialog
 import com.cashbacks.app.ui.composables.EditableTextField
@@ -164,14 +163,13 @@ internal fun BankCardEditingScreen(
                                 }
                             },
                             colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                                containerColor = Color.Transparent,
+                                containerColor = MaterialTheme.colorScheme.primary.animate(),
                                 navigationIconContentColor = MaterialTheme.colorScheme.onPrimary.animate(),
                                 titleContentColor = MaterialTheme.colorScheme.onPrimary.animate(),
                                 actionIconContentColor = MaterialTheme.colorScheme.onPrimary.animate()
                             )
                         )
                     },
-                    contentState = scrollState,
                     snackbarHost = {
                         SnackbarHost(snackbarState) {
                             Snackbar(
@@ -298,7 +296,7 @@ private fun BankCardEditingContent(
                         },
                         trailingIcon = {
                             if (paymentSystem != null) {
-                                PaymentSystemMapper.PaymentSystemImage(
+                                PaymentSystemUtils.PaymentSystemImage(
                                     paymentSystem = paymentSystem,
                                     drawBackground = false
                                 )

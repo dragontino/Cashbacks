@@ -48,7 +48,7 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.cashbacks.app.ui.composables.BankCardCompose
+import com.cashbacks.app.ui.composables.BankCard
 import com.cashbacks.app.ui.composables.CollapsingToolbarScaffold
 import com.cashbacks.app.ui.composables.ConfirmDeletionDialog
 import com.cashbacks.app.ui.composables.DataTextField
@@ -166,14 +166,13 @@ internal fun BankCardViewingScreen(
                             }
                         },
                         colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                            containerColor = Color.Transparent,
+                            containerColor = MaterialTheme.colorScheme.primary.animate(),
                             navigationIconContentColor = MaterialTheme.colorScheme.onPrimary.animate(),
                             titleContentColor = MaterialTheme.colorScheme.onPrimary.animate(),
                             actionIconContentColor = MaterialTheme.colorScheme.onPrimary.animate()
                         )
                     )
                 },
-                contentState = scrollState,
                 snackbarHost = {
                     SnackbarHost(snackbarState) {
                         Snackbar(
@@ -216,7 +215,7 @@ private fun ScreenContent(
             .verticalScroll(scrollState)
             .padding(16.dp)
     ) {
-        BankCardCompose(
+        BankCard(
             bankCard = bankCard,
             onCopy = { part, text ->
                 pushAction(BankCardViewingAction.CopyText(AnnotatedString(text)))
