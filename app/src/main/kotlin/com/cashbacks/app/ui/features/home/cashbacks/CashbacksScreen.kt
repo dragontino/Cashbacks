@@ -198,8 +198,6 @@ private fun CashbacksScreenContent(
         topBar = {
             HomeTopAppBar(
                 title = title,
-                query = viewModel.query.value,
-                onQueryChange = viewModel.query::value::set,
                 state = viewModel.appBarState,
                 onStateChange = {
                     viewModel.push(CashbacksAction.UpdateAppBarState(it))

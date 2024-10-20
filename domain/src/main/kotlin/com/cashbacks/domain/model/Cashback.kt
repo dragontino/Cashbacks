@@ -10,6 +10,9 @@ sealed interface Cashback : Parcelable {
     val expirationDate: String?
     val comment: String
 
+    companion object {
+        val DateFormat = DateTimeFormats.defaultDateFormat()
+    }
 }
 
 

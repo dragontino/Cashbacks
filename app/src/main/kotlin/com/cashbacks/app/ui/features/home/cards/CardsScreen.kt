@@ -51,8 +51,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.cashbacks.app.ui.composables.BankCardCompose
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.cashbacks.app.ui.composables.BankCard
 import com.cashbacks.app.ui.composables.BasicFloatingActionButton
 import com.cashbacks.app.ui.composables.CollapsingToolbarScaffold
 import com.cashbacks.app.ui.composables.EmptyList
@@ -122,8 +122,6 @@ private fun CardsScreenContent(
         topBar = {
             HomeTopAppBar(
                 title = title,
-                query = viewModel.query.value,
-                onQueryChange = viewModel.query::value::set,
                 state = viewModel.appBarState,
                 onStateChange = {
                     viewModel.push(CardsAction.UpdateAppBarState(it))
@@ -255,7 +253,7 @@ private fun CardsContentScreen(
                         .fillMaxWidth()
                 )
 
-                BankCardCompose(
+                BankCard(
                     bankCard = bankCard,
                     onCopy = { part, text ->
                         onItemClick {

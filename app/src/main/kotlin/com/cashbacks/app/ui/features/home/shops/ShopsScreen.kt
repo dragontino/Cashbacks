@@ -124,8 +124,6 @@ internal fun ShopsScreen(
         topBar = {
             HomeTopAppBar(
                 title = title,
-                query = viewModel.query.value,
-                onQueryChange = viewModel.query::value::set,
                 state = viewModel.appBarState,
                 onStateChange = {
                     viewModel.push(ShopsAction.UpdateAppBarState(it))

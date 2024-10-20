@@ -74,9 +74,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 
-internal enum class HomeTopAppBarState {
-    Search,
-    TopBar
+internal sealed class HomeTopAppBarState {
+    data class Search(val query: String) : HomeTopAppBarState()
+    data object TopBar : HomeTopAppBarState()
 }
 
 
@@ -100,8 +100,6 @@ private object AppBarDefaults {
 @Composable
 internal fun HomeTopAppBar(
     title: String,
-    query: String,
-    onQueryChange: (String) -> Unit,
     modifier: Modifier = Modifier,
     state: HomeTopAppBarState = HomeTopAppBarState.TopBar,
     onStateChange: (HomeTopAppBarState) -> Unit = {},
@@ -115,48 +113,46 @@ internal fun HomeTopAppBar(
         label = "search animation",
         transitionSpec = {
             val expandFrom = when (targetState) {
-                HomeTopAppBarState.Search -> Alignment.End
-                HomeTopAppBarState.TopBar -> Alignment.Start
+                is HomeTopAppBarState.Search -> Alignment.End
+                is HomeTopAppBarState.TopBar -> Alignment.Start
             }
             val shrinkTowards = when (initialState) {
-                HomeTopAppBarState.Search -> Alignment.End
-                HomeTopAppBarState.TopBar -> Alignment.Start
+                is HomeTopAppBarState.Search -> Alignment.End
+                is HomeTopAppBarState.TopBar -> Alignment.Start
             }
             enterScreenTransition(expandFrom) togetherWith exitScreenTransition(shrinkTowards)
         },
+        contentKey = { it::class.simpleName },
         modifier = Modifier
             .then(modifier)
             .fillMaxWidth()
     ) { homeTopAppBarState ->
         when (homeTopAppBarState) {
-            HomeTopAppBarState.Search -> SearchBar(
+            is HomeTopAppBarState.Search -> SearchBar(
                 modifier = Modifier.fillMaxWidth(),
-                query = query,
+                query = homeTopAppBarState.query,
                 placeholder = searchPlaceholder,
-                onQueryChange = onQueryChange,
+                onQueryChange = { onStateChange(homeTopAppBarState.copy(query = it)) },
                 onClose = {
                     scope.launch {
                         onStateChange(HomeTopAppBarState.TopBar)
                         delay(100)
-                        onQueryChange("")
                     }
-
                 },
             )
 
             HomeTopAppBarState.TopBar -> TopBar(
                 title = title,
                 onNavigationIconClick = onNavigationIconClick,
-                onSearch = { onStateChange(HomeTopAppBarState.Search) }
+                onSearch = { onStateChange(HomeTopAppBarState.Search("")) }
             )
         }
     }
 
-    BackHandler(enabled = state == HomeTopAppBarState.Search) {
+    BackHandler(enabled = state is HomeTopAppBarState.Search) {
         scope.launch {
             onStateChange(HomeTopAppBarState.TopBar)
             delay(100)
-            onQueryChange("")
         }
     }
 }
@@ -242,7 +238,9 @@ private fun SearchBar(
                     contentDescription = null
                 )
             },
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+            keyboardOptions = KeyboardOptions(
+                imeAction = ImeAction.Search
+            ),
             keyboardActions = KeyboardActions(onSearch = { active.value = false }),
             trailingIcon = {
                 IconButton(onClick = onClose) {
@@ -324,7 +322,7 @@ private fun TopBar(
             }
         },
         colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-            containerColor = Color.Transparent,
+            containerColor = MaterialTheme.colorScheme.primary.animate(),
             navigationIconContentColor = MaterialTheme.colorScheme.onPrimary.animate(),
             titleContentColor = MaterialTheme.colorScheme.onPrimary.animate(),
             actionIconContentColor = MaterialTheme.colorScheme.onPrimary.animate()
