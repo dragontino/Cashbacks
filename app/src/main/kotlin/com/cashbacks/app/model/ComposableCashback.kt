@@ -16,6 +16,7 @@ import com.cashbacks.domain.model.IncorrectCashbackAmountException
 import com.cashbacks.domain.model.MessageHandler
 import com.cashbacks.domain.model.Shop
 import com.cashbacks.domain.model.ShopNotSelectedException
+import com.cashbacks.domain.model.roundedAmount
 import kotlin.random.Random
 
 @Stable

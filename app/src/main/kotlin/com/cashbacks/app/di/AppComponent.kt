@@ -50,9 +50,9 @@ interface AppComponent {
     fun cashbacksViewModel(): CashbacksViewModel
     fun cardsViewModel(): CardsViewModel
 
-    fun categoryViewerViewModel(): CategoryViewingViewModel.Factory
+    fun categoryViewingViewModel(): CategoryViewingViewModel.Factory
 
-    fun categoryEditorViewModel(): CategoryEditingViewModel.Factory
+    fun categoryEditingViewModel(): CategoryEditingViewModel.Factory
 
     fun cashbackViewModel(): CashbackViewModel.Factory
 

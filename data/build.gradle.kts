@@ -36,6 +36,7 @@ android {
 dependencies {
     implementation(project(":domain"))
 
+    implementation(libs.kotlinx.datetime)
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
     kapt(libs.room.compiler)

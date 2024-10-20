@@ -2,13 +2,13 @@ package com.cashbacks.app.app
 
 import android.app.Application
 import com.cashbacks.app.BuildConfig
-import com.cashbacks.domain.R
 import com.cashbacks.app.di.AppComponent
 import com.cashbacks.app.di.DaggerAppComponent
 import com.cashbacks.app.di.modules.AppModule
 import com.cashbacks.app.di.modules.DataModule
-import com.cashbacks.domain.util.parseToDate
-import com.cashbacks.domain.util.parseToString
+import com.cashbacks.domain.R
+import com.cashbacks.domain.util.DateTimeFormats
+import com.cashbacks.domain.util.getDisplayableDateString
 
 class App : Application() {
 
@@ -21,9 +21,11 @@ class App : Application() {
 
     val version by lazy {
         val name = BuildConfig.VERSION_NAME
-        val date = BuildConfig.VERSION_DATE.parseToDate("dd/MM/yyyy")
-        val formattedDateString = date.parseToString("dd MMMM yyyy")
-        return@lazy getString(R.string.app_version_pattern, name, formattedDateString)
+        val displayableDateString = getDisplayableDateString(
+            dateString = BuildConfig.VERSION_DATE,
+            inputFormatBuilder = DateTimeFormats.defaultDateFormat()
+        )
+        return@lazy getString(R.string.app_version_pattern, name, displayableDateString)
     }
 
     val name by lazy { getString(R.string.app_name) }

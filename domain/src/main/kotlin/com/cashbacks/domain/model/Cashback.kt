@@ -1,6 +1,13 @@
 package com.cashbacks.domain.model
 
 import android.os.Parcelable
+import com.cashbacks.domain.util.DateTimeFormats
+import com.cashbacks.domain.util.parseToDate
+import kotlinx.datetime.Clock
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.todayIn
+import kotlinx.datetime.until
 import kotlinx.parcelize.Parcelize
 
 sealed interface Cashback : Parcelable {

@@ -6,7 +6,7 @@ import com.cashbacks.domain.repository.CashbackRepository
 import com.cashbacks.domain.util.parseToDate
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
-import java.time.LocalDate
+import kotlinx.datetime.LocalDate
 
 class DeleteExpiredCashbacksUseCase(
     private val repository: CashbackRepository,
@@ -16,8 +16,9 @@ class DeleteExpiredCashbacksUseCase(
         const val TAG = "DeleteExpiredCashbacksUseCase"
     }
 
+    // TODO: переделать через планирование задач и с TimeZone
     suspend fun deleteExpiredCashbacks(
-        nowDate: LocalDate,
+        today: LocalDate,
         onSuccess: () -> Unit,
         onFailure: (Throwable) -> Unit
     ) {
@@ -25,16 +26,17 @@ class DeleteExpiredCashbacksUseCase(
             val expiredCashbacks = repository.getAllCashbacks().filter {
                 when (val expirationDate = it.expirationDate?.parseToDate()) {
                     null -> false
-                    else -> expirationDate < nowDate
+                    else -> expirationDate < today
                 }
             }
+
             if (expiredCashbacks.isNotEmpty()) {
-                val result = repository.deleteCashbacks(expiredCashbacks)
-                result.exceptionOrNull()?.let {
-                    Log.e(TAG, it.message, it)
-                    onFailure(ExpiredCashbacksDeletionException)
-                }
-                result.getOrNull()?.let { onSuccess() }
+                repository.deleteCashbacks(expiredCashbacks)
+                    .onSuccess { onSuccess() }
+                    .onFailure {
+                        Log.e(TAG, it.message, it)
+                        onFailure(ExpiredCashbacksDeletionException)
+                    }
             }
         }
     }

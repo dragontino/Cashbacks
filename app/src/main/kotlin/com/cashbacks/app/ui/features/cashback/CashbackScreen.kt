@@ -87,12 +87,18 @@ import com.cashbacks.app.util.keyboardAsState
 import com.cashbacks.domain.R
 import com.cashbacks.domain.model.Cashback
 import com.cashbacks.domain.util.LocalDate
+import com.cashbacks.domain.util.LocalDateParceler
 import com.cashbacks.domain.util.epochMillis
+import com.cashbacks.domain.util.format
 import com.cashbacks.domain.util.parseToDate
-import com.cashbacks.domain.util.parseToString
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
-import java.time.LocalDate
+import kotlinx.datetime.Clock
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.todayIn
+import kotlinx.parcelize.Parcelize
+import kotlinx.parcelize.WriteWith
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -167,7 +173,7 @@ internal fun CashbackScreen(
                     with(viewModel.cashback) {
                         updateValue(
                             property = ::expirationDate,
-                            newValue = it?.parseToString() ?: ""
+                            newValue = it?.format(Cashback.DateFormat) ?: ""
                         )
                     }
                 },
@@ -546,8 +552,8 @@ private fun CashbackContent(
                     ) {
                         val date = viewModel.cashback.expirationDate
                             .takeIf { it.isNotBlank() }
-                            ?.parseToDate()
                         viewModel.push(CashbackAction.ShowDialog(DialogType.DatePicker(date)))
+                            ?.parseToDate(Cashback.DateFormat)
                     }
                     .fillMaxWidth()
             )
@@ -632,7 +638,11 @@ private fun DatePickerDialog(
 private fun DatePickerDialogPreview() {
     CashbacksTheme(isDarkTheme = false) {
         DatePickerDialog(
-            date = LocalDate.of(2002, 10, 19),
+            date = LocalDate(
+                year = 2002,
+                monthNumber = 10,
+                dayOfMonth = 19
+            ),
             onConfirm = {},
             onClose = {}
         )

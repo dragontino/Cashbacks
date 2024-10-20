@@ -87,6 +87,7 @@ dependencies {
     implementation(project(":data"))
     implementation(project(":domain"))
     implementation(libs.kotlin.reflect)
+    implementation(libs.kotlinx.datetime)
 
     coreLibraryDesugaring(libs.tools.desugaring)
 
