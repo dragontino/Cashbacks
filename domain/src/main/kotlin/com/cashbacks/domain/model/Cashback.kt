@@ -15,6 +15,12 @@ sealed interface Cashback : Parcelable {
         ?.takeIf { it % 1 == 0.0 }
         ?.toInt()?.toString()
         ?: amount
+
+
+fun Cashback.calculateNumberOfDaysBeforeExpiration(timeZone: TimeZone = TimeZone.currentSystemDefault()): Int {
+    val today = Clock.System.todayIn(timeZone)
+    val expirationDate = expirationDate?.parseToDate(Cashback.DateFormat) ?: return Int.MAX_VALUE
+    return today.until(expirationDate, DateTimeUnit.DAY).coerceAtLeast(0)
 }
 
 

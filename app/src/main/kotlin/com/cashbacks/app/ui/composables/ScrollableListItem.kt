@@ -54,6 +54,7 @@ import androidx.compose.ui.zIndex
 import com.cashbacks.app.ui.managment.ScrollableListItemState
 import com.cashbacks.app.ui.managment.rememberScrollableListItemState
 import com.cashbacks.app.ui.theme.CashbacksTheme
+import com.cashbacks.app.util.OnClick
 import com.cashbacks.app.util.animate
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
@@ -65,7 +66,7 @@ fun ScrollableListItem(
         minOffset = ScrollableListItemDefaults.initialMinOffset,
         initialIsSwiped = false
     ),
-    onClick: (() -> Unit)? = null,
+    onClick: OnClick? = null,
     hiddenContent: @Composable (RowScope.() -> Unit) = {},
     shape: Shape = ScrollableListItemDefaults.shape,
     contentWindowInsets: WindowInsets = ScrollableListItemDefaults.contentWindowInsets,

@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.lifecycle.viewModelScope
+import com.cashbacks.app.mvi.MviViewModel
 import com.cashbacks.app.ui.features.home.HomeTopAppBarState
 import com.cashbacks.app.ui.features.home.shops.mvi.ShopsAction
 import com.cashbacks.app.ui.features.home.shops.mvi.ShopsEvent
@@ -14,7 +15,7 @@ import com.cashbacks.domain.model.BasicCategoryShop
 import com.cashbacks.domain.model.MessageHandler
 import com.cashbacks.domain.model.Shop
 import com.cashbacks.domain.usecase.shops.DeleteShopUseCase
-import com.cashbacks.domain.usecase.shops.FetchCategoryShopsUseCase
+import com.cashbacks.domain.usecase.shops.FetchAllShopsUseCase
 import com.cashbacks.domain.usecase.shops.SearchShopsUseCase
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.SharingStarted
@@ -24,7 +25,7 @@ import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 
 class ShopsViewModel @Inject constructor(
-    fetchCategoryShopsUseCase: FetchCategoryShopsUseCase,
+    fetchAllShopsUseCase: FetchAllShopsUseCase,
     searchShopsUseCase: SearchShopsUseCase,
     private val deleteShopUseCase: DeleteShopUseCase,
     private val exceptionMessage: MessageHandler,
@@ -38,8 +39,8 @@ class ShopsViewModel @Inject constructor(
 
     val shopsFlow: StateFlow<List<BasicCategoryShop>?> by lazy {
         combineTransform(
-            flow = fetchCategoryShopsUseCase.fetchAllShops(),
-            flow2 = fetchCategoryShopsUseCase.fetchShopsWithCashback(),
+            flow = fetchAllShopsUseCase.fetchAllShops(),
+            flow2 = fetchAllShopsUseCase.fetchShopsWithCashback(),
             flow3 = snapshotFlow {
                 listOf(viewModelState, appBarState)
             }
@@ -92,17 +93,6 @@ class ShopsViewModel @Inject constructor(
                 }
             }
 
-    fun deleteShop(shop: Shop) {
-        viewModelScope.launch {
-            _state.value = ListState.Loading
-            delay(100)
-            deleteShopUseCase
-                .deleteShop(shop)
-                .exceptionOrNull()
-                ?.let(exceptionMessage::getMessage)
-                ?.let(::showSnackbar)
-            _state.value = ListState.Stable
-        }
             is ShopsAction.FinishEdit -> viewModelState = ViewModelState.Viewing
 
             is ShopsAction.OpenDialog -> push(ShopsEvent.OpenDialog(action.type))

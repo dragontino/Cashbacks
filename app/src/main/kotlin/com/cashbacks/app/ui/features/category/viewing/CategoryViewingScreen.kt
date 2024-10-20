@@ -52,15 +52,15 @@ import com.cashbacks.app.ui.composables.CollapsingToolbarScaffold
 import com.cashbacks.app.ui.composables.CollapsingToolbarScaffoldDefaults
 import com.cashbacks.app.ui.composables.ConfirmDeletionDialog
 import com.cashbacks.app.ui.composables.ListContentTabPage
-import com.cashbacks.app.ui.composables.OnLifecycleEvent
+import com.cashbacks.app.ui.composables.MaxCashbackOwnerComposable
 import com.cashbacks.app.ui.composables.PrimaryTabsLayout
 import com.cashbacks.app.ui.features.cashback.CashbackArgs
 import com.cashbacks.app.ui.features.category.CategoryArgs
 import com.cashbacks.app.ui.features.category.TabItem
 import com.cashbacks.app.ui.features.shop.ShopArgs
 import com.cashbacks.app.ui.managment.DialogType
-import com.cashbacks.app.ui.managment.ScreenEvents
-import com.cashbacks.app.ui.managment.ViewModelState
+import com.cashbacks.app.ui.managment.ListState
+import com.cashbacks.app.ui.managment.ScreenState
 import com.cashbacks.app.util.Loading
 import com.cashbacks.app.util.LoadingInBox
 import com.cashbacks.app.util.animate
@@ -252,8 +252,8 @@ private fun CategoryViewerContent(
                 modifier = Modifier.padding(8.dp)
             ) { index, item ->
                 when (item) {
-                    is Shop -> ShopComposable(
-                        shop = item,
+                    is BasicShop -> MaxCashbackOwnerComposable(
+                        cashbackOwner = item,
                         isEditing = false,
                         isSwiped = viewModel.selectedShopIndex == index,
                         onSwipe = { isSwiped ->
@@ -297,10 +297,7 @@ private fun CategoryViewerContent(
                         },
                         onClick = {
                             viewModel.onItemClick {
-                                viewModel.push(
-                                    CategoryAction.SwipeCashback(index, false)
-                                )
-
+                                viewModel.push(CategoryAction.SwipeCashback(index, false))
                                 viewModel.push(CategoryAction.NavigateToCashback(item.id))
                             }
                         },

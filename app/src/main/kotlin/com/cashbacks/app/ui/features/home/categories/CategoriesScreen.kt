@@ -31,49 +31,40 @@ import androidx.compose.material.icons.rounded.DataArray
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.EditOff
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ListItem
-import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.cashbacks.app.ui.composables.BasicFloatingActionButton
-import com.cashbacks.app.ui.composables.BasicInfoCashback
 import com.cashbacks.app.ui.composables.CollapsingToolbarScaffold
 import com.cashbacks.app.ui.composables.ConfirmDeletionDialog
-import com.cashbacks.app.ui.composables.EditDeleteContent
 import com.cashbacks.app.ui.composables.EmptyList
+import com.cashbacks.app.ui.composables.MaxCashbackOwnerComposable
 import com.cashbacks.app.ui.composables.NewNameTextField
-import com.cashbacks.app.ui.composables.ScrollableListItem
 import com.cashbacks.app.ui.features.category.CategoryArgs
 import com.cashbacks.app.ui.features.home.HomeTopAppBar
 import com.cashbacks.app.ui.features.home.HomeTopAppBarState
+import com.cashbacks.app.ui.features.home.categories.mvi.CategoriesAction
+import com.cashbacks.app.ui.features.home.categories.mvi.CategoriesEvent
 import com.cashbacks.app.ui.managment.DialogType
 import com.cashbacks.app.ui.managment.ListState
-import com.cashbacks.app.ui.managment.ScreenEvents
-import com.cashbacks.app.ui.managment.rememberScrollableListItemState
+import com.cashbacks.app.ui.managment.ViewModelState
 import com.cashbacks.app.util.LoadingInBox
 import com.cashbacks.app.util.animate
 import com.cashbacks.app.util.floatingActionButtonEnterAnimation
@@ -158,7 +149,9 @@ internal fun CategoriesScreen(
                     query = viewModel.query.value,
                     onQueryChange = viewModel.query::value::set,
                     state = viewModel.appBarState,
-                    onStateChange = viewModel::appBarState::set,
+                    onStateChange = {
+                        viewModel.push(CategoriesAction.UpdateAppBarState(it))
+                    },
                     searchPlaceholder = stringResource(R.string.search_categories_placeholder),
                     onNavigationIconClick = openDrawer
                 )
@@ -187,15 +180,6 @@ internal fun CategoriesScreen(
                 ) {
                     BasicFloatingActionButton(icon = Icons.Rounded.Add) {
                         viewModel.onItemClick {
-                            viewModel.addingCategoriesState = true
-                            scope.launch {
-                                delay(700)
-                                lazyListState.smoothScrollToItem(viewModel.categories.lastIndex)
-                            }
-                        }
-                    }
-                }
-                AnimatedVisibility(visible = !viewModel.addingCategoriesState && !keyboardState.value) {
                             viewModel.push(CategoriesAction.StartCreatingCategory)
                             viewModel.push(CategoriesAction.ScrollToEnd)
                         }
@@ -310,11 +294,9 @@ private fun CategoriesList(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.fillMaxSize()
     ) {
-        itemsIndexed(viewModel.categories) { index, category ->
-            CategoryComposable(
-                category = category,
-                isEditing = viewModel.isEditing.value,
         itemsIndexed(categoriesList) { index, category ->
+            MaxCashbackOwnerComposable(
+                cashbackOwner = category,
                 isEditing = viewModel.viewModelState == ViewModelState.Editing,
                 isSwiped = viewModel.selectedCategoryIndex == index,
                 onSwipe = { isSwiped ->
@@ -364,73 +346,5 @@ private fun CategoriesList(
         item {
             Spacer(modifier = Modifier.height(bottomPadding))
         }
-    }
-}
-
-
-@Composable
-private fun CategoryComposable(
-    category: Category,
-    isEditing: Boolean,
-    isSwiped: Boolean,
-    onSwipe: suspend (isSwiped: Boolean) -> Unit,
-    onClick: () -> Unit,
-    onEdit: () -> Unit,
-    onDelete: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val state = rememberScrollableListItemState(isSwiped)
-    val onClickState = rememberUpdatedState(newValue = onClick)
-
-    LaunchedEffect(isSwiped) {
-        if (isSwiped != state.isSwiped.value) {
-            state.swipe()
-        }
-    }
-    LaunchedEffect(key1 = state.isSwiped.value) {
-        if (state.isSwiped.value != isSwiped) {
-            onSwipe(state.isSwiped.value)
-        }
-    }
-
-    ScrollableListItem(
-        state = state,
-        modifier = modifier,
-        onClick = if (isEditing) null else onClickState.value,
-        containerColor = MaterialTheme.colorScheme.background,
-        hiddenContent = {
-            EditDeleteContent(
-                onEditClick = onEdit,
-                onDeleteClick = onDelete
-            )
-        }
-    ) {
-        ListItem(
-            headlineContent = {
-                Text(
-                    text = category.name,
-                    style = MaterialTheme.typography.bodyMedium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            },
-            supportingContent = {
-                if (category.maxCashback == null) {
-                    Text(
-                        text = stringResource(R.string.no_cashbacks_for_category),
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
-            },
-            trailingContent = {
-                category.maxCashback?.let { BasicInfoCashback(cashback = it) }
-            },
-            colors = ListItemDefaults.colors(
-                containerColor = Color.Transparent,
-                headlineColor = MaterialTheme.colorScheme.onBackground.animate(),
-                supportingColor = MaterialTheme.colorScheme.error.animate(),
-                trailingIconColor = MaterialTheme.colorScheme.primary.animate()
-            )
-        )
     }
 }

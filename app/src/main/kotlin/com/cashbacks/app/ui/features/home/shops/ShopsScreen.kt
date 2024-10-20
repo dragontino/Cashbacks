@@ -39,7 +39,6 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
@@ -53,7 +52,7 @@ import com.cashbacks.app.ui.composables.BasicFloatingActionButton
 import com.cashbacks.app.ui.composables.CollapsingToolbarScaffold
 import com.cashbacks.app.ui.composables.ConfirmDeletionDialog
 import com.cashbacks.app.ui.composables.EmptyList
-import com.cashbacks.app.ui.composables.ShopComposable
+import com.cashbacks.app.ui.composables.MaxCashbackOwnerComposable
 import com.cashbacks.app.ui.features.home.HomeTopAppBar
 import com.cashbacks.app.ui.features.home.HomeTopAppBarState
 import com.cashbacks.app.ui.features.home.shops.mvi.ShopsAction
@@ -128,7 +127,9 @@ internal fun ShopsScreen(
                 query = viewModel.query.value,
                 onQueryChange = viewModel.query::value::set,
                 state = viewModel.appBarState,
-                onStateChange = viewModel::appBarState::set,
+                onStateChange = {
+                    viewModel.push(ShopsAction.UpdateAppBarState(it))
+                },
                 searchPlaceholder = stringResource(R.string.search_shops_placeholder),
                 onNavigationIconClick = openDrawer
             )
