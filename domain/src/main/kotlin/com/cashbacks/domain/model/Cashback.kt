@@ -10,11 +10,14 @@ sealed interface Cashback : Parcelable {
     val expirationDate: String?
     val comment: String
 
-    val roundedAmount: String get() = amount
-        .toDoubleOrNull()
-        ?.takeIf { it % 1 == 0.0 }
-        ?.toInt()?.toString()
-        ?: amount
+}
+
+
+val Cashback.roundedAmount: String get() = amount
+    .toDoubleOrNull()
+    ?.takeIf { it % 1 == 0.0 }
+    ?.toInt()?.toString()
+    ?: amount
 
 
 fun Cashback.calculateNumberOfDaysBeforeExpiration(timeZone: TimeZone = TimeZone.currentSystemDefault()): Int {
