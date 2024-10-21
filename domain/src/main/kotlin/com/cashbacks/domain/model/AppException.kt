@@ -2,7 +2,6 @@ package com.cashbacks.domain.model
 
 import android.content.res.Resources
 import com.cashbacks.domain.R
-import kotlin.reflect.KClass
 
 sealed class AppException : Exception() {
     protected fun readResolve(): Any = Exception()
@@ -11,13 +10,21 @@ sealed class AppException : Exception() {
 }
 
 
-sealed class EntityException(private val entity: Any) : AppException() {
-    protected fun getTypeName(resources: Resources) = when (entity) {
-        is Category -> resources.getString(R.string.category_title)
-        is Shop -> resources.getString(R.string.shop_title)
-        is Cashback -> resources.getString(R.string.cashback_title)
-        else -> null
-    }?.lowercase()
+sealed class EntityException(private val type: Type) : AppException() {
+    enum class Type {
+        Category,
+        Shop,
+        Cashback
+    }
+
+    protected fun getTypeName(resources: Resources): String {
+        return when (type) {
+            Type.Category -> resources.getString(R.string.category_title)
+            Type.Shop -> resources.getString(R.string.shop_title)
+            Type.Cashback -> resources.getString(R.string.cashback_title)
+            else -> ""
+        }.lowercase()
+    }
 }
 
 
@@ -34,7 +41,7 @@ data object SettingsNotFoundException : AppException() {
     }
 }
 
-class EntryAlreadyExistsException(type: KClass<*>) : EntityException(type) {
+class EntryAlreadyExistsException(type: Type) : EntityException(type) {
     override fun getMessage(resources: Resources): String {
         return resources.getString(
             R.string.entry_already_exists_exception,
@@ -43,7 +50,7 @@ class EntryAlreadyExistsException(type: KClass<*>) : EntityException(type) {
     }
 }
 
-class InsertionException(type: KClass<*>, private val entityName: String) : EntityException(type) {
+class InsertionException(type: Type, private val entityName: String) : EntityException(type) {
     override fun getMessage(resources: Resources): String {
         return resources.getString(
             R.string.insertion_exception,
@@ -53,7 +60,7 @@ class InsertionException(type: KClass<*>, private val entityName: String) : Enti
     }
 }
 
-class UpdateException(type: KClass<*>, val name: String) : EntityException(type) {
+class UpdateException(type: Type, val name: String) : EntityException(type) {
     override fun getMessage(resources: Resources): String {
         return resources.getString(
             R.string.update_exception,
@@ -63,13 +70,13 @@ class UpdateException(type: KClass<*>, val name: String) : EntityException(type)
     }
 }
 
-class DeletionException(type: KClass<*>, val name: String) : EntityException(type) {
+class DeletionException(type: Type, val name: String) : EntityException(type) {
     override fun getMessage(resources: Resources): String {
         return resources.getString(R.string.deletion_exception, getTypeName(resources), name)
     }
 }
 
-class EntityNotFoundException(type: KClass<*>, private val id: String) : EntityException(type) {
+class EntityNotFoundException(type: Type, private val id: String) : EntityException(type) {
     override fun getMessage(resources: Resources): String {
         return resources.getString(R.string.entity_not_found_exception, getTypeName(resources), id)
     }

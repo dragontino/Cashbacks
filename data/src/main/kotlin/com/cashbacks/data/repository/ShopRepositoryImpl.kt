@@ -6,6 +6,7 @@ import com.cashbacks.domain.model.BasicCategoryShop
 import com.cashbacks.domain.model.BasicShop
 import com.cashbacks.domain.model.CategoryShop
 import com.cashbacks.domain.model.DeletionException
+import com.cashbacks.domain.model.EntityException
 import com.cashbacks.domain.model.EntityNotFoundException
 import com.cashbacks.domain.model.EntryAlreadyExistsException
 import com.cashbacks.domain.model.InsertionException
@@ -31,13 +32,13 @@ class ShopRepositoryImpl(private val dao: ShopsDao) : ShopRepository {
 
     private suspend fun addShop(shop: ShopDB): Result<Long> {
         if (!checkShopNameForUniqueness(shop.name)) {
-            return Result.failure(EntryAlreadyExistsException(BasicShop::class))
+            return Result.failure(EntryAlreadyExistsException(EntityException.Type.Shop))
         }
 
         return dao.addShop(shop).let { id ->
             when {
                 id < 0 -> Result.failure(
-                    InsertionException(type = Shop::class, entityName = shop.name)
+                    InsertionException(type = EntityException.Type.Shop, entityName = shop.name)
                 )
                 else -> Result.success(id)
             }
@@ -55,7 +56,7 @@ class ShopRepositoryImpl(private val dao: ShopsDao) : ShopRepository {
         return dao.updateShop(shopDB).let { updatedCount ->
             when {
                 updatedCount < 0 -> Result.failure(
-                    UpdateException(type = BasicShop::class, name = shop.name)
+                    UpdateException(type = EntityException.Type.Shop, name = shop.name)
                 )
                 else -> Result.success(Unit)
             }
@@ -67,7 +68,7 @@ class ShopRepositoryImpl(private val dao: ShopsDao) : ShopRepository {
         return dao.deleteShopById(shop.id).let { deletedCount ->
             when {
                 deletedCount <= 0 -> Result.failure(
-                    DeletionException(type = Shop::class, name = shop.name)
+                    DeletionException(type = EntityException.Type.Shop, name = shop.name)
                 )
                 else -> Result.success(Unit)
             }
@@ -79,7 +80,9 @@ class ShopRepositoryImpl(private val dao: ShopsDao) : ShopRepository {
         return dao
             .getCategoryShopById(id)
             ?.let { Result.success(it.mapToCategoryShop()) }
-            ?: Result.failure(EntityNotFoundException(type = BasicShop::class, id = id.toString()))
+            ?: Result.failure(
+                EntityNotFoundException(type = EntityException.Type.Shop, id = id.toString())
+            )
     }
 
 

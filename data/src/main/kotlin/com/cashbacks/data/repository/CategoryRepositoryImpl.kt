@@ -4,6 +4,7 @@ import com.cashbacks.data.model.CategoryDB
 import com.cashbacks.data.room.dao.CategoriesDao
 import com.cashbacks.domain.model.BasicCategory
 import com.cashbacks.domain.model.Category
+import com.cashbacks.domain.model.EntityException
 import com.cashbacks.domain.model.EntityNotFoundException
 import com.cashbacks.domain.model.EntryAlreadyExistsException
 import com.cashbacks.domain.model.FullCategory
@@ -15,12 +16,14 @@ import kotlinx.coroutines.flow.map
 class CategoryRepositoryImpl(private val dao: CategoriesDao) : CategoryRepository {
     override suspend fun addCategory(category: Category): Result<Long> {
         if (!checkCategoryNameForUniqueness(category.name)) {
-            return Result.failure(EntryAlreadyExistsException(Category::class))
+            return Result.failure(EntryAlreadyExistsException(EntityException.Type.Category))
         }
 
         val newId = dao.addCategory(CategoryDB(category))
         return when {
-            newId < 0 -> Result.failure(InsertionException(Category::class, category.name))
+            newId == null || newId < 0L -> Result.failure(
+                InsertionException(EntityException.Type.Category, category.name)
+            )
             else -> Result.success(newId)
         }
     }
@@ -32,7 +35,7 @@ class CategoryRepositoryImpl(private val dao: CategoriesDao) : CategoryRepositor
 
     override suspend fun updateCategory(category: Category): Result<Unit> = try {
         if (!checkCategoryNameForUniqueness(category.name)) {
-            throw EntryAlreadyExistsException(Category::class)
+            throw EntryAlreadyExistsException(EntityException.Type.Category)
         }
 
         dao.updateCategory(CategoryDB(category))
@@ -67,7 +70,7 @@ class CategoryRepositoryImpl(private val dao: CategoriesDao) : CategoryRepositor
 
     override suspend fun getCategoryById(id: Long): Result<Category> {
         return when (val category = dao.getBasicCategoryById(id)) {
-            null -> Result.failure(EntityNotFoundException(FullCategory::class, id.toString()))
+            null -> Result.failure(EntityNotFoundException(EntityException.Type.Category, id.toString()))
             else -> Result.success(category.mapToDomainCategory())
         }
     }

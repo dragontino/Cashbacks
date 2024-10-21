@@ -6,6 +6,7 @@ import com.cashbacks.data.room.dao.CashbacksDao
 import com.cashbacks.domain.model.BasicCashback
 import com.cashbacks.domain.model.Cashback
 import com.cashbacks.domain.model.DeletionException
+import com.cashbacks.domain.model.EntityException
 import com.cashbacks.domain.model.EntityNotFoundException
 import com.cashbacks.domain.model.FullCashback
 import com.cashbacks.domain.model.InsertionException
@@ -36,7 +37,7 @@ class CashbackRepositoryImpl(private val dao: CashbacksDao) : CashbackRepository
         return dao.addCashback(cashback).let { id ->
             when {
                 id < 0 -> Result.failure(
-                    InsertionException(BasicCashback::class, cashback.id.toString())
+                    InsertionException(EntityException.Type.Cashback, cashback.id.toString())
                 )
 
                 else -> Result.success(id)
@@ -67,7 +68,7 @@ class CashbackRepositoryImpl(private val dao: CashbacksDao) : CashbackRepository
         val updatedCount = dao.updateCashback(cashback)
         return when {
             updatedCount <= 0 ->
-                Result.failure(UpdateException(BasicCashback::class, cashback.id.toString()))
+                Result.failure(UpdateException(EntityException.Type.Cashback, cashback.id.toString()))
             else -> Result.success(Unit)
         }
     }
@@ -76,7 +77,7 @@ class CashbackRepositoryImpl(private val dao: CashbacksDao) : CashbackRepository
     override suspend fun deleteCashback(cashback: Cashback): Result<Unit> {
         val deletedCount = dao.deleteCashbackById(id = cashback.id)
         return when {
-            deletedCount < 0 -> Result.failure(DeletionException(BasicCashback::class, cashback.amount))
+            deletedCount < 0 -> Result.failure(DeletionException(EntityException.Type.Cashback, cashback.amount))
             else -> Result.success(Unit)
         }
     }
@@ -89,7 +90,7 @@ class CashbackRepositoryImpl(private val dao: CashbacksDao) : CashbackRepository
             deletedCount >= cashbacks.size / 2 -> Result.success(Unit)
             else -> Result.failure(
                 DeletionException(
-                    type = BasicCashback::class,
+                    type = EntityException.Type.Cashback,
                     name = cashbacks.joinToString { it.expirationDate!! }
                 )
             )
@@ -99,7 +100,7 @@ class CashbackRepositoryImpl(private val dao: CashbacksDao) : CashbackRepository
 
     override suspend fun getCashbackById(id: Long): Result<FullCashback> {
         return when (val cashback = dao.getCashbackById(id)?.mapToDomainCashback()) {
-            null -> Result.failure(EntityNotFoundException(BasicCashback::class, id.toString()))
+            null -> Result.failure(EntityNotFoundException(EntityException.Type.Cashback, id.toString()))
             else -> Result.success(cashback)
         }
     }
