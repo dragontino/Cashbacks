@@ -24,7 +24,7 @@ class DeleteExpiredCashbacksUseCase(
     ) {
         withContext(dispatcher) {
             val expiredCashbacks = repository.getAllCashbacks().filter {
-                when (val expirationDate = it.expirationDate?.parseToDate()) {
+                when (val expirationDate = it.expirationDate) {
                     null -> false
                     else -> expirationDate < today
                 }

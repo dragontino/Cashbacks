@@ -6,9 +6,12 @@ import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.cashbacks.domain.model.BasicCashback
+import com.cashbacks.domain.model.CalculationUnit
 import com.cashbacks.domain.model.Cashback
 import com.cashbacks.domain.model.FullCashback
 import com.cashbacks.domain.model.PreviewBankCard
+import com.cashbacks.domain.util.format
+import com.cashbacks.domain.util.parseToDate
 
 data class AmountDB(val value: Double) : Comparable<AmountDB> {
     constructor(value: String) : this(value.toDoubleOrNull() ?: -1.0)
@@ -69,7 +72,7 @@ data class CashbackDB(
         categoryId = categoryId,
         bankCardId = cashback.bankCard.id,
         amount = AmountDB(cashback.amount),
-        expirationDate = cashback.expirationDate,
+        expirationDate = cashback.expirationDate?.format(),
         comment = cashback.comment
     )
 }
@@ -86,7 +89,8 @@ data class BasicCashbackDB(
     fun mapToDomainCashback() = BasicCashback(
         id = id,
         amount = amount.toString(),
-        expirationDate = expirationDate,
+        calculationUnit = CalculationUnit.Percent,
+        expirationDate = expirationDate?.parseToDate(),
         comment = comment,
         bankCard = bankCard
     )
@@ -107,7 +111,8 @@ data class FullCashbackDB(
             owner = category?.mapToDomainCategory() ?: shop?.mapToDomainShop() ?: return null,
             bankCard = basicCashbackDB.bankCard,
             amount = basicCashbackDB.amount.toString(),
-            expirationDate = basicCashbackDB.expirationDate,
+            calculationUnit = CalculationUnit.Percent,
+            expirationDate = basicCashbackDB.expirationDate?.parseToDate(),
             comment = basicCashbackDB.comment
         )
     }

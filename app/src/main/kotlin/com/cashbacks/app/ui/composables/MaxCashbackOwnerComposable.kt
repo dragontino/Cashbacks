@@ -39,19 +39,17 @@ import androidx.compose.ui.unit.dp
 import com.cashbacks.app.ui.managment.rememberScrollableListItemState
 import com.cashbacks.app.ui.theme.CashbacksTheme
 import com.cashbacks.app.ui.theme.VerdanaFont
+import com.cashbacks.app.util.CashbackUtils.displayableAmount
+import com.cashbacks.app.util.CashbackUtils.getDisplayableExpirationDate
 import com.cashbacks.app.util.OnClick
 import com.cashbacks.app.util.animate
 import com.cashbacks.domain.R
 import com.cashbacks.domain.model.BasicCategory
 import com.cashbacks.domain.model.BasicCategoryShop
-import com.cashbacks.domain.model.Cashback
 import com.cashbacks.domain.model.Category
 import com.cashbacks.domain.model.MaxCashbackOwner
 import com.cashbacks.domain.model.ParentCashbackOwner
 import com.cashbacks.domain.model.Shop
-import com.cashbacks.domain.model.calculateNumberOfDaysBeforeExpiration
-import com.cashbacks.domain.model.roundedAmount
-import com.cashbacks.domain.util.getDisplayableDateString
 
 private object Animations {
     const val DURATION_MILLIS = 300
@@ -172,7 +170,7 @@ internal fun MaxCashbackOwnerComposable(
                             .fillMaxHeight()
                     ) {
                         Text(
-                            text = "${cashback.roundedAmount}%",
+                            text = cashback.displayableAmount,
                             color = MaterialTheme.colorScheme.onBackground.animate(),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
@@ -232,26 +230,12 @@ internal fun MaxCashbackOwnerComposable(
                                     style = MaterialTheme.typography.bodyMedium
                                 )
 
-                                val numberOfDaysBeforeExpiration =
-                                    cashback.calculateNumberOfDaysBeforeExpiration()
                                 Text(
-                                    text = when (numberOfDaysBeforeExpiration) {
-                                        0 -> stringResource(R.string.today)
-                                        1 -> stringResource(R.string.tomorrow)
-                                        2 -> stringResource(R.string.after_tomorrow)
-                                        else -> getDisplayableDateString(
-                                            dateString = expirationDate,
-                                            inputFormatBuilder = Cashback.DateFormat
-                                        )
-                                    }.lowercase(),
+                                    text = cashback.getDisplayableExpirationDate(),
                                     style = MaterialTheme.typography.bodyMedium,
                                     fontFamily = FontFamily(VerdanaFont),
                                     fontWeight = FontWeight.Bold,
-                                    textAlign = TextAlign.End,
-                                    color = when (numberOfDaysBeforeExpiration) {
-                                        in 0 .. 2 -> MaterialTheme.colorScheme.error
-                                        else -> MaterialTheme.colorScheme.onBackground
-                                    }.animate()
+                                    textAlign = TextAlign.End
                                 )
                             }
                         }

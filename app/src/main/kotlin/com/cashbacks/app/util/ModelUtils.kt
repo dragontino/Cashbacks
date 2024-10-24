@@ -44,7 +44,52 @@ data object ColorDesignMapper {
 }
 
 
-data object PaymentSystemUtils {
+internal data object CashbackUtils {
+    val Cashback.roundedAmount: String get() = amount
+        .toDoubleOrNull()
+        ?.takeIf { it % 1 == 0.0 }
+        ?.toInt()?.toString()
+        ?: amount
+
+
+    val Cashback.displayableAmount get() = "$roundedAmount${calculationUnit.getDisplayableString()}"
+
+    @Composable
+    fun Cashback.getDisplayableExpirationDate(
+        timeZone: TimeZone = TimeZone.currentSystemDefault()
+    ): AnnotatedString = buildAnnotatedString {
+        val numberOfDaysBeforeExpiration = calculateNumberOfDaysBeforeExpiration(timeZone)
+        val text = when (numberOfDaysBeforeExpiration) {
+            0 -> stringResource(R.string.today)
+            1 -> stringResource(R.string.tomorrow)
+            2 -> stringResource(R.string.after_tomorrow)
+            else -> expirationDate?.getDisplayableString()
+        }?.lowercase()
+
+        val color = when (numberOfDaysBeforeExpiration) {
+            in 0..2 -> MaterialTheme.colorScheme.error
+            else -> MaterialTheme.colorScheme.onBackground
+        }
+
+        if (text != null) {
+            withStyle(SpanStyle(color = color)) {
+                append(text)
+            }
+        }
+    }
+
+
+    fun Cashback.calculateNumberOfDaysBeforeExpiration(
+        timeZone: TimeZone = TimeZone.currentSystemDefault()
+    ): Int? {
+        val today = Clock.System.todayIn(timeZone)
+        val expirationDate = expirationDate ?: return Int.MAX_VALUE
+        return today.until(expirationDate, DateTimeUnit.DAY).takeIf { it >= 0 }
+    }
+}
+
+
+internal data object PaymentSystemUtils {
     val PaymentSystem?.title @Composable
     get(): String {
         if (this == null) return stringResource(R.string.value_not_selected)

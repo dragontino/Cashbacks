@@ -86,12 +86,9 @@ import com.cashbacks.app.util.LoadingInBox
 import com.cashbacks.app.util.animate
 import com.cashbacks.app.util.keyboardAsState
 import com.cashbacks.domain.R
-import com.cashbacks.domain.model.Cashback
 import com.cashbacks.domain.util.LocalDate
 import com.cashbacks.domain.util.LocalDateParceler
 import com.cashbacks.domain.util.epochMillis
-import com.cashbacks.domain.util.format
-import com.cashbacks.domain.util.parseToDate
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.datetime.Clock
@@ -546,8 +543,10 @@ private fun CashbackContent(
                 modifier = Modifier.padding(horizontal = 16.dp)
             )
 
+
+
             EditableTextField(
-                text = viewModel.cashback.expirationDate,
+                text = viewModel.cashback.expirationDate?.getDisplayableString() ?: "",
                 onTextChange = {},
                 label = stringResource(R.string.validity_period),
                 textStyle = MaterialTheme.typography.bodyMedium,
@@ -558,10 +557,11 @@ private fun CashbackContent(
                         interactionSource = remember(::MutableInteractionSource),
                         indication = null
                     ) {
-                        val date = viewModel.cashback.expirationDate
-                            .takeIf { it.isNotBlank() }
-                            ?.parseToDate(Cashback.DateFormat)
-                        viewModel.push(CashbackAction.ShowDialog(EndDatePicker(date)))
+                        viewModel.push(
+                            CashbackAction.ShowDialog(
+                                EndDatePicker(viewModel.cashback.expirationDate)
+                            )
+                        )
                     }
                     .fillMaxWidth()
             )
@@ -615,8 +615,7 @@ private fun DatePickerDialog(
         initialSelectedDateMillis = date?.epochMillis(),
         selectableDates = object : SelectableDates {
             override fun isSelectableDate(utcTimeMillis: Long): Boolean {
-                val date = LocalDate(epochMillis = utcTimeMillis, timeZone = TimeZone.UTC)
-                return isDateSelectable(date)
+                return isDateSelectable(LocalDate(utcTimeMillis))
             }
         }
     )

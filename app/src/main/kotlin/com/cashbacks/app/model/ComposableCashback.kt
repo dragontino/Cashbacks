@@ -26,7 +26,7 @@ internal class ComposableCashback private constructor(
     owner: CashbackOwner?,
     bankCard: BasicBankCard?,
     amount: String,
-    expirationDate: String?,
+    expirationDate: LocalDate?,
     comment: String
 ) : Updatable {
 
@@ -44,7 +44,7 @@ internal class ComposableCashback private constructor(
     var amount by mutableStateOf(amount)
     var owner by mutableStateOf(owner)
     var bankCard by mutableStateOf(bankCard)
-    var expirationDate by mutableStateOf(expirationDate ?: "")
+    var expirationDate by mutableStateOf(expirationDate)
     var comment by mutableStateOf(comment)
 
     private val errorMessages = mutableStateMapOf<CashbackError, String>()
@@ -62,7 +62,7 @@ internal class ComposableCashback private constructor(
             owner = cashback.owner
             amount = cashback.roundedAmount
             bankCard = cashback.bankCard
-            expirationDate = cashback.expirationDate ?: ""
+            expirationDate = cashback.expirationDate
             comment = cashback.comment
         }
     }
@@ -118,7 +118,7 @@ internal class ComposableCashback private constructor(
             owner = owner ?: return null,
             bankCard = bankCard ?: return null,
             amount = this.amount,
-            expirationDate = this.expirationDate.takeIf { it.isNotBlank() },
+            expirationDate = expirationDate,
             comment = this.comment
         )
     }

@@ -85,11 +85,5 @@ fun getDisplayableDateString(
     .parseToDate(formatBuilder = inputFormatBuilder)
     .toJavaLocalDate()
     .format(DateTimeFormats.displayableDateFormatter(locale))
-
-
-fun LocalDate(
-    epochMillis: Long,
-    timeZone: TimeZone = TimeZone.currentSystemDefault()
-): LocalDate {
     return Instant.fromEpochMilliseconds(epochMillis).toLocalDateTime(timeZone).date
 }
