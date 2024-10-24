@@ -3,7 +3,6 @@ package com.cashbacks.domain.usecase.cashbacks
 import android.util.Log
 import com.cashbacks.domain.model.ExpiredCashbacksDeletionException
 import com.cashbacks.domain.repository.CashbackRepository
-import com.cashbacks.domain.util.parseToDate
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.LocalDate

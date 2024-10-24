@@ -23,15 +23,15 @@ import androidx.compose.ui.zIndex
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
-import com.cashbacks.domain.R
 import com.cashbacks.app.app.App
-import com.cashbacks.app.model.ColorDesignMapper.isDark
 import com.cashbacks.app.ui.features.home.HomeFeature
 import com.cashbacks.app.ui.theme.CashbacksTheme
+import com.cashbacks.app.util.ColorDesignUtils.isDark
 import com.cashbacks.app.util.animate
 import com.cashbacks.app.util.register
 import com.cashbacks.app.util.reversed
 import com.cashbacks.app.viewmodel.MainViewModel
+import com.cashbacks.domain.R
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -54,14 +54,17 @@ class MainActivity : ComponentActivity() {
 
 
             LaunchedEffect(Unit) {
-                if ((application as App).needToDeleteExpiredCashbacks) {
+                if (
+                    (application as App).checkExpiredCashbacks &&
+                    mainViewModel.settings.value.autoDeleteExpiredCashbacks
+                ) {
                     mainViewModel.deleteExpiredCashbacks(
                         success = {
                             showSnackbar(application.getString(R.string.expired_cashbacks_deletion_success))
                         },
                         failure = showSnackbar
                     )
-                    (application as App).needToDeleteExpiredCashbacks = false
+                    (application as App).checkExpiredCashbacks = false
                 }
             }
 

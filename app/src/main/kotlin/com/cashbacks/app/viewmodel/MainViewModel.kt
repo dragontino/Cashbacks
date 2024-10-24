@@ -13,7 +13,9 @@ import com.cashbacks.domain.usecase.settings.SettingsUseCase
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
-import java.time.LocalDate
+import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.todayIn
 import javax.inject.Inject
 
 class MainViewModel @Inject constructor(
@@ -48,9 +50,9 @@ class MainViewModel @Inject constructor(
         failure: (message: String) -> Unit
     ) {
         viewModelScope.launch {
-            val nowDate = LocalDate.now()
+            val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
             deleteExpiredCashbacksUseCase.deleteExpiredCashbacks(
-                nowDate = nowDate,
+                today = today,
                 onSuccess = success,
                 onFailure = { messageHandler.getExceptionMessage(it)?.let(failure) }
             )

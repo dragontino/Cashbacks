@@ -40,6 +40,7 @@ androidx-lifecycle-viewmodel-compose = { group = "androidx.lifecycle", name = "l
 compose-bom = { group ="androidx.compose", name = "compose-bom", version.ref = "compose-bom" }
 compose-activity = { group = "androidx.activity", name = "activity-compose", version.ref ="activity-compose" }
 compose-navigation =  { group = "androidx.navigation", name = "navigation-compose" , version.ref = "compose-navigation" }
+compose-runtime = { group = "androidx.compose.runtime", name = "runtime" }
 compose-ui = { group = "androidx.compose.ui", name = "ui"}
 compose-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics" }
 compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }

@@ -91,7 +91,7 @@ class CashbackRepositoryImpl(private val dao: CashbacksDao) : CashbackRepository
             else -> Result.failure(
                 DeletionException(
                     type = EntityException.Type.Cashback,
-                    name = cashbacks.joinToString { it.expirationDate!! }
+                    name = cashbacks.joinToString()
                 )
             )
         }

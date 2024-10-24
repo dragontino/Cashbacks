@@ -1,4 +1,4 @@
-package com.cashbacks.app.model
+package com.cashbacks.app.util
 
 import android.content.Context
 import androidx.annotation.StringRes
@@ -21,14 +21,23 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.cashbacks.domain.R
+import com.cashbacks.domain.model.Cashback
 import com.cashbacks.domain.model.ColorDesign
 import com.cashbacks.domain.model.PaymentSystem
+import kotlinx.datetime.Clock
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.todayIn
+import kotlinx.datetime.until
 
-data object ColorDesignMapper {
-
+internal data object ColorDesignUtils {
     val ColorDesign.icon get() = when (this) {
         ColorDesign.Light -> Icons.Outlined.LightMode
         ColorDesign.Dark -> Icons.Outlined.DarkMode

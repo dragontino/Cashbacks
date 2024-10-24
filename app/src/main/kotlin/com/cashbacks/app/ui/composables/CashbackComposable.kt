@@ -21,28 +21,26 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.cashbacks.app.model.PaymentSystemUtils
 import com.cashbacks.app.ui.managment.rememberScrollableListItemState
 import com.cashbacks.app.ui.theme.CashbacksTheme
+import com.cashbacks.app.util.CashbackUtils.displayableAmount
+import com.cashbacks.app.util.CashbackUtils.getDisplayableExpirationDate
 import com.cashbacks.app.util.animate
 import com.cashbacks.domain.R
 import com.cashbacks.domain.model.BasicCategory
+import com.cashbacks.domain.model.CalculationUnit
 import com.cashbacks.domain.model.Cashback
 import com.cashbacks.domain.model.Category
 import com.cashbacks.domain.model.FullCashback
 import com.cashbacks.domain.model.PaymentSystem
 import com.cashbacks.domain.model.PreviewBankCard
 import com.cashbacks.domain.model.Shop
-import com.cashbacks.domain.model.calculateNumberOfDaysBeforeExpiration
-import com.cashbacks.domain.model.roundedAmount
-import com.cashbacks.domain.util.getDisplayableDateString
+import kotlinx.datetime.LocalDate
 
 @Composable
 fun CashbackComposable(
@@ -54,6 +52,8 @@ fun CashbackComposable(
     onDelete: () -> Unit = {}
 ) {
     val state = rememberScrollableListItemState(isSwiped)
+    val verticalPadding = 12.dp
+    val horizontalPadding = 12.dp
 
     LaunchedEffect(isSwiped) {
         if (isSwiped != state.isSwiped.value) {
@@ -89,155 +89,108 @@ fun CashbackComposable(
         modifier = modifier
     ) {
         Column(
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement =  Arrangement.spacedBy(verticalPadding),
             modifier = Modifier
-                .padding(vertical = 8.dp)
+                .padding(vertical = verticalPadding)
                 .fillMaxWidth()
         ) {
             if (cashback is FullCashback) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(20.dp),
-                    modifier = Modifier
-                        .padding(horizontal = 8.dp)
-                        .fillMaxWidth()
-                ) {
-                    Text(
-                        text = when (cashback.owner) {
-                            is Category -> stringResource(R.string.category_title)
-                            is Shop -> stringResource(R.string.shop_title)
-                        },
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        text = cashback.owner.name,
-                        style = MaterialTheme.typography.bodyMedium,
-                        textAlign = TextAlign.Center,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
+                CashbackRow(
+                    title = when (cashback.owner) {
+                        is Category -> stringResource(R.string.category_title)
+                        is Shop -> stringResource(R.string.shop_title)
+                    },
+                    content = cashback.owner.name,
+                    modifier = Modifier.padding(horizontal = horizontalPadding)
+                )
             }
 
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(20.dp),
-                modifier = Modifier
-                    .padding(horizontal = 8.dp)
-                    .fillMaxWidth()
-            ) {
-                Text(
-                    text = stringResource(R.string.amount),
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = "${cashback.roundedAmount}%",
-                    style = MaterialTheme.typography.bodyLarge,
-                    textAlign = TextAlign.Center
-                )
-            }
+            CashbackRow(
+                title = stringResource(R.string.amount),
+                content = cashback.displayableAmount,
+                modifier = Modifier.padding(horizontal = horizontalPadding)
+            )
 
             cashback.expirationDate?.let { expirationDate ->
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(20.dp),
-                    modifier = Modifier
-                        .padding(horizontal = 8.dp)
-                        .fillMaxWidth()
-                ) {
-                    Text(
-                        text = stringResource(R.string.expires),
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold
-                    )
-
-                    val numberOfDaysBeforeExpiration = cashback.calculateNumberOfDaysBeforeExpiration()
-                    Text(
-                        text = when (numberOfDaysBeforeExpiration) {
-                            0 -> stringResource(R.string.today)
-                            1 -> stringResource(R.string.tomorrow)
-                            2 -> stringResource(R.string.after_tomorrow)
-                            else -> getDisplayableDateString(
-                                dateString = expirationDate,
-                                inputFormatBuilder = Cashback.DateFormat
-                            )
-                        }.lowercase(),
-                        style = MaterialTheme.typography.bodyLarge,
-                        textAlign = TextAlign.Center,
-                        color = when (numberOfDaysBeforeExpiration) {
-                            in 0 .. 2 -> MaterialTheme.colorScheme.error
-                            else -> MaterialTheme.colorScheme.onBackground
-                        }.animate()
-                    )
-                }
-            }
-
-
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .height(IntrinsicSize.Min)
-                    .padding(horizontal = 8.dp)
-                    .fillMaxWidth()
-            ) {
-                Text(
-                    text = stringResource(R.string.on_card),
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(end = 12.dp)
-                )
-
-                cashback.bankCard.paymentSystem?.let {
-                    PaymentSystemUtils.PaymentSystemImage(
-                        paymentSystem = it,
-                        drawBackground = false,
-                        maxWidth = 30.dp
-                    )
-                }
-
-                Text(
-                    text = buildAnnotatedString {
-                        withStyle(
-                            MaterialTheme.typography.bodyMedium.toSpanStyle()
-                        ) {
-                            appendLine(cashback.bankCard.name)
-                        }
-                        append(cashback.bankCard.hiddenLastDigitsOfNumber)
-                    },
-                    style = MaterialTheme.typography.bodySmall,
-                    textAlign = TextAlign.Right
+                CashbackRow(
+                    title = stringResource(R.string.expires),
+                    content = cashback.getDisplayableExpirationDate(),
+                    modifier = Modifier.padding(horizontal = horizontalPadding)
                 )
             }
+
+            CashbackRow(
+                title = stringResource(R.string.on_card),
+                content = "${cashback.bankCard.hiddenLastDigitsOfNumber}\t(${cashback.bankCard.name})",
+                modifier = Modifier.padding(horizontal = horizontalPadding)
+
+            )
 
             if (cashback.comment.isNotBlank()) {
-                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(20.dp),
-                    modifier = Modifier
-                        .padding(horizontal = 8.dp)
-                        .fillMaxWidth()
-                ) {
-                    Text(
-                        text = stringResource(R.string.comment),
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        text = cashback.comment,
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
+                HorizontalDivider()
+                CashbackRow(
+                    title = stringResource(R.string.comment),
+                    content = cashback.comment,
+                    modifier = Modifier.padding(horizontal = horizontalPadding)
+                )
             }
         }
     }
 }
 
 
-@Preview
+@Composable
+private fun CashbackRow(
+    title: CharSequence,
+    content: CharSequence,
+    modifier: Modifier = Modifier,
+) {
+    val titleStyle = MaterialTheme.typography.labelSmall.copy(
+        fontWeight = FontWeight.Bold,
+        textAlign = TextAlign.Start
+    )
+    val contentStyle = MaterialTheme.typography.bodyMedium.copy(
+        textAlign = TextAlign.Start
+    )
+
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(20.dp),
+        verticalAlignment = Alignment.Top,
+        modifier = Modifier
+            .then(modifier)
+            .height(IntrinsicSize.Min)
+            .fillMaxWidth()
+    ) {
+        when (title) {
+            is String -> Text(
+                text = title,
+                style = titleStyle
+            )
+
+            is AnnotatedString -> Text(
+                text = title,
+                style = titleStyle
+            )
+        }
+
+        when (content) {
+            is String -> Text(
+                text = content,
+                style = contentStyle,
+                modifier = Modifier.align(Alignment.CenterVertically)
+            )
+
+            is AnnotatedString -> Text(
+                text = content,
+                style = contentStyle,
+                modifier = Modifier.align(Alignment.CenterVertically)
+            )
+        }
+    }
+}
+
+
+@Preview(locale = "ru")
 @Composable
 private fun CashbackComposablePreview() {
     CashbacksTheme(isDarkTheme = false) {
@@ -250,9 +203,10 @@ private fun CashbackComposablePreview() {
                     number = "1111222233334444"
                 ),
                 amount = "12",
-                expirationDate = null,
-                comment = "Hello world!",
-                owner = BasicCategory(name = "Products")
+                calculationUnit = CalculationUnit.Percent,
+                expirationDate = LocalDate(dayOfMonth = 26, monthNumber = 10, year = 2024),
+                comment = "Hello world!\nGoodbye, Angels!",
+                owner = BasicCategory(name = "Groceries")
             ),
             onClick = {},
             modifier = Modifier.padding(16.dp)

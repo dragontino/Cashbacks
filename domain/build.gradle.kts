@@ -24,4 +24,6 @@ android {
 dependencies {
     implementation(libs.kotlinx.coroutines)
     implementation(libs.kotlinx.datetime)
+    implementation(platform(libs.compose.bom))
+    implementation(libs.compose.runtime)
 }
