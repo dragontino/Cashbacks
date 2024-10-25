@@ -44,7 +44,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.res.stringResource
@@ -53,18 +52,20 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import com.cashbacks.app.model.PaymentSystemUtils
-import com.cashbacks.app.model.PaymentSystemUtils.title
 import com.cashbacks.app.ui.composables.CollapsingToolbarScaffold
 import com.cashbacks.app.ui.composables.ConfirmExitWithSaveDataDialog
 import com.cashbacks.app.ui.composables.EditableTextField
 import com.cashbacks.app.ui.composables.EditableTextFieldDefaults
+import com.cashbacks.app.ui.composables.ListDropdownMenu
 import com.cashbacks.app.ui.features.bankcard.mvi.BankCardEditingAction
 import com.cashbacks.app.ui.features.bankcard.mvi.BankCardEditingEvent
 import com.cashbacks.app.ui.managment.DialogType
+import com.cashbacks.app.ui.managment.ListState
 import com.cashbacks.app.ui.managment.ScreenState
 import com.cashbacks.app.ui.theme.DarkerGray
 import com.cashbacks.app.util.LoadingInBox
+import com.cashbacks.app.util.PaymentSystemUtils
+import com.cashbacks.app.util.PaymentSystemUtils.title
 import com.cashbacks.app.util.animate
 import com.cashbacks.app.util.mix
 import com.cashbacks.domain.R
@@ -272,22 +273,21 @@ private fun BankCardEditingContent(
                 modifier = Modifier
                     .menuAnchor(MenuAnchorType.PrimaryNotEditable)
                     .padding(bottom = 16.dp)
-                    .padding(horizontal = 16.dp)
                     .fillMaxWidth()
             )
 
-            ExposedDropdownMenu(
+            ListDropdownMenu(
+                state = ListState.Stable {
+                    add(null)
+                    addAll(PaymentSystem.entries)
+                },
                 expanded = viewModel.showPaymentSystemSelection,
-                onDismissRequest = {
+                onClose = {
                     viewModel.push(BankCardEditingAction.HidePaymentSystemSelection)
                 },
-                modifier = Modifier
-                    .align(Alignment.CenterHorizontally)
-                    .padding(horizontal = 16.dp)
-                    .fillMaxWidth()
-            ) {
-                val options = listOf(null) + PaymentSystem.entries
-                options.forEach { paymentSystem ->
+                modifier = Modifier.padding(horizontal = 16.dp)
+            ) { paymentSystems ->
+                paymentSystems.forEach { paymentSystem ->
                     DropdownMenuItem(
                         text = {
                             Text(
@@ -307,6 +307,7 @@ private fun BankCardEditingContent(
                             if (paymentSystem != null) {
                                 PaymentSystemUtils.PaymentSystemImage(
                                     paymentSystem = paymentSystem,
+                                    maxWidth = 30.dp,
                                     drawBackground = false
                                 )
                             }

@@ -39,9 +39,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
-import com.cashbacks.app.model.BankCardUtils
-import com.cashbacks.app.model.CopyableBankCardPart
-import com.cashbacks.app.model.PaymentSystemUtils
+import com.cashbacks.app.util.BankCardUtils
+import com.cashbacks.app.util.CopyableBankCardPart
+import com.cashbacks.app.util.PaymentSystemUtils
 import com.cashbacks.app.ui.theme.BackgroundDark
 import com.cashbacks.app.util.animate
 import com.cashbacks.domain.R

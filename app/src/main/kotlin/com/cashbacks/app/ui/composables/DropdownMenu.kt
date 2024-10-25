@@ -33,7 +33,7 @@ import kotlinx.coroutines.flow.StateFlow
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun <T : Any> ExposedDropdownMenuBoxScope.DropdownMenu(
+internal fun <T> ExposedDropdownMenuBoxScope.DropdownMenu(
     itemsFlow: StateFlow<List<T>?>,
     expanded: Boolean,
     onClose: () -> Unit,
@@ -41,7 +41,19 @@ internal fun <T : Any> ExposedDropdownMenuBoxScope.DropdownMenu(
     content: @Composable (ColumnScope.(List<T>) -> Unit)
 ) {
     val listState = ListState.fromList(itemsFlow.collectAsStateWithLifecycle().value)
+    ListDropdownMenu(listState, expanded, onClose, modifier, content)
+}
 
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun <T> ExposedDropdownMenuBoxScope.ListDropdownMenu(
+    state: ListState<T>,
+    expanded: Boolean,
+    onClose: () -> Unit,
+    modifier: Modifier = Modifier,
+    content: @Composable (ColumnScope.(List<T>) -> Unit)
+) {
     ExposedDropdownMenu(
         expanded = expanded,
         onDismissRequest = onClose,
@@ -52,7 +64,7 @@ internal fun <T : Any> ExposedDropdownMenuBoxScope.DropdownMenu(
         ),
         modifier = modifier
     ) {
-        when (listState) {
+        when (state) {
             is ListState.Loading -> Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier.fillMaxWidth()
@@ -62,10 +74,15 @@ internal fun <T : Any> ExposedDropdownMenuBoxScope.DropdownMenu(
 
             is ListState.Empty -> content(emptyList())
 
-            is ListState.Stable -> content(listState.data)
+            is ListState.Stable -> content(state.data)
         }
     }
 }
+
+
+
+
+
 
 
 @Suppress("UnusedReceiverParameter")
@@ -79,12 +96,6 @@ internal fun <T : Any> ColumnScope.DropdownMenuListContent(
     leadingIcon: @Composable ((T) -> Unit)? = null,
     addButton: @Composable (() -> Unit)? = null,
 ) {
-    @Composable
-    fun getBackgroundColorForPosition(position: Int) = when (position % 2) {
-        0 -> MaterialTheme.colorScheme.background
-        else -> MaterialTheme.colorScheme.surface
-    }
-
     list.forEachIndexed { index, item ->
         DropdownMenuItem(
             text = {
@@ -119,10 +130,14 @@ internal fun <T : Any> ColumnScope.DropdownMenuListContent(
     }
 
     if (addButton != null) {
-        HorizontalDivider()
+        if (list.isNotEmpty()) {
+            HorizontalDivider()
+        }
         addButton()
     }
 }
+
+
 
 
 @Preview

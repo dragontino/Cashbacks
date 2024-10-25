@@ -334,7 +334,7 @@ private fun TopBar(
     containerColor: Color
 ) {
     val titleContentColor = MaterialTheme.colorScheme.onPrimary
-    val shadow = when(val a = abs(titleContentColor.luminance() - containerColor.luminance())) {
+    val shadow = when(abs(titleContentColor.luminance() - containerColor.luminance())) {
         in 0f ..< 0.3f -> {
             Shadow(
                 color = MaterialTheme.colorScheme.onBackground,

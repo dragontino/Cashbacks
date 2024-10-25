@@ -26,7 +26,6 @@ import dagger.assisted.AssistedInject
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
-import kotlin.random.Random
 
 class CategoryEditingViewModel @AssistedInject constructor(
     private val getCategoryUseCase: GetCategoryUseCase,
@@ -150,7 +149,7 @@ class CategoryEditingViewModel @AssistedInject constructor(
 
 
     private suspend fun saveShop(name: String): Result<Long> {
-        val shop = BasicShop(id = Random.nextLong(), name = name)
+        val shop = BasicShop(id = 0L, name = name)
         return addShopUseCase.addShop(categoryId, shop)
     }
 
