@@ -33,18 +33,6 @@ class SettingsRepositoryImpl(private val dao: SettingsDao) : SettingsRepository 
         }
     }
 
-    override suspend fun updateSettingsProperty(name: String, value: Any): Result<Long> {
-        val updatedRowsCount = when (name) {
-            "colorDesign" -> dao.updateColorDesign(value as String)
-            "dynamicColor" -> dao.updateDynamicColor(value as Boolean)
-            else -> null
-        }
-
-        return updatedRowsCount
-            ?.let { Result.success(it.toLong()) }
-            ?: Result.failure(Exception())
-    }
-
     override fun fetchSettings(): Flow<Settings> {
         return dao.fetchSettings().map { it?.mapToDomainSettings() ?: Settings() }
     }

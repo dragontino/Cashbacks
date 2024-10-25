@@ -27,15 +27,6 @@ class SettingsUseCase(
         }
     }
 
-    suspend fun updateSettingsProperty(
-        name: String,
-        value: Any
-    ): Result<Long> = withContext(dispatcher) {
-        repository.updateSettingsProperty(name, value).onFailure {
-            Log.e(TAG, it.message, it)
-        }
-    }
-
     fun fetchSettings(onFailure: (Throwable) -> Unit = {}): Flow<Settings> {
         val handler = CoroutineExceptionHandler { _, throwable ->
             Log.e(TAG, throwable.message, throwable)

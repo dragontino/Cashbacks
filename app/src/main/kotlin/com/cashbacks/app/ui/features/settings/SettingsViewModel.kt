@@ -14,9 +14,7 @@ import com.cashbacks.domain.usecase.settings.SettingsUseCase
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.launch
 import javax.inject.Inject
-import kotlin.reflect.KProperty1
 
 class SettingsViewModel @Inject constructor(
     private val useCase: SettingsUseCase,
@@ -61,34 +59,9 @@ class SettingsViewModel @Inject constructor(
                                 ?.takeIf { it.isNotBlank() }
                                 ?.let { push(SettingsEvent.ShowSnackbar(it)) }
                         }
+                    state = ScreenState.Showing
                 }
             }
-        }
-    }
-
-
-    /**
-     * Функция, позволяющая обновить значение параметра с именем [property], изменив его на [value]
-     *
-     * Пример использования:
-     * ```
-     * viewModel.updateSettingsProperty(Settings::colorDesign, 1)
-     * ```
-     * @param property имя параметра, который нужно обновить
-     * @param value новое значение параметра
-     */
-    fun updateSettingsProperty(
-        property: KProperty1<Settings, Any>,
-        value: Any
-    ) {
-        viewModelScope.launch {
-            state = ScreenState.Loading
-            delay(200)
-            useCase.updateSettingsProperty(
-                name = property.name,
-                value = value
-            )
-            state = ScreenState.Showing
         }
     }
 }

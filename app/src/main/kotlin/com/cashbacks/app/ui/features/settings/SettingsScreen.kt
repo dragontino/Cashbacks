@@ -60,14 +60,14 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.cashbacks.app.model.ColorDesignMapper.icon
-import com.cashbacks.app.model.ColorDesignMapper.isDark
 import com.cashbacks.app.ui.composables.Header
 import com.cashbacks.app.ui.composables.ModalBottomSheet
 import com.cashbacks.app.ui.composables.ModalSheetItems.IconTextItem
 import com.cashbacks.app.ui.features.settings.mvi.SettingsAction
 import com.cashbacks.app.ui.features.settings.mvi.SettingsEvent
 import com.cashbacks.app.ui.managment.ScreenState
+import com.cashbacks.app.util.ColorDesignUtils.icon
+import com.cashbacks.app.util.ColorDesignUtils.isDark
 import com.cashbacks.app.util.LoadingInBox
 import com.cashbacks.app.util.animate
 import com.cashbacks.domain.R
@@ -245,6 +245,21 @@ private fun SettingsContent(viewModel: SettingsViewModel) {
                         SettingsAction.UpdateSetting { it.copy(dynamicColor = isChecked) }
                     )
                 }
+            }
+        }
+
+
+        item {
+            SwitchItem(
+                isChecked = viewModel.settings.autoDeleteExpiredCashbacks,
+                header = Header(
+                    title = stringResource(R.string.auto_delete_expired_cashbacks)
+                ),
+                enabled = viewModel.state != ScreenState.Loading
+            ) { isChecked ->
+                viewModel.push(
+                    SettingsAction.UpdateSetting { it.copy(autoDeleteExpiredCashbacks = isChecked) }
+                )
             }
         }
     }
