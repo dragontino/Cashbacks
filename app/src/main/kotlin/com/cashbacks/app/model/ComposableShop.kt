@@ -49,10 +49,12 @@ internal class ComposableShop(
 
     fun updateErrorMessage(error: ShopError, messageHandler: MessageHandler) {
         val exception = when (error) {
-            ShopError.Parent -> CategoryNotSelectedException
-            ShopError.Name -> ShopNameNotSelectedException
+            ShopError.Parent -> CategoryNotSelectedException.takeIf { parentCategory == null }
+            ShopError.Name -> ShopNameNotSelectedException.takeIf { name.isBlank() }
         }
-        messageHandler.getExceptionMessage(exception)
+
+        exception
+            ?.let { messageHandler.getExceptionMessage(it) }
             ?.let { _errors[error] = it }
             ?: _errors.remove(error)
     }

@@ -10,7 +10,7 @@ sealed class ShopAction : MviAction {
 
     data object Edit : ShopAction()
 
-    data object Save : ShopAction()
+    data class Save(val onSuccess: () -> Unit = {}) : ShopAction()
 
     data class Delete(val onSuccess: () -> Unit = {}) : ShopAction()
 

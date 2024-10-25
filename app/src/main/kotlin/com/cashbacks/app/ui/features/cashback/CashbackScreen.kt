@@ -519,17 +519,16 @@ private fun CashbackContent(
             EditableTextField(
                 text = viewModel.cashback.amount,
                 onTextChange = {
-                    with(viewModel.cashback) {
-                        updateValue(::amount, it)
-
-                        if (viewModel.showErrors) {
-                            viewModel.push(CashbackAction.UpdateCashbackErrorMessage(CashbackError.Amount))
-                        }
                     viewModel.cashback.apply { ::amount updateTo it }
                     if (viewModel.showErrors) {
                         viewModel.push(CashbackAction.UpdateCashbackErrorMessage(CashbackError.Amount))
                     }
                 },
+                trailingActions = {
+                    VerticalDivider()
+
+                    IconButton(onClick = {}) {
+
                     }
                 },
                 error = viewModel.showErrors

@@ -52,7 +52,7 @@ class ShopViewModel @AssistedInject constructor(
     @Assisted private val initialIsEditing: Boolean
 ) : MviViewModel<ShopAction, ShopEvent>() {
 
-    var state by mutableStateOf(ScreenState.Loading)
+    var state by mutableStateOf(ScreenState.Showing)
         private set
 
     var viewModelState by mutableStateOf(
@@ -118,7 +118,7 @@ class ShopViewModel @AssistedInject constructor(
             is ShopAction.Edit -> viewModelState = ViewModelState.Editing
 
             is ShopAction.Save -> {
-                if (shop.haveChanges) {
+                if (shop.haveChanges || shop.id == null) {
                     showErrors = true
                     shop.updateErrorMessages(messageHandler)
 
@@ -129,7 +129,12 @@ class ShopViewModel @AssistedInject constructor(
                         delay(300)
 
                         saveShop(shop)
-                            .onSuccess { shop.id = it }
+                            .onSuccess {
+                                shop.id = it
+                                shop.updatedProperties.clear()
+                                viewModelState = ViewModelState.Viewing
+                                action.onSuccess()
+                            }
                             .onFailure { throwable ->
                                 messageHandler.getExceptionMessage(throwable)
                                     ?.takeIf { it.isNotBlank() }
@@ -137,9 +142,9 @@ class ShopViewModel @AssistedInject constructor(
                             }
                         state = ScreenState.Showing
                     }
+                } else {
+                    viewModelState = ViewModelState.Viewing
                 }
-
-                viewModelState = ViewModelState.Viewing
             }
 
             is ShopAction.Delete -> {

@@ -181,8 +181,11 @@ internal fun ShopScreen(
         DialogType.Save -> {
             ConfirmExitWithSaveDataDialog(
                 onConfirm = {
-                    viewModel.push(ShopAction.Save)
-                    viewModel.push(ShopAction.ClickButtonBack)
+                    viewModel.push(
+                        ShopAction.Save {
+                            viewModel.push(ShopAction.ClickButtonBack)
+                        }
+                    )
                 },
                 onDismiss = { viewModel.push(ShopAction.ClickButtonBack) },
                 onClose = { viewModel.push(ShopAction.CloseDialog) }
@@ -343,7 +346,7 @@ internal fun ShopScreenScaffold(
                 ) {
                     viewModel.onItemClick {
                         val action = when (viewModel.viewModelState) {
-                            ViewModelState.Editing -> ShopAction.Save
+                            ViewModelState.Editing -> ShopAction.Save()
                             ViewModelState.Viewing -> ShopAction.Edit
                         }
                         viewModel.push(action)
