@@ -24,7 +24,6 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.DataArray
@@ -35,6 +34,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableFloatStateOf
@@ -58,6 +58,7 @@ import com.cashbacks.app.ui.composables.EmptyList
 import com.cashbacks.app.ui.composables.MaxCashbackOwnerComposable
 import com.cashbacks.app.ui.composables.NewNameTextField
 import com.cashbacks.app.ui.features.category.CategoryArgs
+import com.cashbacks.app.ui.features.home.HomeAppBarDefaults
 import com.cashbacks.app.ui.features.home.HomeTopAppBar
 import com.cashbacks.app.ui.features.home.HomeTopAppBarState
 import com.cashbacks.app.ui.features.home.categories.mvi.CategoriesAction
@@ -70,10 +71,10 @@ import com.cashbacks.app.util.animate
 import com.cashbacks.app.util.floatingActionButtonEnterAnimation
 import com.cashbacks.app.util.floatingActionButtonExitAnimation
 import com.cashbacks.app.util.keyboardAsState
+import com.cashbacks.app.util.mix
 import com.cashbacks.app.util.reversed
 import com.cashbacks.app.util.smoothScrollToItem
 import com.cashbacks.domain.R
-import com.cashbacks.domain.model.BasicCategory
 import com.cashbacks.domain.model.Category
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.launchIn
@@ -84,6 +85,7 @@ import kotlinx.coroutines.flow.onEach
 internal fun CategoriesScreen(
     viewModel: CategoriesViewModel,
     title: String,
+    contentState: LazyListState,
     openDrawer: () -> Unit,
     navigateToCategory: (args: CategoryArgs, isEditing: Boolean) -> Unit,
     navigateBack: () -> Unit,
@@ -99,7 +101,7 @@ internal fun CategoriesScreen(
     }
 
     val snackbarHostState = remember(::SnackbarHostState)
-    val lazyListState = rememberLazyListState()
+    val topBarState = rememberTopAppBarState()
     val keyboardState = keyboardAsState()
     val dialogType = rememberSaveable { mutableStateOf<DialogType?>(null) }
 
@@ -113,7 +115,7 @@ internal fun CategoriesScreen(
                 is CategoriesEvent.CloseDialog -> dialogType.value = null
                 is CategoriesEvent.ScrollToEnd -> {
                     delay(700)
-                    lazyListState.smoothScrollToItem(lazyListState.layoutInfo.totalItemsCount)
+                    contentState.smoothScrollToItem(contentState.layoutInfo.totalItemsCount)
                 }
             }
         }.launchIn(this)
@@ -139,7 +141,6 @@ internal fun CategoriesScreen(
 
     val fabHeightPx = rememberSaveable { mutableFloatStateOf(0f) }
 
-
     Box(contentAlignment = Alignment.Center) {
         CollapsingToolbarScaffold(
             topBar = {
@@ -150,9 +151,16 @@ internal fun CategoriesScreen(
                         viewModel.push(CategoriesAction.UpdateAppBarState(it))
                     },
                     searchPlaceholder = stringResource(R.string.search_categories_placeholder),
-                    onNavigationIconClick = openDrawer
+                    onNavigationIconClick = openDrawer,
+                    colors = HomeAppBarDefaults.colors(
+                        topBarContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = .6f)
+                            .mix(MaterialTheme.colorScheme.primary)
+                            .ratio(topBarState.overlappedFraction),
+                    ),
                 )
             },
+            topBarState = topBarState,
+            contentState = contentState,
             topBarScrollEnabled = viewModel.appBarState is HomeTopAppBarState.TopBar,
             snackbarHost = {
                 SnackbarHost(snackbarHostState) {
@@ -160,7 +168,7 @@ internal fun CategoriesScreen(
                         snackbarData = it,
                         containerColor = MaterialTheme.colorScheme.background.reversed.animate(),
                         contentColor = MaterialTheme.colorScheme.onBackground.reversed.animate(),
-                        shape = MaterialTheme.shapes.medium
+                        shape = MaterialTheme.shapes.medium,
                     )
                 }
             },

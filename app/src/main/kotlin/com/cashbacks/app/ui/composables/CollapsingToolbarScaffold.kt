@@ -3,6 +3,7 @@ package com.cashbacks.app.ui.composables
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.gestures.ScrollableState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,6 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.tappableElement
 import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FabPosition
 import androidx.compose.material3.MaterialTheme
@@ -45,6 +47,7 @@ fun CollapsingToolbarScaffold(
     modifier: Modifier = Modifier,
     topBar: @Composable (() -> Unit) = {},
     topBarState: TopAppBarState = rememberTopAppBarState(initialHeightOffsetLimit = -100f),
+    contentState: ScrollableState = rememberScrollState(),
     topBarScrollEnabled: Boolean = true,
     floatingActionButtons: @Composable (ColumnScope.() -> Unit) = {},
     fabModifier: Modifier = Modifier.windowInsetsPadding(
@@ -55,19 +58,28 @@ fun CollapsingToolbarScaffold(
     content: @Composable (() -> Unit),
 ) {
     val scope = rememberCoroutineScope()
-    val nestedScrollConnection = remember(topBarState, topBarScrollEnabled) {
+    val nestedScrollConnection = remember(
+        topBarState,
+        contentState.canScrollForward,
+        contentState.canScrollBackward,
+        topBarScrollEnabled
+    ) {
         object : NestedScrollConnection {
             override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                if (!topBarScrollEnabled) return Offset.Zero
-
                 val delta = available.y
+                if (delta < 0 && !contentState.canScrollForward) return Offset.Zero
+
                 val previousContentOffset = topBarState.contentOffset
 
-                topBarState.heightOffset = (topBarState.heightOffset + delta)
-                    .coerceIn(topBarState.heightOffsetLimit, 0f)
+                if (topBarScrollEnabled) {
+                    topBarState.heightOffset = (topBarState.heightOffset + delta)
+                        .coerceIn(topBarState.heightOffsetLimit, 0f)
+                }
 
-                topBarState.contentOffset = (topBarState.contentOffset + delta)
-                    .coerceIn(topBarState.heightOffsetLimit, 0f)
+                if (delta > 0 && !contentState.canScrollBackward || delta < 0) {
+                    topBarState.contentOffset = (topBarState.contentOffset + delta)
+                        .coerceIn(topBarState.heightOffsetLimit, 0f)
+                }
 
                 return when (topBarState.contentOffset) {
                     previousContentOffset -> Offset.Zero

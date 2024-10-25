@@ -57,6 +57,7 @@ import com.cashbacks.app.ui.composables.BasicFloatingActionButton
 import com.cashbacks.app.ui.composables.CollapsingToolbarScaffold
 import com.cashbacks.app.ui.composables.EmptyList
 import com.cashbacks.app.ui.features.bankcard.BankCardArgs
+import com.cashbacks.app.ui.features.home.HomeAppBarDefaults
 import com.cashbacks.app.ui.features.home.HomeTopAppBar
 import com.cashbacks.app.ui.features.home.HomeTopAppBarState
 import com.cashbacks.app.ui.features.home.cards.mvi.CardsAction
@@ -66,6 +67,7 @@ import com.cashbacks.app.ui.theme.CashbacksTheme
 import com.cashbacks.app.util.LoadingInBox
 import com.cashbacks.app.util.OnClick
 import com.cashbacks.app.util.animate
+import com.cashbacks.app.util.mix
 import com.cashbacks.app.util.reversed
 import com.cashbacks.domain.R
 import com.cashbacks.domain.model.PrimaryBankCard
@@ -127,10 +129,16 @@ private fun CardsScreenContent(
                     viewModel.push(CardsAction.UpdateAppBarState(it))
                 },
                 searchPlaceholder = stringResource(R.string.search_cards_placeholder),
-                onNavigationIconClick = { viewModel.push(CardsAction.ClickNavigationIcon) }
+                onNavigationIconClick = { viewModel.push(CardsAction.ClickNavigationIcon) },
+                colors = HomeAppBarDefaults.colors(
+                    topBarContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = .6f)
+                        .mix(MaterialTheme.colorScheme.primary)
+                        .ratio(topBarState.overlappedFraction)
+                )
             )
         },
         topBarState = topBarState,
+        contentState = lazyListState,
         topBarScrollEnabled = viewModel.appBarState is HomeTopAppBarState.TopBar,
         floatingActionButtons = {
             AnimatedVisibility(visible = viewModel.appBarState is HomeTopAppBarState.TopBar) {
@@ -157,7 +165,6 @@ private fun CardsScreenContent(
             .then(modifier)
             .fillMaxSize()
     ) {
-
         val cardsState = viewModel.cardsFlow.collectAsStateWithLifecycle()
         Crossfade(
             targetState = ListState.fromList(cardsState.value),

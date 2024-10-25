@@ -53,6 +53,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -95,6 +96,7 @@ import com.cashbacks.app.util.animate
 import com.cashbacks.app.util.floatingActionButtonEnterAnimation
 import com.cashbacks.app.util.floatingActionButtonExitAnimation
 import com.cashbacks.app.util.keyboardAsState
+import com.cashbacks.app.util.mix
 import com.cashbacks.domain.R
 import com.cashbacks.domain.model.Cashback
 import com.cashbacks.domain.model.Category
@@ -227,11 +229,14 @@ internal fun ShopScreenScaffold(
     viewModel: ShopViewModel,
     snackbarHostState: SnackbarHostState
 ) {
+    val topBarState = rememberTopAppBarState()
     val lazyListState = rememberLazyListState()
     val keyboardIsVisibleState = keyboardAsState()
     val fabHeightPx = rememberSaveable { mutableFloatStateOf(0f) }
 
     CollapsingToolbarScaffold(
+        topBarState = topBarState,
+        contentState = lazyListState,
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
@@ -295,7 +300,9 @@ internal fun ShopScreenScaffold(
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary.animate(),
+                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = .6f)
+                        .mix(MaterialTheme.colorScheme.primary)
+                        .ratio(topBarState.overlappedFraction),
                     titleContentColor = MaterialTheme.colorScheme.onPrimary.animate(),
                     navigationIconContentColor = MaterialTheme.colorScheme.onPrimary.animate(),
                     actionIconContentColor = MaterialTheme.colorScheme.onPrimary.animate()

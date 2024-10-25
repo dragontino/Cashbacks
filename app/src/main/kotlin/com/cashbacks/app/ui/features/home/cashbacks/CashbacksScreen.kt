@@ -56,6 +56,7 @@ import com.cashbacks.app.ui.composables.EmptyList
 import com.cashbacks.app.ui.composables.ModalBottomSheet
 import com.cashbacks.app.ui.composables.ModalSheetItems.IconTextItem
 import com.cashbacks.app.ui.features.cashback.CashbackArgs
+import com.cashbacks.app.ui.features.home.HomeAppBarDefaults
 import com.cashbacks.app.ui.features.home.HomeTopAppBar
 import com.cashbacks.app.ui.features.home.HomeTopAppBarState
 import com.cashbacks.app.ui.features.home.cashbacks.mvi.CashbacksAction
@@ -68,6 +69,7 @@ import com.cashbacks.app.util.animate
 import com.cashbacks.app.util.floatingActionButtonEnterAnimation
 import com.cashbacks.app.util.floatingActionButtonExitAnimation
 import com.cashbacks.app.util.keyboardAsState
+import com.cashbacks.app.util.mix
 import com.cashbacks.app.util.reversed
 import com.cashbacks.domain.R
 import com.cashbacks.domain.model.Cashback
@@ -205,10 +207,16 @@ private fun CashbacksScreenContent(
                 searchPlaceholder = stringResource(R.string.search_cashbacks_placeholder),
                 onNavigationIconClick = {
                     viewModel.push(CashbacksAction.ClickNavigationButton)
-                }
+                },
+                colors = HomeAppBarDefaults.colors(
+                    topBarContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = .6f)
+                        .mix(MaterialTheme.colorScheme.primary)
+                        .ratio(topBarState.overlappedFraction)
+                )
             )
         },
         topBarState = topBarState,
+        contentState = lazyListState,
         topBarScrollEnabled = viewModel.appBarState is HomeTopAppBarState.TopBar,
         snackbarHost = {
             SnackbarHost(snackbarHostState) {

@@ -63,9 +63,7 @@ import com.cashbacks.app.ui.features.home.categories.CategoriesViewModel
 import com.cashbacks.app.ui.features.home.shops.ShopsScreen
 import com.cashbacks.app.ui.features.home.shops.ShopsViewModel
 import com.cashbacks.app.ui.features.shop.ShopArgs
-import com.cashbacks.app.ui.navigation.AppBarIcon
 import com.cashbacks.app.ui.navigation.AppBarItem
-import com.cashbacks.app.ui.navigation.asAppBarIcon
 import com.cashbacks.app.ui.navigation.enterScreenTransition
 import com.cashbacks.app.ui.navigation.exitScreenTransition
 import com.cashbacks.app.util.animate
@@ -105,10 +103,16 @@ internal fun HomeScreen(
                 HomeDestination.Shops,
                 HomeDestination.Cashbacks,
                 HomeDestination.Cards
-            ).find {  currentRoute.value == it.route }
-                ?: HomeDestination.Categories
+            ).find {  currentRoute.value == it.route } ?: HomeDestination.Categories
         }
     }
+
+    val childContentListStates = listOf(
+        HomeDestination.Categories,
+        HomeDestination.Shops,
+        HomeDestination.Cashbacks,
+        HomeDestination.Cards
+    ).associate { it.route to rememberLazyListState() }
 
 
     val openDrawer = remember {
@@ -187,6 +191,7 @@ internal fun HomeScreen(
                     CategoriesScreen(
                         viewModel = viewModel { provideCategoriesViewModel() },
                         title = HomeDestination.Categories.screenTitle,
+                        contentState = childContentListStates[route] ?: rememberLazyListState(),
                         bottomPadding = with(LocalDensity.current) {
                             bottomHeightPx.floatValue.toDp().animate()
                         },

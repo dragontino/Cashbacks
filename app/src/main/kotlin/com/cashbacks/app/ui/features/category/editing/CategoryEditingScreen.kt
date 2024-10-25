@@ -265,6 +265,8 @@ private fun CategoryEditingScreenContent(
         }
         else {
             CollapsingToolbarScaffold(
+                contentState = currentListState,
+                topBarScrollEnabled = false,
                 topBar = {
                     CenterAlignedTopAppBar(
                         title = {

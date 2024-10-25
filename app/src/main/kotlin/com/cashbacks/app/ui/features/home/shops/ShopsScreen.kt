@@ -53,6 +53,7 @@ import com.cashbacks.app.ui.composables.CollapsingToolbarScaffold
 import com.cashbacks.app.ui.composables.ConfirmDeletionDialog
 import com.cashbacks.app.ui.composables.EmptyList
 import com.cashbacks.app.ui.composables.MaxCashbackOwnerComposable
+import com.cashbacks.app.ui.features.home.HomeAppBarDefaults
 import com.cashbacks.app.ui.features.home.HomeTopAppBar
 import com.cashbacks.app.ui.features.home.HomeTopAppBarState
 import com.cashbacks.app.ui.features.home.shops.mvi.ShopsAction
@@ -66,6 +67,7 @@ import com.cashbacks.app.util.animate
 import com.cashbacks.app.util.floatingActionButtonEnterAnimation
 import com.cashbacks.app.util.floatingActionButtonExitAnimation
 import com.cashbacks.app.util.keyboardAsState
+import com.cashbacks.app.util.mix
 import com.cashbacks.app.util.reversed
 import com.cashbacks.domain.R
 import com.cashbacks.domain.model.BasicCategoryShop
@@ -129,10 +131,16 @@ internal fun ShopsScreen(
                     viewModel.push(ShopsAction.UpdateAppBarState(it))
                 },
                 searchPlaceholder = stringResource(R.string.search_shops_placeholder),
-                onNavigationIconClick = openDrawer
+                onNavigationIconClick = openDrawer,
+                colors = HomeAppBarDefaults.colors(
+                    topBarContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = .6f)
+                        .mix(MaterialTheme.colorScheme.primary)
+                        .ratio(topAppBarState.overlappedFraction)
+                )
             )
         },
         topBarState = topAppBarState,
+        contentState = lazyListState,
         topBarScrollEnabled = viewModel.appBarState is HomeTopAppBarState.TopBar,
         snackbarHost = {
             SnackbarHost(snackbarHostState) {

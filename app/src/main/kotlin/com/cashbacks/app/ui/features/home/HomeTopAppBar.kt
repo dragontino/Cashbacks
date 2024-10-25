@@ -54,6 +54,8 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.geometry.toRect
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.semantics.onClick
@@ -72,6 +74,7 @@ import com.cashbacks.app.util.keyboardAsState
 import com.cashbacks.app.util.mix
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.math.abs
 
 
 internal sealed class HomeTopAppBarState {
@@ -80,7 +83,7 @@ internal sealed class HomeTopAppBarState {
 }
 
 
-private object AppBarDefaults {
+internal object HomeAppBarDefaults {
     val EnterFloatSpec: FiniteAnimationSpec<Float> = tween(
         durationMillis = 600,
         delayMillis = 100,
@@ -94,7 +97,25 @@ private object AppBarDefaults {
     )
 
     val SearchBarCornerRadius = 20.dp
+
+    @Composable
+    fun colors(
+        topBarContainerColor: Color = MaterialTheme.colorScheme.primary,
+        searchActiveContainerColor: Color = MaterialTheme.colorScheme.surface,
+        searchInactiveContainerColor: Color = MaterialTheme.colorScheme.background.copy(alpha = .6f)
+    ) = HomeTopAppBarColors(
+        topBarContainerColor = topBarContainerColor,
+        searchActiveContainerColor = searchActiveContainerColor,
+        searchInactiveContainerColor = searchInactiveContainerColor
+    )
 }
+
+
+internal class HomeTopAppBarColors internal constructor(
+    val topBarContainerColor: Color,
+    val searchActiveContainerColor: Color,
+    val searchInactiveContainerColor: Color
+)
 
 
 @Composable
@@ -105,6 +126,7 @@ internal fun HomeTopAppBar(
     onStateChange: (HomeTopAppBarState) -> Unit = {},
     searchPlaceholder: String = "",
     onNavigationIconClick: () -> Unit = {},
+    colors: HomeTopAppBarColors = HomeAppBarDefaults.colors(),
 ) {
     val scope = rememberCoroutineScope()
 
@@ -130,6 +152,8 @@ internal fun HomeTopAppBar(
         when (homeTopAppBarState) {
             is HomeTopAppBarState.Search -> SearchBar(
                 modifier = Modifier.fillMaxWidth(),
+                activeContainerColor = colors.searchActiveContainerColor,
+                inactiveContainerColor = colors.searchInactiveContainerColor,
                 query = homeTopAppBarState.query,
                 placeholder = searchPlaceholder,
                 onQueryChange = { onStateChange(homeTopAppBarState.copy(query = it)) },
@@ -143,8 +167,12 @@ internal fun HomeTopAppBar(
 
             HomeTopAppBarState.TopBar -> TopBar(
                 title = title,
+                containerColor = colors.topBarContainerColor,
                 onNavigationIconClick = onNavigationIconClick,
-                onSearch = { onStateChange(HomeTopAppBarState.Search("")) }
+                onSearch = {
+                    onStateChange(HomeTopAppBarState.Search(""))
+                },
+                modifier = Modifier.fillMaxWidth()
             )
         }
     }
@@ -161,11 +189,13 @@ internal fun HomeTopAppBar(
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun SearchBar(
-    modifier: Modifier,
     query: String,
     onQueryChange: (String) -> Unit,
     placeholder: String,
     onClose: () -> Unit,
+    modifier: Modifier,
+    activeContainerColor: Color,
+    inactiveContainerColor: Color,
 ) {
     val focusRequester = remember(::FocusRequester)
     val active = rememberSaveable { mutableStateOf(true) }
@@ -176,8 +206,8 @@ private fun SearchBar(
         targetValue = if (active.value) 1f else 0f,
         label = "search field anim",
         animationSpec = when {
-            active.value -> AppBarDefaults.EnterFloatSpec
-            else -> AppBarDefaults.ExitFloatSpec
+            active.value -> HomeAppBarDefaults.EnterFloatSpec
+            else -> HomeAppBarDefaults.ExitFloatSpec
         }
     )
     val density = LocalDensity.current
@@ -185,17 +215,15 @@ private fun SearchBar(
     val animatedShape = remember {
         GenericShape { size, _ ->
             val radius = with(density) {
-                (AppBarDefaults.SearchBarCornerRadius * (1 - animationProgress.value)).toPx()
+                (HomeAppBarDefaults.SearchBarCornerRadius * (1 - animationProgress.value)).toPx()
             }
             addRoundRect(RoundRect(size.toRect(), CornerRadius(radius)))
         }
     }
 
-    val activeBackgroundColor = MaterialTheme.colorScheme.surface
-    val inactiveBackgroundColor = MaterialTheme.colorScheme.background.copy(alpha = .6f)
     val animatedColor = remember {
         derivedStateOf {
-            activeBackgroundColor mix inactiveBackgroundColor ratio animationProgress.value
+            activeContainerColor mix inactiveContainerColor ratio animationProgress.value
         }
     }
 
@@ -301,32 +329,52 @@ private fun SearchBar(
 private fun TopBar(
     title: String,
     onNavigationIconClick: () -> Unit,
-    onSearch: () -> Unit
+    onSearch: () -> Unit,
+    modifier: Modifier,
+    containerColor: Color
 ) {
+    val titleContentColor = MaterialTheme.colorScheme.onPrimary
+    val shadow = when(val a = abs(titleContentColor.luminance() - containerColor.luminance())) {
+        in 0f ..< 0.3f -> {
+            Shadow(
+                color = MaterialTheme.colorScheme.onBackground,
+                blurRadius = 5f
+            )
+        }
+        else -> null
+    }
+
     CenterAlignedTopAppBar(
         title = {
             Text(
                 text = title,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
+                style = MaterialTheme.typography.titleMedium.copy(shadow = shadow),
+                fontWeight = FontWeight.Bold,
             )
         },
         navigationIcon = {
             IconButton(onNavigationIconClick) {
-                Icon(Icons.Rounded.Menu, contentDescription = "open menu")
+                Icon(
+                    imageVector = Icons.Rounded.Menu,
+                    contentDescription = "open menu"
+                )
             }
         },
         actions = {
             IconButton(onClick = onSearch) {
-                Icon(imageVector = Icons.Rounded.Search, contentDescription = "search")
+                Icon(
+                    imageVector = Icons.Rounded.Search,
+                    contentDescription = "search"
+                )
             }
         },
         colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-            containerColor = MaterialTheme.colorScheme.primary.animate(),
+            containerColor = containerColor,
             navigationIconContentColor = MaterialTheme.colorScheme.onPrimary.animate(),
-            titleContentColor = MaterialTheme.colorScheme.onPrimary.animate(),
+            titleContentColor = titleContentColor.animate(),
             actionIconContentColor = MaterialTheme.colorScheme.onPrimary.animate()
-        )
+        ),
+        modifier = modifier
     )
 }
 

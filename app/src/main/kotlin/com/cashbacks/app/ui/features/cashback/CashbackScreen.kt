@@ -46,6 +46,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -250,9 +251,12 @@ private fun CashbackContent(
     viewModel: CashbackViewModel,
     snackbarHostState: SnackbarHostState
 ) {
-    val scrollState = rememberScrollState()
+    val topBarState = rememberTopAppBarState()
+    val contentState = rememberScrollState()
 
     CollapsingToolbarScaffold(
+        topBarState = topBarState,
+        contentState = contentState,
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
@@ -320,7 +324,9 @@ private fun CashbackContent(
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary.animate(),
+                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = .6f)
+                        .mix(MaterialTheme.colorScheme.primary)
+                        .ratio(topBarState.overlappedFraction),
                     titleContentColor = MaterialTheme.colorScheme.onPrimary.animate(),
                     navigationIconContentColor = MaterialTheme.colorScheme.onPrimary.animate(),
                     actionIconContentColor = MaterialTheme.colorScheme.onPrimary.animate()
@@ -343,7 +349,7 @@ private fun CashbackContent(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(scrollState)
+                .verticalScroll(contentState)
                 .padding(vertical = 16.dp)
         ) {
             ExposedDropdownMenuBox(

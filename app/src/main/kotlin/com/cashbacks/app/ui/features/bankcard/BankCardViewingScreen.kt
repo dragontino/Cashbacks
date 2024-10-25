@@ -30,6 +30,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -59,6 +60,7 @@ import com.cashbacks.app.ui.managment.ScreenState
 import com.cashbacks.app.ui.theme.CashbacksTheme
 import com.cashbacks.app.util.LoadingInBox
 import com.cashbacks.app.util.animate
+import com.cashbacks.app.util.mix
 import com.cashbacks.domain.R
 import com.cashbacks.domain.model.BasicBankCard
 import com.cashbacks.domain.model.FullBankCard
@@ -70,9 +72,9 @@ internal fun BankCardViewingScreen(
     navigateToBankCard: (args: BankCardArgs) -> Unit,
     navigateBack: () -> Unit
 ) {
-    val scrollState = rememberScrollState()
+    val topBarState = rememberTopAppBarState()
+    val contentState = rememberScrollState()
     val snackbarState = remember(::SnackbarHostState)
-
     val clipboardManager = LocalClipboardManager.current
     var dialogType: DialogType? by rememberSaveable { mutableStateOf(null) }
 
@@ -117,6 +119,8 @@ internal fun BankCardViewingScreen(
         when (state) {
             ScreenState.Loading -> LoadingInBox()
             ScreenState.Showing -> CollapsingToolbarScaffold(
+                topBarState = topBarState,
+                contentState = contentState,
                 topBar = {
                     CenterAlignedTopAppBar(
                         title = {
@@ -165,7 +169,9 @@ internal fun BankCardViewingScreen(
                             }
                         },
                         colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                            containerColor = MaterialTheme.colorScheme.primary.animate(),
+                            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = .6f)
+                                .mix(MaterialTheme.colorScheme.primary)
+                                .ratio(topBarState.overlappedFraction),
                             navigationIconContentColor = MaterialTheme.colorScheme.onPrimary.animate(),
                             titleContentColor = MaterialTheme.colorScheme.onPrimary.animate(),
                             actionIconContentColor = MaterialTheme.colorScheme.onPrimary.animate()
@@ -186,7 +192,7 @@ internal fun BankCardViewingScreen(
                 ScreenContent(
                     bankCard = viewModel.bankCard,
                     pushAction = viewModel::push,
-                    scrollState = scrollState,
+                    scrollState = contentState,
                     modifier = Modifier.fillMaxSize()
                 )
             }
