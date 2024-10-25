@@ -443,7 +443,7 @@ private fun ShopScreenContent(
                                 title = Category::name,
                                 onClick = {
                                     with(viewModel) {
-                                        shop.updateValue(shop::parentCategory, it)
+                                        shop.apply { ::parentCategory updateTo it }
                                         if (showErrors) {
                                             updateShopErrorMessage(ShopError.Parent)
                                         }
@@ -471,11 +471,9 @@ private fun ShopScreenContent(
                     EditableTextField(
                         text = viewModel.shop.name,
                         onTextChange = {
-                            with(viewModel) {
-                                shop.updateValue(shop::name, it)
-                                if (showErrors) {
-                                    updateShopErrorMessage(ShopError.Name)
-                                }
+                            viewModel.shop.apply { ::name updateTo it }
+                            if (viewModel.showErrors) {
+                                viewModel.updateShopErrorMessage(ShopError.Name)
                             }
                         },
                         label = stringResource(R.string.shop_placeholder),

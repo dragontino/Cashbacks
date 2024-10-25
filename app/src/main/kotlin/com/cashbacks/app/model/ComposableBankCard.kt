@@ -7,6 +7,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
+import com.cashbacks.app.util.BankCardUtils
 import com.cashbacks.domain.model.FullBankCard
 import com.cashbacks.domain.model.PaymentSystem
 import kotlin.math.abs
@@ -80,12 +81,10 @@ class ComposableBankCard(
             20 -> number.text
             else -> newNumber.text
         }
-        updateValue(
-            property = ::number,
-            newValue = newNumber.copy(
-                text = newText,
-                selection = TextRange(newText.length)
-            )
+
+        ::number updateTo newNumber.copy(
+            text = newText,
+            selection = TextRange(newText.length)
         )
 
         updatePaymentSystemByNumber(newText)
@@ -96,10 +95,7 @@ class ComposableBankCard(
         val newPaymentSystem = PaymentSystem.entries.find { withoutSpacesNumber.startsWith(it.prefix) }
 
         if (newPaymentSystem != null) {
-            updateValue(
-                property = ::paymentSystem,
-                newValue = newPaymentSystem
-            )
+            ::paymentSystem updateTo newPaymentSystem
         }
     }
 
@@ -112,13 +108,10 @@ class ComposableBankCard(
             newPeriod.text.length <= 7 -> newPeriod.text
             else -> this.validityPeriod.text
         }
-        updateValue(
-            property = ::validityPeriod,
-            newValue = newPeriod.copy(
+        ::validityPeriod updateTo newPeriod.copy(
                 text = newText,
                 selection = TextRange(newText.length)
             )
-        )
     }
 
     fun mapToBankCard() = FullBankCard(

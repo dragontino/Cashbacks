@@ -127,6 +127,8 @@ internal fun BankCardEditingScreen(
             ScreenState.Loading -> LoadingInBox()
             ScreenState.Showing -> {
                 CollapsingToolbarScaffold(
+                    topBarState = topBarState,
+                    contentState = contentState,
                     topBar = {
                         CenterAlignedTopAppBar(
                             title = {
@@ -215,7 +217,9 @@ private fun BankCardEditingContent(
     {
         EditableTextField(
             text = viewModel.bankCard.name,
-            onTextChange = { viewModel.bankCard.updateValue(viewModel.bankCard::name, it) },
+            onTextChange = {
+                viewModel.bankCard.apply { ::name updateTo it }
+            },
             label = stringResource(R.string.card_name)
         )
 
@@ -324,7 +328,7 @@ private fun BankCardEditingContent(
         EditableTextField(
             text = viewModel.bankCard.holder,
             onTextChange = {
-                viewModel.bankCard.updateValue(viewModel.bankCard::holder, it.uppercase())
+                viewModel.bankCard.apply { ::holder updateTo it.uppercase() }
             },
             label = stringResource(R.string.card_holder),
             keyboardCapitalization = KeyboardCapitalization.Characters
@@ -342,7 +346,7 @@ private fun BankCardEditingContent(
             text = viewModel.bankCard.cvv,
             onTextChange = {
                 if (it.length <= 3) {
-                    viewModel.bankCard.updateValue(viewModel.bankCard::cvv, it)
+                    viewModel.bankCard.apply { ::cvv updateTo it }
                 }
             },
             label = stringResource(R.string.cvv),
@@ -367,7 +371,7 @@ private fun BankCardEditingContent(
             text = viewModel.bankCard.pin,
             onTextChange = {
                 if (it.length <= 4) {
-                    viewModel.bankCard.updateValue(viewModel.bankCard::pin, it)
+                    viewModel.bankCard.apply { ::pin updateTo it }
                 }
             },
             label = stringResource(R.string.pin),
@@ -397,7 +401,9 @@ private fun BankCardEditingContent(
 
         EditableTextField(
             text = viewModel.bankCard.comment,
-            onTextChange = { viewModel.bankCard.updateValue(viewModel.bankCard::comment, it) },
+            onTextChange = {
+                viewModel.bankCard.apply { ::comment updateTo it }
+            },
             label = stringResource(R.string.comment),
             singleLine = false,
             imeAction = ImeAction.Default

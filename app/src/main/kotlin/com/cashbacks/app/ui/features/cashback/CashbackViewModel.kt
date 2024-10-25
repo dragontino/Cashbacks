@@ -151,10 +151,9 @@ class CashbackViewModel @AssistedInject constructor(
                 delay(100)
                 addCategory(action.name)
                     .onSuccess {
-                        cashback.updateValue(
-                            property = cashback::owner,
-                            newValue = BasicCategory(id = it, name = action.name)
-                        )
+                        cashback.apply {
+                            ::owner updateTo BasicCategory(id = it, name = action.name)
+                        }
                     }
                     .onFailure { throwable ->
                         messageHandler.getExceptionMessage(throwable)

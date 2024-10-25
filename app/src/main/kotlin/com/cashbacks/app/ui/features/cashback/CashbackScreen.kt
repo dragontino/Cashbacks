@@ -86,6 +86,7 @@ import com.cashbacks.app.ui.theme.VerdanaFont
 import com.cashbacks.app.util.LoadingInBox
 import com.cashbacks.app.util.animate
 import com.cashbacks.app.util.keyboardAsState
+import com.cashbacks.app.util.mix
 import com.cashbacks.domain.R
 import com.cashbacks.domain.util.LocalDate
 import com.cashbacks.domain.util.LocalDateParceler
@@ -169,12 +170,7 @@ internal fun CashbackScreen(
             DatePickerDialog(
                 date = type.date,
                 onConfirm = {
-                    with(viewModel.cashback) {
-                        updateValue(
-                            property = ::expirationDate,
-                            newValue = it?.format(Cashback.DateFormat) ?: ""
-                        )
-                    }
+                    viewModel.cashback.apply { ::expirationDate updateTo it }
                 },
                 onClose = { viewModel.push(CashbackAction.HideDialog) },
                 isDateSelectable = { date ->
@@ -396,11 +392,7 @@ private fun CashbackContent(
                         selected = { viewModel.cashback.owner?.id == it.id },
                         title = { it.name },
                         onClick = {
-                            viewModel.cashback.updateValue(
-                                property = viewModel.cashback::owner,
-                                newValue = it
-                            )
-
+                            viewModel.cashback.apply { ::owner updateTo it }
                             if (viewModel.showErrors) {
                                 viewModel.push(
                                     CashbackAction.UpdateCashbackErrorMessage(
@@ -499,19 +491,13 @@ private fun CashbackContent(
                         },
                         title = { it.name },
                         onClick = {
-                            with(viewModel.cashback) {
-                                updateValue(
-                                    property = ::bankCard,
-                                    newValue = it
-                                )
-
-                                if (viewModel.showErrors) {
-                                    viewModel.push(
-                                        CashbackAction.UpdateCashbackErrorMessage(
-                                            CashbackError.BankCard
-                                        )
+                            viewModel.cashback.apply { ::bankCard updateTo it }
+                            if (viewModel.showErrors) {
+                                viewModel.push(
+                                    CashbackAction.UpdateCashbackErrorMessage(
+                                        CashbackError.BankCard
                                     )
-                                }
+                                )
                             }
                             viewModel.push(CashbackAction.HideBankCardsSelection)
                         },
@@ -539,6 +525,11 @@ private fun CashbackContent(
                         if (viewModel.showErrors) {
                             viewModel.push(CashbackAction.UpdateCashbackErrorMessage(CashbackError.Amount))
                         }
+                    viewModel.cashback.apply { ::amount updateTo it }
+                    if (viewModel.showErrors) {
+                        viewModel.push(CashbackAction.UpdateCashbackErrorMessage(CashbackError.Amount))
+                    }
+                },
                     }
                 },
                 error = viewModel.showErrors
@@ -575,9 +566,7 @@ private fun CashbackContent(
             EditableTextField(
                 text = viewModel.cashback.comment,
                 onTextChange = {
-                    with(viewModel.cashback) {
-                        updateValue(::comment, it)
-                    }
+                    viewModel.cashback.apply { ::comment updateTo it }
                 },
                 label = stringResource(R.string.comment),
                 singleLine = false,

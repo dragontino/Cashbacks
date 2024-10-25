@@ -397,10 +397,7 @@ private fun CategoryEditingScreenContent(
                     EditableTextField(
                         text = viewModel.category.name,
                         onTextChange = {
-                            viewModel.category.updateValue(
-                                property = viewModel.category::name,
-                                newValue = it
-                            )
+                            viewModel.category.apply { ::name updateTo it }
                         },
                         label = stringResource(R.string.category_placeholder),
                         imeAction = ImeAction.Done,

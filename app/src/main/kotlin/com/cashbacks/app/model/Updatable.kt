@@ -10,21 +10,21 @@ internal interface Updatable {
 
     val haveChanges: Boolean get() = updatedProperties.isNotEmpty()
 
-    fun <T> updateValue(property: KMutableProperty0<T>, newValue: T) {
-        val previousValue = property.get()
-        property.set(newValue)
+    infix fun <T> KMutableProperty0<T>.updateTo(newValue: T): KMutableProperty0<T> {
+        val previousValue = get()
+        set(newValue)
 
-        with(updatedProperties) {
-            val changeHistory = this[property.name]
-
-            when {
-                changeHistory == null -> this[property.name] =
-                    previousValue.toString() to newValue.toString()
-
-                changeHistory.first == newValue.toString() -> remove(property.name)
-
-                else -> this[property.name] = changeHistory.copy(second = newValue.toString())
+        val changeHistory = updatedProperties[name]
+        when {
+            changeHistory == null -> {
+                updatedProperties[name] = previousValue.toString() to newValue.toString()
             }
+
+            changeHistory.first == newValue.toString() -> updatedProperties.remove(name)
+
+            else -> updatedProperties[name] = changeHistory.copy(second = newValue.toString())
         }
+
+        return this
     }
 }

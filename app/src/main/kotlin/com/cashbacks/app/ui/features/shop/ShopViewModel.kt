@@ -205,10 +205,9 @@ class ShopViewModel @AssistedInject constructor(
                 delay(100)
                 addCategory(action.name)
                     .onSuccess {
-                        shop.updateValue(
-                            property = shop::parentCategory,
-                            newValue = BasicCategory(id = it, name = action.name)
-                        )
+                        shop.apply {
+                            ::parentCategory updateTo BasicCategory(id = it, name = action.name)
+                        }
                     }
                     .onFailure { throwable ->
                         messageHandler.getExceptionMessage(throwable)
