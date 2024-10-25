@@ -9,6 +9,11 @@ import androidx.compose.animation.slideOutVertically
 
 object AnimationDefaults {
     const val SCREEN_DELAY_MILLIS: Int = 650
+
+    fun <T> loadingContentAnimation() = tween<T>(
+        durationMillis = 150,
+        easing = FastOutSlowInEasing
+    )
 }
 
 fun floatingActionButtonEnterAnimation(durationMillis: Int = 500) = slideInVertically(

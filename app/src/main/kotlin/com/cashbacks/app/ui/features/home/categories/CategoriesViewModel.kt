@@ -48,7 +48,6 @@ class CategoriesViewModel @Inject constructor(
             flow2 = fetchCategoriesUseCase.fetchCategoriesWithCashback(),
             flow3 = snapshotFlow { listOf(viewModelState, appBarState) },
         ) { allCategories, categoriesWithCashback, _ ->
-            state = ScreenState.Loading
             emit(null)
             delay(200)
 
@@ -62,10 +61,7 @@ class CategoriesViewModel @Inject constructor(
                 viewModelState == ViewModelState.Editing -> allCategories
                 else -> categoriesWithCashback
             }
-
             emit(resultCategories)
-            state = ScreenState.Showing
-
         }.stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5000L),

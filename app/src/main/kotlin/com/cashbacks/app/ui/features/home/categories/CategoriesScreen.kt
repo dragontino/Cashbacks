@@ -66,6 +66,7 @@ import com.cashbacks.app.ui.features.home.categories.mvi.CategoriesEvent
 import com.cashbacks.app.ui.managment.DialogType
 import com.cashbacks.app.ui.managment.ListState
 import com.cashbacks.app.ui.managment.ViewModelState
+import com.cashbacks.app.util.AnimationDefaults
 import com.cashbacks.app.util.LoadingInBox
 import com.cashbacks.app.util.animate
 import com.cashbacks.app.util.floatingActionButtonEnterAnimation
@@ -178,7 +179,7 @@ internal fun CategoriesScreen(
                             && viewModel.appBarState !is HomeTopAppBarState.Search
                             && !viewModel.isCreatingCategory,
                     enter = floatingActionButtonEnterAnimation(),
-                    exit = floatingActionButtonExitAnimation()
+                    exit = floatingActionButtonExitAnimation(),
                 ) {
                     BasicFloatingActionButton(icon = Icons.Rounded.Add) {
                         viewModel.onItemClick {
@@ -197,7 +198,7 @@ internal fun CategoriesScreen(
                             viewModel.onItemClick {
                                 viewModel.push(CategoriesAction.SwitchEdit)
                             }
-                        }
+                        },
                     )
                 }
             },
@@ -206,58 +207,16 @@ internal fun CategoriesScreen(
                 .onGloballyPositioned { fabHeightPx.floatValue = it.size.height.toFloat() }
                 .windowInsetsPadding(WindowInsets.tappableElement.only(WindowInsetsSides.End))
                 .padding(bottom = bottomPadding),
-            modifier = modifier.fillMaxSize()
+            modifier = modifier.fillMaxSize(),
         ) {
-
-            val categoriesState = viewModel.categoriesFlow.collectAsStateWithLifecycle()
-            Crossfade(
-                targetState = ListState.fromList(categoriesState.value),
-                label = "Content loading animation",
-                animationSpec = tween(durationMillis = 100, easing = FastOutSlowInEasing)
-            ) { listState ->
-                when (listState) {
-                    is ListState.Loading -> {
-                        LoadingInBox(
-                            modifier = Modifier.padding(bottom = bottomPadding)
-                        )
-                    }
-
-                    is ListState.Empty -> {
-                        EmptyList(
-                            text = when (val appBarState = viewModel.appBarState) {
-                                is HomeTopAppBarState.Search -> {
-                                    when {
-                                        appBarState.query.isBlank() -> stringResource(R.string.empty_search_query)
-                                        else -> stringResource(R.string.empty_search_results)
-                                    }
-                                }
-
-                                is HomeTopAppBarState.TopBar -> {
-                                    when (viewModel.viewModelState) {
-                                        ViewModelState.Viewing -> stringResource(R.string.empty_categories_list_viewing)
-                                        ViewModelState.Editing -> stringResource(R.string.empty_categories_list_editing)
-                                    }
-                                }
-                            },
-                            icon = Icons.Rounded.DataArray,
-                            iconModifier = Modifier.scale(2.5f),
-                            modifier = Modifier
-                                .padding(bottom = bottomPadding)
-                                .align(Alignment.Center)
-                                .fillMaxSize()
-                        )
-                    }
-
-                    is ListState.Stable -> CategoriesList(
-                        lazyListState = lazyListState,
-                        categoriesList = listState.data,
-                        viewModel = viewModel,
-                        bottomPadding = with(LocalDensity.current) {
-                            (bottomPadding + fabHeightPx.floatValue.toDp()).animate()
-                        }
-                    )
-                }
-            }
+            CategoriesList(
+                lazyListState = contentState,
+                viewModel = viewModel,
+                bottomPadding = with(LocalDensity.current) {
+                    (bottomPadding + fabHeightPx.floatValue.toDp())
+                },
+                modifier = Modifier.align(Alignment.Center)
+            )
         }
 
 
@@ -285,68 +244,122 @@ internal fun CategoriesScreen(
 @Composable
 private fun CategoriesList(
     lazyListState: LazyListState,
-    categoriesList: List<BasicCategory>,
     viewModel: CategoriesViewModel,
-    bottomPadding: Dp
+    bottomPadding: Dp,
+    modifier: Modifier = Modifier
 ) {
-    LazyColumn(
-        state = lazyListState,
-        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.fillMaxSize()
-    ) {
-        itemsIndexed(categoriesList) { index, category ->
-            MaxCashbackOwnerComposable(
-                cashbackOwner = category,
-                isEditing = viewModel.viewModelState == ViewModelState.Editing,
-                isSwiped = viewModel.selectedCategoryIndex == index,
-                onSwipe = { isSwiped ->
-                    viewModel.push(
-                        CategoriesAction.SwipeCategory(
-                            position = index,
-                            isOpened = isSwiped
-                        )
-                    )
-                },
-                onClick = {
-                    viewModel.onItemClick {
-                        viewModel.push(
-                            CategoriesAction.SwipeCategory(isOpened = false)
-                        )
-                        viewModel.push(
-                            CategoriesAction.NavigateToCategory(CategoryArgs(id = category.id))
-                        )
-                    }
-                },
-                onEdit = {
-                    viewModel.onItemClick {
-                        viewModel.push(
-                            CategoriesAction.SwipeCategory(isOpened = false)
-                        )
-                        viewModel.push(
-                            CategoriesAction.NavigateToCategory(
-                                args = CategoryArgs(id = category.id),
-                                isEditing = true
-                            )
-                        )
-                    }
-                },
-                onDelete = {
-                    viewModel.onItemClick {
-                        viewModel.push(
-                            CategoriesAction.SwipeCategory(isOpened = false)
-                        )
+    val categoriesState = viewModel.categoriesFlow.collectAsStateWithLifecycle()
+    Crossfade(
+        targetState = categoriesState.value,
+        label = "Content loading animation",
+        animationSpec = AnimationDefaults.loadingContentAnimation()
+    ) { categoriesList ->
+        when (val listState = ListState.fromList(categoriesList)) {
+            is ListState.Loading -> {
+                LoadingInBox(
+                    modifier = Modifier.padding(bottom = bottomPadding)
+                )
+            }
 
-                        viewModel.push(
-                            CategoriesAction.OpenDialog(DialogType.ConfirmDeletion(category))
+            is ListState.Empty -> {
+                Crossfade(
+                    targetState = viewModel.appBarState to viewModel.viewModelState,
+                    label = "emptyList",
+                    animationSpec = AnimationDefaults.loadingContentAnimation()
+                ) { (appBarState, viewModelState) ->
+                    EmptyList(
+                        text = when (appBarState) {
+                            is HomeTopAppBarState.Search -> {
+                                when {
+                                    appBarState.query.isBlank() -> stringResource(R.string.empty_search_query)
+                                    else -> stringResource(R.string.empty_search_results)
+                                }
+                            }
+
+                            is HomeTopAppBarState.TopBar -> {
+                                when (viewModelState) {
+                                    ViewModelState.Viewing -> stringResource(R.string.empty_categories_list_viewing)
+                                    ViewModelState.Editing -> stringResource(R.string.empty_categories_list_editing)
+                                }
+                            }
+                        },
+                        icon = Icons.Rounded.DataArray,
+                        iconModifier = Modifier.scale(2.5f),
+                        modifier = Modifier
+                            .then(modifier)
+                            .padding(bottom = bottomPadding)
+                            .fillMaxSize()
+                    )
+                }
+            }
+
+            is ListState.Stable -> {
+                LazyColumn(
+                    state = lazyListState,
+                    contentPadding = PaddingValues(
+                        start = 16.dp,
+                        end = 16.dp,
+                        top = 16.dp,
+                        bottom = 8.dp
+                    ),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    itemsIndexed(listState.data) { index, category ->
+                        MaxCashbackOwnerComposable(
+                            cashbackOwner = category,
+                            isEditing = viewModel.viewModelState == ViewModelState.Editing,
+                            isSwiped = viewModel.selectedCategoryIndex == index,
+                            onSwipe = { isSwiped ->
+                                viewModel.push(
+                                    CategoriesAction.SwipeCategory(
+                                        position = index,
+                                        isOpened = isSwiped
+                                    )
+                                )
+                            },
+                            onClick = {
+                                viewModel.onItemClick {
+                                    viewModel.push(
+                                        CategoriesAction.SwipeCategory(isOpened = false)
+                                    )
+                                    viewModel.push(
+                                        CategoriesAction.NavigateToCategory(CategoryArgs(id = category.id))
+                                    )
+                                }
+                            },
+                            onEdit = {
+                                viewModel.onItemClick {
+                                    viewModel.push(
+                                        CategoriesAction.SwipeCategory(isOpened = false)
+                                    )
+                                    viewModel.push(
+                                        CategoriesAction.NavigateToCategory(
+                                            args = CategoryArgs(id = category.id),
+                                            isEditing = true
+                                        )
+                                    )
+                                }
+                            },
+                            onDelete = {
+                                viewModel.onItemClick {
+                                    viewModel.push(
+                                        CategoriesAction.SwipeCategory(isOpened = false)
+                                    )
+
+                                    viewModel.push(
+                                        CategoriesAction.OpenDialog(DialogType.ConfirmDeletion(category))
+                                    )
+                                }
+                            }
                         )
+                    }
+                    item {
+                        Spacer(modifier = Modifier.height(bottomPadding))
                     }
                 }
-            )
-        }
-        item {
-            Spacer(modifier = Modifier.height(bottomPadding))
+            }
         }
     }
 }
