@@ -1,7 +1,6 @@
 package com.cashbacks.domain.model
 
 import kotlinx.parcelize.Parcelize
-import kotlin.random.Random
 
 sealed interface Category : CashbackOwner {
     override val id: Long
@@ -11,7 +10,7 @@ sealed interface Category : CashbackOwner {
 
 @Parcelize
 data class BasicCategory(
-    override val id: Long = Random.nextLong(),
+    override val id: Long = 0L,
     override val name: String = "",
     override val maxCashback: Cashback? = null,
 ) : Category, MaxCashbackOwner
@@ -19,7 +18,7 @@ data class BasicCategory(
 
 @Parcelize
 data class FullCategory(
-    override val id: Long = Random.nextLong(),
+    override val id: Long = 0L,
     override val name: String = "",
     val shops: List<BasicShop> = emptyList(),
     val cashbacks: List<Cashback> = emptyList()

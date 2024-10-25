@@ -2,7 +2,6 @@ package com.cashbacks.domain.model
 
 import android.os.Parcelable
 import kotlinx.parcelize.Parcelize
-import kotlin.random.Random
 
 interface BasicBankCard : Parcelable {
     val id: Long
@@ -57,7 +56,7 @@ data class PreviewBankCard(
 
 @Parcelize
 data class PrimaryBankCard(
-    override val id: Long = Random.nextLong(),
+    override val id: Long = 0L,
     override val name: String = "",
     override val number: String = "",
     override val paymentSystem: PaymentSystem? = null,
@@ -71,7 +70,7 @@ data class PrimaryBankCard(
 
 @Parcelize
 data class FullBankCard(
-    override val id: Long = Random.nextLong(),
+    override val id: Long = 0L,
     override val name: String = "",
     override val number: String = "",
     override val paymentSystem: PaymentSystem? = null,

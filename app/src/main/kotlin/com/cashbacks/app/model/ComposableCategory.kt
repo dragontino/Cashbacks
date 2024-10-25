@@ -9,10 +9,9 @@ import com.cashbacks.domain.model.BasicShop
 import com.cashbacks.domain.model.Cashback
 import com.cashbacks.domain.model.Category
 import com.cashbacks.domain.model.FullCategory
-import kotlin.random.Random
 
 class ComposableCategory(
-    id: Long = Random.nextLong(),
+    id: Long = 0L,
     name: String = "",
     shops: List<BasicShop> = emptyList(),
     cashbacks: List<Cashback> = emptyList()

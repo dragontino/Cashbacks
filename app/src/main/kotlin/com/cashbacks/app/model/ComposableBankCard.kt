@@ -11,7 +11,6 @@ import com.cashbacks.app.util.BankCardUtils
 import com.cashbacks.domain.model.FullBankCard
 import com.cashbacks.domain.model.PaymentSystem
 import kotlin.math.abs
-import kotlin.random.Random
 
 class ComposableBankCard(
     id: Long? = null,
@@ -115,7 +114,7 @@ class ComposableBankCard(
     }
 
     fun mapToBankCard() = FullBankCard(
-        id = this.id ?: Random.nextLong(),
+        id = this.id ?: 0L,
         name = this.name,
         number = BankCardUtils.removeSpacesFromNumber(number.text),
         paymentSystem = this.paymentSystem,

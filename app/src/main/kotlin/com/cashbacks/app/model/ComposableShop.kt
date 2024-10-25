@@ -15,7 +15,6 @@ import com.cashbacks.domain.model.FullCategoryShop
 import com.cashbacks.domain.model.MessageHandler
 import com.cashbacks.domain.model.Shop
 import com.cashbacks.domain.model.ShopNameNotSelectedException
-import kotlin.random.Random
 
 @Stable
 internal class ComposableShop(
@@ -65,11 +64,14 @@ internal class ComposableShop(
         }
     }
 
-    fun mapToShop(): Shop = BasicShop(id = id ?: Random.nextLong(), name = this.name)
+    fun mapToShop(): Shop = BasicShop(
+        id = id ?: 0L,
+        name = this.name
+    )
 
     fun mapToCategoryShop(): CategoryShop? {
         return BasicCategoryShop(
-            id = id ?: Random.nextLong(),
+            id = id ?: 0L,
             parent = parentCategory ?: return null,
             name = this.name,
             maxCashback = null
