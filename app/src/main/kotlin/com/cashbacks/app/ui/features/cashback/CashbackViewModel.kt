@@ -17,6 +17,7 @@ import com.cashbacks.domain.model.Cashback
 import com.cashbacks.domain.model.CashbackOwner
 import com.cashbacks.domain.model.Category
 import com.cashbacks.domain.model.FullCashback
+import com.cashbacks.domain.model.MeasureUnit
 import com.cashbacks.domain.model.MessageHandler
 import com.cashbacks.domain.model.PrimaryBankCard
 import com.cashbacks.domain.model.Shop

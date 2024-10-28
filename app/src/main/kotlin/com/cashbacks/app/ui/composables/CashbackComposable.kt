@@ -33,7 +33,7 @@ import com.cashbacks.app.util.CashbackUtils.getDisplayableExpirationDate
 import com.cashbacks.app.util.animate
 import com.cashbacks.domain.R
 import com.cashbacks.domain.model.BasicCategory
-import com.cashbacks.domain.model.CalculationUnit
+import com.cashbacks.domain.model.MeasureUnit
 import com.cashbacks.domain.model.Cashback
 import com.cashbacks.domain.model.Category
 import com.cashbacks.domain.model.FullCashback
@@ -203,7 +203,7 @@ private fun CashbackComposablePreview() {
                     number = "1111222233334444"
                 ),
                 amount = "12",
-                calculationUnit = CalculationUnit.Percent,
+                measureUnit = MeasureUnit.Percent,
                 expirationDate = LocalDate(dayOfMonth = 26, monthNumber = 10, year = 2024),
                 comment = "Hello world!\nGoodbye, Angels!",
                 owner = BasicCategory(name = "Groceries")

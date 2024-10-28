@@ -88,6 +88,7 @@ import com.cashbacks.app.util.animate
 import com.cashbacks.app.util.keyboardAsState
 import com.cashbacks.app.util.mix
 import com.cashbacks.domain.R
+import com.cashbacks.domain.model.MeasureUnit
 import com.cashbacks.domain.util.LocalDate
 import com.cashbacks.domain.util.LocalDateParceler
 import com.cashbacks.domain.util.epochMillis
@@ -195,6 +196,7 @@ internal fun CashbackScreen(
                 onClose = { viewModel.push(CashbackAction.HideDialog) }
             )
         }
+
         null -> {}
     }
 
@@ -396,7 +398,8 @@ private fun CashbackContent(
                             if (viewModel.showErrors) {
                                 viewModel.push(
                                     CashbackAction.UpdateCashbackErrorMessage(
-                                        CashbackError.Owner)
+                                        CashbackError.Owner
+                                    )
                                 )
                             }
                             viewModel.push(CashbackAction.HideOwnersSelection)

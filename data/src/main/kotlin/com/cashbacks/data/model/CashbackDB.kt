@@ -6,7 +6,7 @@ import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.cashbacks.domain.model.BasicCashback
-import com.cashbacks.domain.model.CalculationUnit
+import com.cashbacks.domain.model.MeasureUnit
 import com.cashbacks.domain.model.Cashback
 import com.cashbacks.domain.model.FullCashback
 import com.cashbacks.domain.model.PreviewBankCard
@@ -89,7 +89,7 @@ data class BasicCashbackDB(
     fun mapToDomainCashback() = BasicCashback(
         id = id,
         amount = amount.toString(),
-        calculationUnit = CalculationUnit.Percent,
+        measureUnit = MeasureUnit.Percent,
         expirationDate = expirationDate?.parseToDate(),
         comment = comment,
         bankCard = bankCard
@@ -111,7 +111,7 @@ data class FullCashbackDB(
             owner = category?.mapToDomainCategory() ?: shop?.mapToDomainShop() ?: return null,
             bankCard = basicCashbackDB.bankCard,
             amount = basicCashbackDB.amount.toString(),
-            calculationUnit = CalculationUnit.Percent,
+            measureUnit = MeasureUnit.Percent,
             expirationDate = basicCashbackDB.expirationDate?.parseToDate(),
             comment = basicCashbackDB.comment
         )

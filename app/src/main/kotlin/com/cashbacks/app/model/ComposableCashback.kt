@@ -9,12 +9,12 @@ import com.cashbacks.app.ui.features.cashback.CashbackOwnerType
 import com.cashbacks.app.util.CashbackUtils.roundedAmount
 import com.cashbacks.domain.model.BankCardNotSelectedException
 import com.cashbacks.domain.model.BasicBankCard
-import com.cashbacks.domain.model.CalculationUnit
 import com.cashbacks.domain.model.CashbackOwner
 import com.cashbacks.domain.model.Category
 import com.cashbacks.domain.model.CategoryNotSelectedException
 import com.cashbacks.domain.model.FullCashback
 import com.cashbacks.domain.model.IncorrectCashbackAmountException
+import com.cashbacks.domain.model.MeasureUnit
 import com.cashbacks.domain.model.MessageHandler
 import com.cashbacks.domain.model.Shop
 import com.cashbacks.domain.model.ShopNotSelectedException
@@ -27,7 +27,7 @@ internal class ComposableCashback private constructor(
     owner: CashbackOwner?,
     bankCard: BasicBankCard?,
     amount: String,
-    calculationUnit: CalculationUnit,
+    measureUnit: MeasureUnit,
     expirationDate: LocalDate?,
     comment: String
 ) : Updatable {
@@ -38,14 +38,14 @@ internal class ComposableCashback private constructor(
         owner = null,
         bankCard = null,
         amount = "",
-        calculationUnit = CalculationUnit.Percent,
+        measureUnit = MeasureUnit.Percent,
         expirationDate = null,
         comment = ""
     )
 
     var id by mutableStateOf(id)
     var amount by mutableStateOf(amount)
-    var calculationUnit by mutableStateOf(calculationUnit)
+    var measureUnit by mutableStateOf(measureUnit)
     var owner by mutableStateOf(owner)
     var bankCard by mutableStateOf(bankCard)
     var expirationDate by mutableStateOf(expirationDate)
@@ -65,7 +65,7 @@ internal class ComposableCashback private constructor(
             id = cashback.id
             owner = cashback.owner
             amount = cashback.roundedAmount
-            calculationUnit = cashback.calculationUnit
+            measureUnit = cashback.measureUnit
             bankCard = cashback.bankCard
             expirationDate = cashback.expirationDate
             comment = cashback.comment
@@ -123,7 +123,7 @@ internal class ComposableCashback private constructor(
             owner = owner ?: return null,
             bankCard = bankCard ?: return null,
             amount = this.amount,
-            calculationUnit = calculationUnit,
+            measureUnit = measureUnit,
             expirationDate = expirationDate,
             comment = this.comment
         )
