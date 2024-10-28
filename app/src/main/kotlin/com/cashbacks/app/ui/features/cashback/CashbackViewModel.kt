@@ -137,13 +137,13 @@ class CashbackViewModel @AssistedInject constructor(
         delay(100)
         when {
             initialCashbackId != null -> {
-                getCashback(initialCashbackId).onSuccess {
-                    cashback.updateCashback(it)
-                }.onFailure { throwable ->
-                    messageHandler.getExceptionMessage(throwable)
-                        ?.takeIf { it.isNotBlank() }
-                        ?.let { push(CashbackEvent.ShowSnackbar(it)) }
-                }
+                getCashback(initialCashbackId)
+                    .onSuccess { cashback.updateCashback(it) }
+                    .onFailure { throwable ->
+                        messageHandler.getExceptionMessage(throwable)
+                            ?.takeIf { it.isNotBlank() }
+                            ?.let { push(CashbackEvent.ShowSnackbar(it)) }
+                    }
             }
 
             initialOwnerId != null -> {

@@ -28,6 +28,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.cashbacks.app.ui.managment.rememberScrollableListItemState
 import com.cashbacks.app.ui.theme.CashbacksTheme
+import com.cashbacks.app.util.CashbackUtils.calculateNumberOfDaysBeforeExpiration
 import com.cashbacks.app.util.CashbackUtils.displayableAmount
 import com.cashbacks.app.util.CashbackUtils.getDisplayableExpirationDate
 import com.cashbacks.app.util.animate
@@ -113,7 +114,14 @@ fun CashbackComposable(
 
             cashback.expirationDate?.let { expirationDate ->
                 CashbackRow(
-                    title = stringResource(R.string.expires),
+                    title = when {
+                        cashback.calculateNumberOfDaysBeforeExpiration() < 0 -> {
+                            stringResource(R.string.expired)
+                        }
+                        else -> {
+                            stringResource(R.string.expires)
+                        }
+                    },
                     content = cashback.getDisplayableExpirationDate(),
                     modifier = Modifier.padding(horizontal = horizontalPadding)
                 )

@@ -69,6 +69,8 @@ internal data object CashbackUtils {
     ): AnnotatedString = buildAnnotatedString {
         val numberOfDaysBeforeExpiration = calculateNumberOfDaysBeforeExpiration(timeZone)
         val text = when (numberOfDaysBeforeExpiration) {
+            -2 -> stringResource(R.string.before_yesterday)
+            -1 -> stringResource(R.string.yesterday)
             0 -> stringResource(R.string.today)
             1 -> stringResource(R.string.tomorrow)
             2 -> stringResource(R.string.after_tomorrow)
@@ -90,10 +92,10 @@ internal data object CashbackUtils {
 
     fun Cashback.calculateNumberOfDaysBeforeExpiration(
         timeZone: TimeZone = TimeZone.currentSystemDefault()
-    ): Int? {
+    ): Int {
         val today = Clock.System.todayIn(timeZone)
         val expirationDate = expirationDate ?: return Int.MAX_VALUE
-        return today.until(expirationDate, DateTimeUnit.DAY).takeIf { it >= 0 }
+        return today.until(expirationDate, DateTimeUnit.DAY)
     }
 }
 
