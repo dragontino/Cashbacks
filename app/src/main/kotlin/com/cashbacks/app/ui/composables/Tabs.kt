@@ -112,9 +112,7 @@ private fun <T : AppBarItem> TabsLayout(
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier
-            .then(modifier)
-            .fillMaxSize()
+        modifier = modifier.fillMaxWidth()
     ) {
         PrimaryTabRow(
             selectedTabIndex = selectedTabIndex.value,

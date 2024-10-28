@@ -99,7 +99,6 @@ import com.cashbacks.app.util.keyboardAsState
 import com.cashbacks.app.util.mix
 import com.cashbacks.domain.R
 import com.cashbacks.domain.model.Cashback
-import com.cashbacks.domain.model.Category
 import com.cashbacks.domain.model.Shop
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -443,7 +442,7 @@ private fun ShopScreenContent(
                             DropdownMenuListContent(
                                 list = categories,
                                 selected = { viewModel.shop.parentCategory?.id == it.id },
-                                title = Category::name,
+                                title = { it.name },
                                 onClick = {
                                     with(viewModel) {
                                         shop.apply { ::parentCategory updateTo it }

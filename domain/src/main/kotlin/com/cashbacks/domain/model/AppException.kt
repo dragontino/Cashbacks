@@ -23,7 +23,7 @@ sealed class EntityException(private val type: Type) : AppException() {
             Type.Shop -> resources.getString(R.string.shop_title)
             Type.Cashback -> resources.getString(R.string.cashback_title)
             else -> ""
-        }.lowercase()
+        }
     }
 }
 
@@ -54,7 +54,7 @@ class InsertionException(type: Type, private val entityName: String) : EntityExc
     override fun getMessage(resources: Resources): String {
         return resources.getString(
             R.string.insertion_exception,
-            getTypeName(resources),
+            getTypeName(resources).lowercase(),
             entityName
         )
     }

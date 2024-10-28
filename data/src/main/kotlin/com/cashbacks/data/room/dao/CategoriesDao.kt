@@ -15,7 +15,7 @@ import kotlinx.coroutines.flow.combine
 @Dao
 interface CategoriesDao : BaseDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
-    suspend fun addCategory(category: CategoryDB): Long
+    suspend fun addCategory(category: CategoryDB): Long?
 
     @Update(entity = CategoryDB::class, onConflict = OnConflictStrategy.REPLACE)
     suspend fun updateCategory(category: CategoryDB)

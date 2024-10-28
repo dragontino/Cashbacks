@@ -20,6 +20,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -92,23 +93,26 @@ internal fun <T : Any> ColumnScope.DropdownMenuListContent(
     list: List<T>,
     selected: (T) -> Boolean,
     onClick: (T) -> Unit,
-    title: (T) -> CharSequence = { it.toString() },
+    title: @Composable ((T) -> CharSequence) = { it.toString() },
     leadingIcon: @Composable ((T) -> Unit)? = null,
     addButton: @Composable (() -> Unit)? = null,
 ) {
     list.forEachIndexed { index, item ->
         DropdownMenuItem(
             text = {
+                val fontWeight = FontWeight.Bold.takeIf { selected(item) }
                 when (val text = title(item)) {
                     is String -> Text(
                         text = text,
                         style = MaterialTheme.typography.bodySmall,
                         maxLines = 1,
+                        fontWeight = fontWeight,
                         overflow = TextOverflow.Ellipsis
                     )
                     is AnnotatedString -> Text(
                         text = text,
                         style = MaterialTheme.typography.bodySmall,
+                        fontWeight = fontWeight,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )

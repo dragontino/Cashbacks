@@ -1,6 +1,6 @@
 [versions]
-app-android = "1.9.0-beta22"
-app-date = "16/10/2024"
+app-android = "1.9.0-beta30"
+app-date = "28/10/2024"
 android-minSdk = "27"
 android-compileSdk = "34"
 
