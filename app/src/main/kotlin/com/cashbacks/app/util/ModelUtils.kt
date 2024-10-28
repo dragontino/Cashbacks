@@ -61,7 +61,7 @@ internal data object CashbackUtils {
         ?: amount
 
 
-    val Cashback.displayableAmount get() = "$roundedAmount${calculationUnit.getDisplayableString()}"
+    val Cashback.displayableAmount get() = "$roundedAmount${measureUnit.getDisplayableString()}"
 
     @Composable
     fun Cashback.getDisplayableExpirationDate(

@@ -98,11 +98,19 @@ internal class ComposableCashback private constructor(
 
                 else -> null
             }
-            CashbackError.Amount -> when {
-                amount.toDoubleOrNull() == null -> messageHandler
-                    .getExceptionMessage(IncorrectCashbackAmountException)
-
-                else -> null
+            CashbackError.Amount -> {
+                val doubleAmount = amount.toDoubleOrNull()
+                if (
+                    doubleAmount == null ||
+                    doubleAmount < 0 ||
+                    (doubleAmount > 100 && measureUnit is MeasureUnit.Percent)
+                ) {
+                    messageHandler
+                        .getExceptionMessage(IncorrectCashbackAmountException)
+                }
+                else {
+                    null
+                }
             }
         }
 

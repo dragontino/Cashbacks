@@ -10,6 +10,7 @@ import com.cashbacks.app.ui.features.bankcard.BankCardArgs
 import com.cashbacks.app.ui.features.cashback.mvi.CashbackAction
 import com.cashbacks.app.ui.features.cashback.mvi.CashbackEvent
 import com.cashbacks.app.ui.features.shop.ShopArgs
+import com.cashbacks.app.ui.managment.ListState
 import com.cashbacks.app.ui.managment.ScreenState
 import com.cashbacks.domain.model.BasicBankCard
 import com.cashbacks.domain.model.BasicCategory
@@ -35,8 +36,12 @@ import dagger.assisted.AssistedInject
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.suspendCancellableCoroutine
+import java.util.Currency
+import java.util.Locale
 
 class CashbackViewModel @AssistedInject constructor(
     private val editCashbackUseCase: EditCashbackUseCase,
@@ -92,6 +97,40 @@ class CashbackViewModel @AssistedInject constructor(
                 initialValue = null
             )
     }
+
+
+    val measureUnitsStateFlow: StateFlow<ListState<MeasureUnit>> by lazy {
+        flow {
+            delay(200)
+            val units = buildList {
+                add(MeasureUnit.Percent)
+                getLocalCurrencies().forEach {
+                    add(MeasureUnit.Currency(it))
+                }
+            }
+            emit(ListState.Stable(units))
+
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000L),
+            initialValue = ListState.Loading
+        )
+    }
+
+
+    private suspend fun getLocalCurrencies(locale: Locale = Locale.getDefault()): List<Currency> =
+        suspendCancellableCoroutine { continuation ->
+            val localeCurrency = Currency.getInstance(locale)
+            val resultCurrencies = buildSet {
+                listOf("EUR", "USD").forEach {
+                    add(Currency.getInstance(it))
+                }
+                add(localeCurrency)
+            }.sortedBy { it.getDisplayName(locale) }
+
+            continuation.resumeWith(Result.success(resultCurrencies))
+        }
+
 
     override suspend fun bootstrap() {
         state = ScreenState.Loading

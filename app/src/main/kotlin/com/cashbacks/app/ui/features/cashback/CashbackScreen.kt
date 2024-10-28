@@ -8,23 +8,34 @@ import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Save
 import androidx.compose.material.icons.rounded.ArrowBackIosNew
+import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.DeleteOutline
+import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.DatePicker
@@ -36,6 +47,8 @@ import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.SelectableDates
@@ -50,23 +63,30 @@ import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.zIndex
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.cashbacks.app.model.CashbackError
-import com.cashbacks.app.model.PaymentSystemUtils
 import com.cashbacks.app.ui.composables.CollapsingToolbarScaffold
 import com.cashbacks.app.ui.composables.ConfirmDeletionDialog
 import com.cashbacks.app.ui.composables.ConfirmExitWithSaveDataDialog
@@ -80,11 +100,15 @@ import com.cashbacks.app.ui.features.cashback.mvi.CashbackAction
 import com.cashbacks.app.ui.features.cashback.mvi.CashbackEvent
 import com.cashbacks.app.ui.features.shop.ShopArgs
 import com.cashbacks.app.ui.managment.DialogType
+import com.cashbacks.app.ui.managment.ListState
 import com.cashbacks.app.ui.managment.ScreenState
 import com.cashbacks.app.ui.theme.CashbacksTheme
 import com.cashbacks.app.ui.theme.VerdanaFont
+import com.cashbacks.app.util.Loading
 import com.cashbacks.app.util.LoadingInBox
+import com.cashbacks.app.util.PaymentSystemUtils
 import com.cashbacks.app.util.animate
+import com.cashbacks.app.util.getDisplayableString
 import com.cashbacks.app.util.keyboardAsState
 import com.cashbacks.app.util.mix
 import com.cashbacks.domain.R
@@ -92,6 +116,7 @@ import com.cashbacks.domain.model.MeasureUnit
 import com.cashbacks.domain.util.LocalDate
 import com.cashbacks.domain.util.LocalDateParceler
 import com.cashbacks.domain.util.epochMillis
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.datetime.Clock
@@ -100,6 +125,7 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
 import kotlinx.parcelize.Parcelize
 import kotlinx.parcelize.WriteWith
+import java.util.Locale
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -167,6 +193,20 @@ internal fun CashbackScreen(
             )
         }
 
+        DialogType.Save -> {
+            ConfirmExitWithSaveDataDialog(
+                onConfirm = {
+                    viewModel.push(
+                        CashbackAction.SaveData {
+                            viewModel.push(CashbackAction.ClickButtonBack)
+                        }
+                    )
+                },
+                onDismiss = { viewModel.push(CashbackAction.ClickButtonBack) },
+                onClose = { viewModel.push(CashbackAction.HideDialog) }
+            )
+        }
+
         is DatePicker -> {
             DatePickerDialog(
                 date = type.date,
@@ -183,16 +223,22 @@ internal fun CashbackScreen(
                 }
             )
         }
-        DialogType.Save -> {
-            ConfirmExitWithSaveDataDialog(
+
+        is CashbackUnitSelection -> {
+            UnitSelectionDialog(
+                measureUnitsFlow = viewModel.measureUnitsStateFlow,
+                selectedUnit = viewModel.cashback.measureUnit,
                 onConfirm = {
-                    viewModel.push(
-                        CashbackAction.SaveData {
-                            viewModel.push(CashbackAction.ClickButtonBack)
+                    viewModel.cashback.apply {
+                        ::measureUnit updateTo it
+                        if (
+                            it is MeasureUnit.Percent &&
+                            amount.toDoubleOrNull()?.let { it !in 0.0..100.0 } == true
+                        ) {
+                            ::amount updateTo ""
                         }
-                    )
+                    }
                 },
-                onDismiss = { viewModel.push(CashbackAction.ClickButtonBack) },
                 onClose = { viewModel.push(CashbackAction.HideDialog) }
             )
         }
@@ -361,7 +407,8 @@ private fun CashbackContent(
                 }
             ) {
                 EditableTextField(
-                    text = viewModel.cashback.owner?.name ?: stringResource(R.string.value_not_selected),
+                    text = viewModel.cashback.owner?.name
+                        ?: stringResource(R.string.value_not_selected),
                     onTextChange = {},
                     label = when (viewModel.ownerType) {
                         CashbackOwnerType.Category -> stringResource(R.string.category_title)
@@ -521,17 +568,33 @@ private fun CashbackContent(
 
             EditableTextField(
                 text = viewModel.cashback.amount,
-                onTextChange = {
-                    viewModel.cashback.apply { ::amount updateTo it }
-                    if (viewModel.showErrors) {
-                        viewModel.push(CashbackAction.UpdateCashbackErrorMessage(CashbackError.Amount))
+                onTextChange = { stringAmount ->
+                    with(viewModel) {
+                        val amount = stringAmount.toDoubleOrNull()
+                        val isAmountCorrect = when {
+                            amount == null -> true
+                            cashback.measureUnit is MeasureUnit.Currency -> amount >= 0
+                            amount in 0.0 .. 100.0 -> true
+                            else -> false
+                        }
+                        if (isAmountCorrect) {
+                            cashback.apply { ::amount updateTo stringAmount }
+                            if (showErrors) {
+                                push(CashbackAction.UpdateCashbackErrorMessage(CashbackError.Amount))
+                            }
+                        }
                     }
                 },
                 trailingActions = {
-                    VerticalDivider()
-
-                    IconButton(onClick = {}) {
-
+                    TextButton(
+                        onClick = {
+                            viewModel.push(CashbackAction.ShowDialog(CashbackUnitSelection))
+                        }
+                    ) {
+                        Text(
+                            text = viewModel.cashback.measureUnit.getDisplayableString(),
+                            style = MaterialTheme.typography.labelMedium
+                        )
                     }
                 },
                 error = viewModel.showErrors
@@ -673,6 +736,196 @@ private fun DatePickerDialog(
         )
     ) {
         DatePicker(state = datePickerState)
+    }
+}
+
+
+
+
+@Parcelize
+private object CashbackUnitSelection : DialogType
+
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+@Composable
+private fun UnitSelectionDialog(
+    measureUnitsFlow: StateFlow<ListState<MeasureUnit>>,
+    selectedUnit: MeasureUnit?,
+    onConfirm: (MeasureUnit) -> Unit,
+    onClose: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val unitsState = measureUnitsFlow.collectAsStateWithLifecycle()
+    val selectedUnit = rememberSaveable { mutableStateOf(selectedUnit) }
+    val confirmEnabled = remember {
+        derivedStateOf { selectedUnit.value != null }
+    }
+    val topPaddingPx = remember { mutableFloatStateOf(0f) }
+    val bottomPaddingPx = remember { mutableFloatStateOf(0f) }
+
+    BasicAlertDialog(
+        onDismissRequest = onClose,
+        properties = DialogProperties(usePlatformDefaultWidth = true),
+        modifier = Modifier
+            .then(modifier)
+            .clip(MaterialTheme.shapes.medium)
+            .border(
+                width = 1.5.dp,
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+                shape = MaterialTheme.shapes.medium
+            )
+    ) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .background(MaterialTheme.colorScheme.surface)
+                .padding(vertical = 16.dp)
+                .fillMaxWidth()
+        ) {
+            Text(
+                text = stringResource(R.string.cashback_measure_unit),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onBackground,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .background(MaterialTheme.colorScheme.surface.copy(alpha = .85f))
+                    .onGloballyPositioned { topPaddingPx.floatValue = it.size.height.toFloat() }
+                    .padding(horizontal = 16.dp)
+                    .zIndex(1.2f)
+                    .align(Alignment.TopCenter)
+                    .fillMaxWidth()
+            )
+
+            LazyColumn(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier
+                    .background(MaterialTheme.colorScheme.surface)
+                    .padding(vertical = 8.dp)
+            ) {
+                item {
+                    Spacer(
+                        Modifier.height(
+                            with(LocalDensity.current) { topPaddingPx.floatValue.toDp() }
+                        )
+                    )
+                }
+
+                when (unitsState.value) {
+                    is ListState.Loading -> item {
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Loading()
+                        }
+                    }
+
+                    else -> items(
+                        items = unitsState.value.data,
+                        key = { it.toString() }
+                    ) { calculationUnit ->
+                        ListItem(
+                            leadingContent = {
+                                Text(
+                                    text = buildString {
+                                        calculationUnit.getDisplayableString().let {
+                                            when (it.length) {
+                                                1 -> append(' ', it, ' ')
+                                                2 -> append(it, ' ')
+                                                else -> append(it)
+                                            }
+                                        }
+                                    },
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontFamily = FontFamily.Monospace,
+                                    fontWeight = FontWeight.Bold.takeIf {
+                                        calculationUnit == selectedUnit.value
+                                    }
+                                )
+                            },
+                            headlineContent = {
+                                Text(
+                                    text = when (calculationUnit) {
+                                        is MeasureUnit.Percent -> stringResource(R.string.percents)
+                                        is MeasureUnit.Currency -> calculationUnit.currency
+                                            .getDisplayName(Locale.getDefault())
+                                    },
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Bold.takeIf {
+                                        calculationUnit == selectedUnit.value
+                                    }
+                                )
+                            },
+                            trailingContent = {
+                                if (calculationUnit == selectedUnit.value) {
+                                    Icon(
+                                        imageVector = Icons.Rounded.Check,
+                                        contentDescription = null
+                                    )
+                                }
+                            },
+                            colors = ListItemDefaults.colors(
+                                headlineColor = MaterialTheme.colorScheme.onBackground,
+                                leadingIconColor = MaterialTheme.colorScheme.onBackground,
+                                trailingIconColor = MaterialTheme.colorScheme.primary
+                            ),
+                            modifier = Modifier
+                                .clickable { selectedUnit.value = calculationUnit }
+                                .padding(horizontal = 16.dp, vertical = 4.dp)
+                        )
+                    }
+                }
+
+
+                item {
+                    Spacer(
+                        modifier = Modifier.height(
+                            with(LocalDensity.current) { bottomPaddingPx.floatValue.toDp() }
+                        )
+                    )
+                }
+            }
+
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.End,
+                modifier = Modifier
+                    .background(MaterialTheme.colorScheme.surface.copy(alpha = .85f))
+                    .onGloballyPositioned { bottomPaddingPx.floatValue = it.size.height.toFloat() }
+                    .padding(horizontal = 16.dp)
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+            ) {
+                TextButton(onClose) {
+                    Text(
+                        text = stringResource(R.string.cancel),
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontFamily = FontFamily(VerdanaFont),
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                Spacer(Modifier.width(8.dp))
+
+                TextButton(
+                    onClick = {
+                        selectedUnit.value?.let {
+                            onConfirm(it)
+                            onClose()
+                        }
+                    },
+                    enabled = confirmEnabled.value
+                ) {
+                    Text(
+                        text = stringResource(R.string.save),
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontFamily = FontFamily(VerdanaFont),
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+        }
     }
 }
 
