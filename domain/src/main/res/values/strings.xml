@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">My cashbacks</string>
+    <string name="app_version_pattern">Version %1$s dated %2$s</string>
+    <string name="value_not_selected">Not selected</string>
+
+    <string name="home">Home</string>
+    <string name="categories_title">My categories</string>
+    <string name="shops_title">My shops</string>
+    <string name="bank_cards_title">My cards</string>
+    <string name="cashbacks_title">My cashbacks</string>
+    <string name="categories">Categories</string>
+    <string name="shops">Shops</string>
+    <string name="cashbacks">Cashbacks</string>
+    <string name="bank_cards">Cards</string>
+    <string name="settings">Settings</string>
+
+    <string name="bank_card">Bank Card</string>
+    <string name="shop_title">Shop</string>
+    <string name="cashback_title">Cashback</string>
+    <string name="category_title">Category</string>
+
+    <string name="dynamic_color">Use dynamic colors in application design</string>
+    <string name="dynamic_color_desc">Application color palette automatically adapts and integrates with user settings</string>
+    <string name="auto_delete_expired_cashbacks">Automatically delete expired cashbacks</string>
+
+    <string name="expired_cashbacks_deletion_success">Expired cashbacks have been deleted</string>
+
+    <!-- App design -->
+    <string name="dark_scheme">Dark</string>
+    <string name="light_scheme">Light</string>
+    <string name="system_scheme">As on device</string>
+    <string name="now">(Now %s)</string>
+
+    <string name="switchThemeText">App design:</string>
+
+
+    <string name="empty_categories_list_viewing">There are no categories with cashbacks.\nClick on the pencil to view all categories</string>
+    <string name="empty_categories_list_editing">Click + to add categories</string>
+    <string name="add_category">Add category</string>
+    <string name="no_cashbacks_for_category">There are no cashbacks for this category</string>
+    <string name="confirm_category_deletion">Delete category «%s»?</string>
+
+    <string name="category_placeholder">Category name</string>
+    <string name="shop_placeholder">Shop name</string>
+    <string name="add_cashback">Add cashback</string>
+    <string name="no_cashbacks_for_shop">There are no cashbacks for this shop</string>
+    <string name="no_cashbacks">There are no cashbacks</string>
+
+    <string name="search_categories_placeholder">Search by category</string>
+    <string name="search_shops_placeholder">Search by shops</string>
+    <string name="search_cashbacks_placeholder">Search by cashbacks</string>
+    <string name="search_cards_placeholder">Search by bank cards</string>
+
+    <string name="empty_search_query">Start typing a query…</string>
+    <string name="empty_search_results">The search was inconclusive</string>
+
+    <string name="empty_shops_list_viewing">
+        There are no shops with cashbacks.\nClick on the pencil to view all stores in this category
+    </string>
+    <string name="empty_shops_list_editing">Click + to add shops</string>
+    <string name="empty_cashbacks_list_viewing">There are no cashbacks. Go to edit mode to add new cashbacks</string>
+    <string name="empty_cashbacks_list_editing">Click + to add cashbacks</string>
+    <string name="empty_bank_cards_list">Click + to add bank card</string>
+    <string name="confirm_shop_deletion">Delete shop «%s»?</string>
+
+    <!-- Cashback screen -->
+    <string name="amount">Amount</string>
+    <string name="comment">Comment</string>
+    <string name="confirm_cashback_deletion">Delete cashback?</string>
+    <string name="add_card">Add bank card</string>
+    <string name="add_shop">Add shop</string>
+    <string name="on_card">On card</string>
+    <string name="add_cashback_title">Add cashback…</string>
+    <string name="to_category">To a category</string>
+    <string name="to_shop">To a shop</string>
+    <string name="percents">Percents</string>
+
+    <!-- Bank card editing screen -->
+    <string name="card_name">Name</string>
+    <string name="main_info">Basic data</string>
+    <string name="card_number">Card number</string>
+    <string name="payment_system">Payment system</string>
+    <string name="card_holder">Card holder</string>
+    <string name="validity_period">Validity period</string>
+    <string name="indefinitely_period">Indefinitely</string>
+    <string name="cvv" translatable="false">CVC2/CVV2</string>
+    <string name="pin" translatable="false">PIN</string>
+    <string name="additional_info">Optional</string>
+    <string name="expires">Expires</string>
+    <string name="today">Today</string>
+    <string name="tomorrow">Tomorrow</string>
+    <string name="after_tomorrow">The day after tomorrow</string>
+    <string name="expired">Expired</string>
+    <string name="yesterday">Yesterday</string>
+    <string name="before_yesterday">The day before yesterday</string>
+    <string name="cashback_measure_unit">The unit of measurement if cashback</string>
+
+    <string name="full_name">Full name</string>
+    <string name="cvv_for_copy">CVV number</string>
+
+    <string name="card_part_text_is_copied">%s has been copied to the clipboard</string>
+    <string name="text_is_copied">Text has been copied!</string>
+    <string name="confirm_card_deletion">Delete bank card «%s»?</string>
+
+    <!-- Bank card viewing screen -->
+    <string name="open">Open</string>
+
+    <!-- Dialogs -->
+    <string name="save">Save</string>
+    <string name="delete">Delete</string>
+    <string name="cancel">Cancel</string>
+    <string name="confirm_deletion">Confirm deletion</string>
+    <string name="do_not_save">Do not save</string>
+    <string name="unsaved_data">You have unsaved data. Save it?</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+
+    <!-- Payment systems -->
+    <string-array name="payment_systems" translatable="false">
+        <item name="visa">Visa</item>
+        <item name="master_card">Mastercard</item>
+        <item name="mir">МИР</item>
+        <item name="jcb">JCB</item>
+        <item name="union_pay">China UnionPay</item>
+        <item name="american_express">American Express</item>
+    </string-array>
+
+    <!-- Exceptions handle -->
+    <string name="entry_already_exists_exception">A %s by that name already exists!</string>
+    <string name="save_settings_exception">Failed to save settings into database</string>
+    <string name="settings_not_found_exception">Failed to find saved settings in database!</string>
+    <string name="deletion_exception">Failed to delete %1$s «%2$s»</string>
+    <string name="expired_cashbacks_deletion_failure">Failed to delete expired cashbacks</string>
+    <string name="incorrect_cashback_amount">Incorrect amount! Use a dot as a separator in a number</string>
+    <string name="bank_card_not_selected">You did not select a bank card!</string>
+    <string name="category_not_selected">You did not select a category!</string>
+    <string name="shop_not_selected">You did not select a shop!</string>
+    <string name="shop_name_not_selected">Enter shop name!</string>
+    <string name="insertion_exception">Failed to insert %1$s <b>«%2$s»</b> into database</string>
+    <string name="update_exception">Failed to update %1$s <b>«%2$s»</b></string>
+    <string name="entity_not_found_exception">Failed to find %1$s with id %2$s in database!</string>
+</resources>
