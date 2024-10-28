@@ -93,6 +93,7 @@ import com.cashbacks.app.ui.composables.ConfirmExitWithSaveDataDialog
 import com.cashbacks.app.ui.composables.DropdownMenu
 import com.cashbacks.app.ui.composables.DropdownMenuListContent
 import com.cashbacks.app.ui.composables.EditableTextField
+import com.cashbacks.app.ui.composables.EditableTextFieldDefaults
 import com.cashbacks.app.ui.composables.NewNameTextField
 import com.cashbacks.app.ui.composables.OnLifecycleEvent
 import com.cashbacks.app.ui.features.bankcard.BankCardArgs
@@ -544,9 +545,7 @@ private fun CashbackContent(
                             viewModel.cashback.apply { ::bankCard updateTo it }
                             if (viewModel.showErrors) {
                                 viewModel.push(
-                                    CashbackAction.UpdateCashbackErrorMessage(
-                                        CashbackError.BankCard
-                                    )
+                                    CashbackAction.UpdateCashbackErrorMessage(CashbackError.BankCard)
                                 )
                             }
                             viewModel.push(CashbackAction.HideBankCardsSelection)
@@ -597,6 +596,10 @@ private fun CashbackContent(
                         )
                     }
                 },
+                colors = EditableTextFieldDefaults.colors(
+                    focusedTrailingActionsColor = MaterialTheme.colorScheme.onBackground,
+                    unfocusedTrailingActionsColor = MaterialTheme.colorScheme.onBackground
+                ),
                 error = viewModel.showErrors
                         && viewModel.cashback.errors[CashbackError.Amount] != null,
                 errorMessage = viewModel.cashback.errors[CashbackError.Amount] ?: "",
@@ -611,6 +614,20 @@ private fun CashbackContent(
                 text = viewModel.cashback.expirationDate?.getDisplayableString() ?: "",
                 onTextChange = {},
                 label = stringResource(R.string.validity_period),
+                trailingActions = {
+                    if (viewModel.cashback.expirationDate != null) {
+                        IconButton(
+                            onClick = {
+                                viewModel.cashback.apply { ::expirationDate updateTo null }
+                            }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Close,
+                                contentDescription = null
+                            )
+                        }
+                    }
+                },
                 textStyle = MaterialTheme.typography.bodyMedium,
                 enabled = false,
                 modifier = Modifier
