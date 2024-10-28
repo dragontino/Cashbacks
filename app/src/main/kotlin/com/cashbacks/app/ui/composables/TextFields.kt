@@ -35,9 +35,11 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldColors
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -204,8 +206,10 @@ fun EditableTextField(
     visualTransformation: VisualTransformation = VisualTransformation.None,
     leadingIcon: @Composable (() -> Unit)? = null,
     trailingActions: @Composable (RowScope.() -> Unit) = {},
+    prefix: @Composable (() -> Unit)? = null,
+    suffix: @Composable (() -> Unit)? = null,
     shape: Shape = MaterialTheme.shapes.medium,
-    borderColors: Collection<Color> = EditableTextFieldDefaults.borderColors
+    colors: EditableTextFieldColors = EditableTextFieldDefaults.colors()
 ) {
     EditableTextField(
         value = value,
@@ -227,8 +231,10 @@ fun EditableTextField(
         visualTransformation = visualTransformation,
         leadingIcon = leadingIcon,
         trailingActions = trailingActions,
+        prefix = prefix,
+        suffix = suffix,
         shape = shape,
-        borderColors = borderColors
+        colors = colors
     )
 }
 
@@ -262,8 +268,10 @@ fun EditableTextField(
     visualTransformation: VisualTransformation = VisualTransformation.None,
     leadingIcon: @Composable (() -> Unit)? = null,
     trailingActions: @Composable (RowScope.() -> Unit) = {},
+    prefix: @Composable (() -> Unit)? = null,
+    suffix: @Composable (() -> Unit)? = null,
     shape: Shape = MaterialTheme.shapes.medium,
-    borderColors: Collection<Color> = EditableTextFieldDefaults.borderColors
+    colors: EditableTextFieldColors = EditableTextFieldDefaults.colors()
 ) {
     EditableTextField(
         value = text,
@@ -285,8 +293,10 @@ fun EditableTextField(
         visualTransformation = visualTransformation,
         leadingIcon = leadingIcon,
         trailingActions = trailingActions,
+        prefix = prefix,
+        suffix = suffix,
         shape = shape,
-        borderColors = borderColors
+        colors = colors
     )
 }
 
@@ -314,8 +324,10 @@ private fun <T> EditableTextField(
     visualTransformation: VisualTransformation,
     leadingIcon: @Composable (() -> Unit)?,
     trailingActions: @Composable (RowScope.() -> Unit),
+    prefix: @Composable (() -> Unit)?,
+    suffix: @Composable (() -> Unit)?,
     shape: Shape,
-    borderColors: Collection<Color>
+    colors: EditableTextFieldColors
 ) {
     val focusManager = LocalFocusManager.current
     var showSupportingText by rememberSaveable { mutableStateOf(true) }
@@ -337,12 +349,12 @@ private fun <T> EditableTextField(
     val borderBrush = when {
         error -> SolidColor(MaterialTheme.colorScheme.error.animate())
         readOnly -> SolidColor(MaterialTheme.colorScheme.onBackground.animate())
-        else -> Brush.horizontalGradient(colors = borderColors.map { it.animate() })
+        else -> Brush.horizontalGradient(colors = colors.borderColors(enabled).map { it.animate() })
     }
     val cursorBrush = when {
-        error || readOnly || !enabled -> borderBrush
+        error || readOnly -> borderBrush
         else -> Brush.verticalGradient(
-            colors = borderColors.map { it.animate() },
+            colors = colors.cursorColors.map { it.animate() },
             tileMode = TileMode.Mirror
         )
     }
@@ -413,7 +425,7 @@ private fun <T> EditableTextField(
                         onClick = { showSupportingText = !showSupportingText },
                         colors = IconButtonDefaults.iconButtonColors(
                             containerColor = Color.Transparent,
-                            contentColor = MaterialTheme.colorScheme.error/*.animate()*/
+                            contentColor = MaterialTheme.colorScheme.error
                         ),
                         modifier = Modifier.padding(horizontal = 2.dp, vertical = 4.dp)
                     ) {
@@ -429,27 +441,13 @@ private fun <T> EditableTextField(
                     }
                 }
             },
+            prefix = prefix,
+            suffix = suffix,
             contentPadding = TextFieldDefaults.contentPaddingWithLabel(
                 top = 16.dp,
                 bottom = 16.dp
             ),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedTextColor = textColor.animate(),
-                unfocusedTextColor = unfocusedTextColor.animate(),
-                disabledTextColor = textColor.animate(),
-                focusedContainerColor = containerColor,
-                unfocusedContainerColor = containerColor,
-                disabledContainerColor = containerColor,
-                errorContainerColor = containerColor,
-                disabledBorderColor = Color.Transparent,
-                focusedLeadingIconColor = textColor.animate(),
-                unfocusedLeadingIconColor = textColor.animate(),
-                disabledLeadingIconColor = unfocusedTextColor.animate(),
-                errorLeadingIconColor = MaterialTheme.colorScheme.error.animate(),
-                focusedSupportingTextColor = MaterialTheme.colorScheme.error.animate(),
-                unfocusedSupportingTextColor = MaterialTheme.colorScheme.error.animate(),
-                disabledSupportingTextColor = MaterialTheme.colorScheme.error.animate(),
-            ),
+            colors = colors.textFieldColors,
             container = {
                 val borderModifier = Modifier.border(
                     border = animateBorderStrokeAsState(
@@ -622,13 +620,60 @@ internal class KeyboardParams private constructor(
 
 
 object EditableTextFieldDefaults {
-    val borderColors
     @Composable
-    get() = listOf(
-        MaterialTheme.colorScheme.primary,
-        MaterialTheme.colorScheme.primaryContainer,
-        MaterialTheme.colorScheme.secondary,
-        MaterialTheme.colorScheme.onBackground
+    fun colors(
+        focusedTextColor: Color = MaterialTheme.colorScheme.onBackground,
+        unfocusedTextColor: Color = focusedTextColor.copy(alpha = 0.7f),
+        disabledTextColor: Color = focusedTextColor,
+        errorTextColor: Color = Color.Unspecified,
+        focusedContainerColor: Color = Color.Transparent,
+        unfocusedContainerColor: Color = Color.Transparent,
+        disabledContainerColor: Color = Color.Transparent,
+        errorContainerColor: Color = Color.Transparent,
+        focusedLeadingIconColor: Color = focusedTextColor,
+        unfocusedLeadingIconColor: Color = focusedTextColor,
+        disabledLeadingIconColor: Color = unfocusedTextColor,
+        errorLeadingIconColor: Color = MaterialTheme.colorScheme.error,
+        focusedTrailingActionsColor: Color = Color.Unspecified,
+        unfocusedTrailingActionsColor: Color = Color.Unspecified,
+        disabledTrailingActionsColor: Color = Color.Unspecified,
+        errorTrailingActionsColor: Color = MaterialTheme.colorScheme.error,
+        focusedSupportingTextColor: Color = MaterialTheme.colorScheme.error,
+        unfocusedSupportingTextColor: Color = MaterialTheme.colorScheme.error,
+        disabledSupportingTextColor: Color = MaterialTheme.colorScheme.error,
+        errorSupportingTextColor: Color = MaterialTheme.colorScheme.error,
+        enabledBorderColors: Collection<Color> = listOf(
+            MaterialTheme.colorScheme.primary,
+            MaterialTheme.colorScheme.primaryContainer,
+            MaterialTheme.colorScheme.secondary,
+            MaterialTheme.colorScheme.onBackground
+        ),
+        disabledBorderColors: Collection<Color> = enabledBorderColors,
+        cursorColors: Collection<Color> = enabledBorderColors,
+    ): EditableTextFieldColors = EditableTextFieldColors(
+        focusedTextColor = focusedTextColor,
+        unfocusedTextColor = unfocusedTextColor,
+        disabledTextColor = disabledTextColor,
+        errorTextColor = errorTextColor,
+        focusedContainerColor = focusedContainerColor,
+        unfocusedContainerColor = unfocusedContainerColor,
+        disabledContainerColor = disabledContainerColor,
+        errorContainerColor = errorContainerColor,
+        focusedLeadingIconColor = focusedLeadingIconColor,
+        unfocusedLeadingIconColor = unfocusedLeadingIconColor,
+        disabledLeadingIconColor = disabledLeadingIconColor,
+        errorLeadingIconColor = errorLeadingIconColor,
+        focusedTrailingActionsColor = focusedTrailingActionsColor,
+        unfocusedTrailingActionsColor = unfocusedTrailingActionsColor,
+        disabledTrailingActionsColor = disabledTrailingActionsColor,
+        errorTrailingActionsColor = errorTrailingActionsColor,
+        focusedSupportingTextColor = focusedSupportingTextColor,
+        unfocusedSupportingTextColor = unfocusedSupportingTextColor,
+        disabledSupportingTextColor = disabledSupportingTextColor,
+        errorSupportingTextColor = errorSupportingTextColor,
+        enabledBorderColors = enabledBorderColors,
+        disabledBorderColors = disabledBorderColors,
+        cursorColors = cursorColors
     )
 
     fun passwordVisualTransformation(isVisible: Boolean) = when {
@@ -636,6 +681,68 @@ object EditableTextFieldDefaults {
         else -> PasswordVisualTransformation()
     }
 }
+
+
+
+data class EditableTextFieldColors(
+    val focusedTextColor: Color,
+    val unfocusedTextColor: Color,
+    val disabledTextColor: Color,
+    val errorTextColor: Color,
+    val focusedContainerColor: Color,
+    val unfocusedContainerColor: Color,
+    val disabledContainerColor: Color,
+    val errorContainerColor: Color,
+    val focusedLeadingIconColor: Color,
+    val unfocusedLeadingIconColor: Color,
+    val disabledLeadingIconColor: Color,
+    val errorLeadingIconColor: Color,
+    val focusedTrailingActionsColor: Color,
+    val unfocusedTrailingActionsColor: Color,
+    val disabledTrailingActionsColor: Color,
+    val errorTrailingActionsColor: Color,
+    val focusedSupportingTextColor: Color,
+    val unfocusedSupportingTextColor: Color,
+    val disabledSupportingTextColor: Color,
+    val errorSupportingTextColor: Color,
+    val enabledBorderColors: Collection<Color>,
+    val disabledBorderColors: Collection<Color>,
+    val cursorColors: Collection<Color>,
+) {
+    val textFieldColors: TextFieldColors
+        @Composable
+        @Stable
+        get() = OutlinedTextFieldDefaults.colors(
+            focusedTextColor = focusedTextColor.animate(),
+            unfocusedTextColor = unfocusedTextColor.animate(),
+            disabledTextColor = disabledTextColor.animate(),
+            errorTextColor = errorTextColor.animate(),
+            focusedContainerColor = focusedContainerColor.animate(),
+            unfocusedContainerColor = unfocusedContainerColor.animate(),
+            disabledContainerColor = disabledContainerColor.animate(),
+            errorContainerColor = errorContainerColor.animate(),
+            focusedLeadingIconColor = focusedLeadingIconColor.animate(),
+            unfocusedLeadingIconColor = unfocusedLeadingIconColor.animate(),
+            disabledLeadingIconColor = disabledLeadingIconColor.animate(),
+            errorLeadingIconColor = errorLeadingIconColor.animate(),
+            focusedTrailingIconColor = focusedTrailingActionsColor.animate(),
+            unfocusedTrailingIconColor = unfocusedTrailingActionsColor.animate(),
+            disabledTrailingIconColor = disabledTrailingActionsColor.animate(),
+            errorTrailingIconColor = errorTrailingActionsColor.animate(),
+            focusedSupportingTextColor = focusedSupportingTextColor.animate(),
+            unfocusedSupportingTextColor = unfocusedSupportingTextColor.animate(),
+            disabledSupportingTextColor = disabledSupportingTextColor.animate(),
+            errorSupportingTextColor = errorSupportingTextColor.animate(),
+        )
+
+
+    @Stable
+    fun borderColors(enabled: Boolean) = when {
+        enabled -> enabledBorderColors
+        else -> disabledBorderColors
+    }
+}
+
 
 
 @Composable
