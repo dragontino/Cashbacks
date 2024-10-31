@@ -1,17 +1,20 @@
 package com.cashbacks.data.model
 
+import androidx.room.ColumnInfo
 import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.cashbacks.domain.model.BasicCashback
-import com.cashbacks.domain.model.MeasureUnit
 import com.cashbacks.domain.model.Cashback
 import com.cashbacks.domain.model.FullCashback
+import com.cashbacks.domain.model.MeasureUnit
 import com.cashbacks.domain.model.PreviewBankCard
 import com.cashbacks.domain.util.format
 import com.cashbacks.domain.util.parseToDate
+import com.cashbacks.domain.util.today
+import kotlinx.datetime.Clock
 
 data class AmountDB(val value: Double) : Comparable<AmountDB> {
     constructor(value: String) : this(value.toDoubleOrNull() ?: -1.0)
@@ -58,9 +61,13 @@ data class CashbackDB(
     val shopId: Long?,
     val categoryId: Long?,
     val bankCardId: Long,
-    val amount: AmountDB = AmountDB(-1.0),
-    val expirationDate: String? = "",
-    val comment: String = ""
+    val amount: AmountDB,
+    @ColumnInfo(defaultValue = MeasureUnit.PERCENT_MARK)
+    val measureUnit: MeasureUnit,
+    @ColumnInfo(defaultValue = "null")
+    val startDate: String?,
+    val expirationDate: String?,
+    val comment: String
 ) {
     constructor(
         cashback: Cashback,
@@ -72,6 +79,8 @@ data class CashbackDB(
         categoryId = categoryId,
         bankCardId = cashback.bankCard.id,
         amount = AmountDB(cashback.amount),
+        measureUnit = cashback.measureUnit,
+        startDate = cashback.startDate.format(),
         expirationDate = cashback.expirationDate?.format(),
         comment = cashback.comment
     )
@@ -83,16 +92,19 @@ data class BasicCashbackDB(
     @Embedded(prefix = "card_")
     val bankCard: PreviewBankCard,
     val amount: AmountDB,
+    val measureUnit: MeasureUnit,
+    val startDate: String?,
     val expirationDate: String?,
     val comment: String
 ) {
     fun mapToDomainCashback() = BasicCashback(
         id = id,
+        bankCard = bankCard,
         amount = amount.toString(),
-        measureUnit = MeasureUnit.Percent,
+        measureUnit = measureUnit,
+        startDate = startDate?.parseToDate() ?: Clock.System.today(),
         expirationDate = expirationDate?.parseToDate(),
-        comment = comment,
-        bankCard = bankCard
+        comment = comment
     )
 }
 
@@ -107,13 +119,8 @@ data class FullCashbackDB(
 ) {
     fun mapToDomainCashback(): FullCashback? {
         return FullCashback(
-            id = basicCashbackDB.id,
-            owner = category?.mapToDomainCategory() ?: shop?.mapToDomainShop() ?: return null,
-            bankCard = basicCashbackDB.bankCard,
-            amount = basicCashbackDB.amount.toString(),
-            measureUnit = MeasureUnit.Percent,
-            expirationDate = basicCashbackDB.expirationDate?.parseToDate(),
-            comment = basicCashbackDB.comment
+            basicCashback = basicCashbackDB.mapToDomainCashback(),
+            owner = category?.mapToDomainCategory() ?: shop?.mapToDomainShop() ?: return null
         )
     }
 }

@@ -1,6 +1,7 @@
 package com.cashbacks.domain.util
 
 import android.os.Parcel
+import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
@@ -9,6 +10,7 @@ import kotlinx.datetime.format
 import kotlinx.datetime.format.DateTimeFormatBuilder
 import kotlinx.datetime.format.char
 import kotlinx.datetime.toLocalDateTime
+import kotlinx.datetime.todayIn
 import kotlinx.parcelize.Parceler
 
 
@@ -66,4 +68,9 @@ fun LocalDate.epochMillis(timeZone: TimeZone = TimeZone.UTC): Long {
 
 fun LocalDate(epochMillis: Long, timeZone: TimeZone = TimeZone.UTC): LocalDate {
     return Instant.fromEpochMilliseconds(epochMillis).toLocalDateTime(timeZone).date
+}
+
+
+fun Clock.System.today(timeZone: TimeZone = TimeZone.currentSystemDefault()): LocalDate {
+    return Clock.System.todayIn(timeZone)
 }

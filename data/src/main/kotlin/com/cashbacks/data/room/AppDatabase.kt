@@ -25,7 +25,11 @@ import com.cashbacks.data.room.dao.ShopsDao
         AutoMigration(from = 1, to = 2)
     ]
 )
-@TypeConverters(PaymentSystemConverter::class, AmountConverter::class)
+@TypeConverters(
+    PaymentSystemConverter::class,
+    AmountConverter::class,
+    MeasureUnitConverter::class
+)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun cardsDao(): CardsDao
     abstract fun shopsDao(): ShopsDao

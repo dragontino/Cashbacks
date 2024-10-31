@@ -19,7 +19,7 @@ sealed class MeasureUnit : Parcelable {
     }
 
     companion object {
-        private const val PERCENT_MARK = "%"
+        const val PERCENT_MARK = "%"
 
         internal fun fromString(unitString: String): MeasureUnit = when(unitString) {
             PERCENT_MARK -> Percent
