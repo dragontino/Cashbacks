@@ -3,7 +3,7 @@ package com.cashbacks.domain.model
 import android.os.Parcelable
 import kotlinx.parcelize.Parcelize
 
-interface BasicBankCard : Parcelable {
+sealed interface BasicBankCard : Parcelable {
     val id: Long
     val name: String
     val number: String
@@ -39,6 +39,8 @@ sealed interface BankCard : BasicBankCard {
     val validityPeriod: String
     val cvv: String
 }
+
+
 
 
 @Parcelize
@@ -79,4 +81,5 @@ data class FullBankCard(
     override val cvv: String = "",
     val pin: String = "",
     val comment: String = "",
+    val maxCashbacksNumber: Int? = null
 ) : BankCard

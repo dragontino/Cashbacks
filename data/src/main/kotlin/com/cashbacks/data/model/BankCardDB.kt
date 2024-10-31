@@ -1,5 +1,6 @@
 package com.cashbacks.data.model
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.cashbacks.domain.model.FullBankCard
@@ -13,11 +14,13 @@ data class BankCardDB(
     val name: String,
     val number: String,
     val paymentSystem: PaymentSystem?,
-    val holder: String = "",
-    val validityPeriod: String = "",
-    val cvv: String = "",
-    val pin: String = "",
-    val comment: String = "",
+    val holder: String,
+    val validityPeriod: String,
+    val cvv: String,
+    val pin: String,
+    val comment: String,
+    @ColumnInfo(defaultValue = "null")
+    val maxCashbacksNumber: Int?
 ) {
     constructor(bankCard: FullBankCard) : this(
         id = bankCard.id,
@@ -28,7 +31,8 @@ data class BankCardDB(
         validityPeriod = bankCard.validityPeriod,
         cvv = bankCard.cvv,
         pin = bankCard.pin,
-        comment = bankCard.comment
+        comment = bankCard.comment,
+        maxCashbacksNumber = bankCard.maxCashbacksNumber
     )
 
     fun mapToBankCard() = FullBankCard(
@@ -40,7 +44,8 @@ data class BankCardDB(
         validityPeriod = validityPeriod,
         cvv = cvv,
         pin = pin,
-        comment = comment
+        comment = comment,
+        maxCashbacksNumber = maxCashbacksNumber
     )
 }
 
