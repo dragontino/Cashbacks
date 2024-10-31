@@ -23,45 +23,26 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
+
+        buildConfigField(
+            type = "String",
+            name = "VERSION_DATE",
+            value = "\"${libs.versions.app.date.get()}\""
+        )
     }
 
     buildTypes {
-        val versionName = libs.versions.app.android
-        val versionDate = libs.versions.app.date
-
         release {
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-
-            buildConfigField(
-                type = "String",
-                name = "VERSION_NAME",
-                value = "\"${versionName.get()}\""
-            )
-            buildConfigField(
-                type = "String",
-                name = "VERSION_DATE",
-                value = "\"${versionDate.get()}\""
-            )
         }
 
         debug {
             applicationIdSuffix = ".debug"
-            versionNameSuffix = "-debug"
-
-            buildConfigField(
-                type = "String",
-                name = "VERSION_NAME",
-                value = "\"${versionName.get()}\""
-            )
-            buildConfigField(
-                type = "String",
-                name = "VERSION_DATE",
-                value = "\"${versionDate.get()}\""
-            )
+            versionNameSuffix = "-${libs.versions.app.debug.suffix.get()}"
         }
     }
     compileOptions {
@@ -99,6 +80,7 @@ dependencies {
     implementation(libs.compose.activity)
     implementation(libs.compose.navigation)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.compose.constraintlayout)
     implementation(libs.compose.ui)
     implementation(libs.compose.ui.graphics)
     implementation(libs.compose.ui.tooling)
