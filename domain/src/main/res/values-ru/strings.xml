@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Мои Кешбэки</string>
+    <string name="app_name">Cashbook — книга твоих кешбэков</string>
+    <string name="activity_name">Мои Кешбэки</string>
     <string name="app_version_pattern">Версия %1$s от %2$s</string>
     <string name="value_not_selected">Не выбрано</string>
+    <string name="download_saved_data">Скачать сохранённые данные</string>
 
     <string name="home">Главная</string>
     <string name="categories_title">Мои Категории</string>
@@ -64,7 +66,7 @@
     <string name="empty_bank_cards_list">Нажмите + для добавления банковской карты</string>
     <string name="confirm_shop_deletion">Удалить магазин «%s»?</string>
 
-    <!-- Экран кешбэка -->
+    <!-- Кешбэки -->
     <string name="amount">Размер</string>
     <string name="comment">Комментарий</string>
     <string name="confirm_cashback_deletion">Удалить кешбэк?</string>
@@ -75,7 +77,11 @@
     <string name="to_category">В категорию</string>
     <string name="to_shop">В магазин</string>
     <string name="percents">Проценты</string>
+    <string name="valid">Действителен</string>
+    <string name="valid_from">С</string>
+    <string name="valid_through">По</string>
     <string name="expires">Истекает</string>
+    <string name="indefinitely_period">Бессрочно</string>
     <string name="today">Сегодня</string>
     <string name="tomorrow">Завтра</string>
     <string name="after_tomorrow">Послезавтра</string>
@@ -92,13 +98,18 @@
     <string name="payment_system">Платежная система</string>
     <string name="card_holder">Владелец карты</string>
     <string name="validity_period">Срок действия</string>
-    <string name="indefinitely_period">Бессрочно</string>
+    <string name="pin">ПИН-код</string>
     <string name="additional_info">Дополнительно</string>
+    <string name="cashbacks_month_limit">Лимит количества кешбэков в месяц</string>
+    <string name="card_number_for_copy">Номер карты скопирован</string>
+    <string name="full_name_for_copy">ФИО скопированы</string>
+    <string name="cvv_for_copy">Номер CVV скопирован</string>
+    <string name="card_name_for_copy">Название карты скопировано</string>
+    <string name="pin_for_copy">ПИН-код карты скопирован</string>
+    <string name="number_for_copy">Число скопировано</string>
+    <string name="comment_for_copy">Комментарий скопирован</string>
 
-    <string name="full_name">ФИО</string>
-    <string name="cvv_for_copy">Номер CVV</string>
-
-    <string name="card_part_text_is_copied">%s скопирован в буфер обмена</string>
+    <string name="card_part_text_is_copied">%s в буфер обмена</string>
 
     <string name="text_is_copied">Текст скопирован!</string>
     <string name="confirm_card_deletion">Удалить банковскую карту «%s»?</string>
@@ -130,4 +141,9 @@
     <string name="insertion_exception">Не удалось добавить %1$s <b>«%2$s»</b> в базу данных</string>
     <string name="update_exception">Не удалось обновить %1$s <b>«%2$s»</b></string>
     <string name="entity_not_found_exception">Не удалось найти %1$s с id %2$s в базе данных!</string>
+    <string name="incorrect_card_number">Номер карты должен содержать 16 цифр</string>
+    <string name="empty_card_validity_period_exception">Вы не выбрали срок действия</string>
+    <string name="incorrect_card_cvv">CVV код должен содержать 3 цифры</string>
+    <string name="empty_pin_code">Вы не ввели пин-код</string>
+    <string name="insert_cashback_exception">Достигнут лимит кэшбэков по карте «%1$s» за %2$s</string>
 </resources>
