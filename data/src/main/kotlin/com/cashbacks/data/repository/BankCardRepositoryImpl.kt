@@ -27,8 +27,8 @@ class BankCardRepositoryImpl(private val dao: CardsDao) : BankCardRepository {
     }
 
 
-    override fun fetchBankCards(): Flow<List<PrimaryBankCard>> {
-        return dao.fetchBankCards().map { list ->
+    override fun fetchAllBankCards(): Flow<List<PrimaryBankCard>> {
+        return dao.fetchAllBankCards().map { list ->
             list.map { it.mapToDomainBankCard() }
         }
     }

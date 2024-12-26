@@ -58,6 +58,7 @@ data class PrimaryBankCardDB(
     val holder: String = "",
     val validityPeriod: String = "",
     val cvv: String = "",
+    val maxCashbacksNumber: Int? = null
 ) {
     fun mapToDomainBankCard() = PrimaryBankCard(
         id = id,
@@ -66,6 +67,7 @@ data class PrimaryBankCardDB(
         paymentSystem = paymentSystem,
         holder = holder,
         validityPeriod = validityPeriod,
-        cvv = cvv
+        cvv = cvv,
+        maxCashbacksNumber = maxCashbacksNumber
     )
 }

@@ -35,7 +35,8 @@ interface ShopsDao : BaseDao {
                    cash.id AS cashback_id, cash.amount AS cashback_amount, 
                    cash.expirationDate AS cashback_expirationDate, cash.comment AS cashback_comment,
                    card.id AS cashback_card_id, card.name AS cashback_card_name,
-                   card.number AS cashback_card_number, card.paymentSystem AS cashback_card_paymentSystem
+                   card.number AS cashback_card_number, card.paymentSystem AS cashback_card_paymentSystem,
+                   card.maxCashbacksNumber AS cashback_card_maxCashbacksNumber
             FROM Shops AS s
             LEFT JOIN Cashbacks AS cash 
             ON s.id = cash.shopId AND cash.amount = (
@@ -56,7 +57,8 @@ interface ShopsDao : BaseDao {
                cash.id AS cashback_id, cash.amount AS cashback_amount, 
                cash.expirationDate AS cashback_expirationDate, cash.comment AS cashback_comment,
                card.id AS cashback_card_id, card.name AS cashback_card_name,
-               card.number AS cashback_card_number, card.paymentSystem AS cashback_card_paymentSystem
+               card.number AS cashback_card_number, card.paymentSystem AS cashback_card_paymentSystem,
+               card.maxCashbacksNumber AS cashback_card_maxCashbacksNumber
         FROM Shops AS s
         LEFT JOIN (SELECT id, name FROM Categories) AS cat ON s.categoryId = cat.id
         LEFT JOIN (SELECT * FROM Cashbacks) AS cash
@@ -76,7 +78,8 @@ interface ShopsDao : BaseDao {
                cash.id AS cashback_id, cash.amount AS cashback_amount, 
                cash.expirationDate AS cashback_expirationDate, cash.comment AS cashback_comment,
                card.id AS cashback_card_id, card.name AS cashback_card_name,
-               card.number AS cashback_card_number, card.paymentSystem AS cashback_card_paymentSystem
+               card.number AS cashback_card_number, card.paymentSystem AS cashback_card_paymentSystem,
+               card.maxCashbacksNumber AS cashback_card_maxCashbacksNumber
         FROM Shops AS s
         LEFT JOIN (SELECT id, name FROM Categories) AS cat ON s.categoryId = cat.id
         LEFT JOIN (SELECT * FROM Cashbacks) AS cash 
@@ -97,7 +100,8 @@ interface ShopsDao : BaseDao {
                cash.id AS cashback_id, cash.amount AS cashback_amount, 
                cash.expirationDate AS cashback_expirationDate, cash.comment AS cashback_comment,
                card.id AS cashback_card_id, card.name AS cashback_card_name,
-               card.number AS cashback_card_number, card.paymentSystem AS cashback_card_paymentSystem
+               card.number AS cashback_card_number, card.paymentSystem AS cashback_card_paymentSystem,
+               card.maxCashbacksNumber AS cashback_card_maxCashbacksNumber
         FROM Shops AS s
         LEFT JOIN (SELECT id, name FROM Categories) AS cat ON s.categoryId = cat.id
         LEFT JOIN (SELECT * FROM Cashbacks) AS cash 
@@ -119,7 +123,8 @@ interface ShopsDao : BaseDao {
                cash.id AS cashback_id, cash.amount AS cashback_amount, 
                cash.expirationDate AS cashback_expirationDate, cash.comment AS cashback_comment,
                card.id AS cashback_card_id, card.name AS cashback_card_name,
-               card.number AS cashback_card_number, card.paymentSystem AS cashback_card_paymentSystem
+               card.number AS cashback_card_number, card.paymentSystem AS cashback_card_paymentSystem,
+               card.maxCashbacksNumber AS cashback_card_maxCashbacksNumber
         FROM Shops AS s
         LEFT JOIN Categories AS cat ON s.categoryId = cat.id
         LEFT JOIN Cashbacks AS cash ON 
@@ -145,7 +150,8 @@ interface ShopsDao : BaseDao {
                cash.id AS cashback_id, cash.amount AS cashback_amount,
                cash.expirationDate AS cashback_expirationDate, cash.comment AS cashback_comment,
                card.id AS cashback_card_id, card.name AS cashback_card_name,
-               card.number AS cashback_card_number, card.paymentSystem AS cashback_card_paymentSystem
+               card.number AS cashback_card_number, card.paymentSystem AS cashback_card_paymentSystem,
+               card.maxCashbacksNumber AS cashback_card_maxCashbacksNumber
         FROM Shops AS s
         LEFT JOIN Categories AS c ON s.categoryId = c.id
         LEFT JOIN Cashbacks AS cash ON 

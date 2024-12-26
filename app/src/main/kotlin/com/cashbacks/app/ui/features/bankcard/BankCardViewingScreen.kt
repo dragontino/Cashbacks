@@ -1,15 +1,18 @@
 package com.cashbacks.app.ui.features.bankcard
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -42,6 +45,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
@@ -58,6 +62,7 @@ import com.cashbacks.app.ui.features.bankcard.mvi.BankCardViewingEvent
 import com.cashbacks.app.ui.managment.DialogType
 import com.cashbacks.app.ui.managment.ScreenState
 import com.cashbacks.app.ui.theme.CashbacksTheme
+import com.cashbacks.app.util.BankCardUtils.getDisplayableString
 import com.cashbacks.app.util.LoadingInBox
 import com.cashbacks.app.util.animate
 import com.cashbacks.app.util.mix
@@ -94,9 +99,12 @@ internal fun BankCardViewingScreen(
         is DialogType.ConfirmDeletion<*> -> {
             val card = type.value as BasicBankCard
             ConfirmDeletionDialog(
-                text = stringResource(R.string.confirm_card_deletion, card.name),
+                text = stringResource(
+                    R.string.confirm_card_deletion,
+                    card.name.ifBlank { card.getDisplayableString() }
+                ),
                 onConfirm = remember {
-                    fun () {
+                    fun() {
                         viewModel.push(
                             BankCardViewingAction.Delete {
                                 viewModel.push(BankCardViewingAction.ClickButtonBack)
@@ -107,89 +115,104 @@ internal fun BankCardViewingScreen(
                 onClose = { viewModel.push(BankCardViewingAction.CloseDialog) }
             )
         }
+
         else -> {}
     }
 
 
-    Crossfade(
-        targetState = viewModel.state,
-        animationSpec = tween(durationMillis = 300, easing = LinearEasing),
-        label = "state animation"
-    ) { state ->
-        when (state) {
-            ScreenState.Loading -> LoadingInBox()
-            ScreenState.Showing -> CollapsingToolbarScaffold(
-                topBarState = topBarState,
-                contentState = contentState,
-                topBar = {
-                    CenterAlignedTopAppBar(
-                        title = {
-                            Text(
-                                text = viewModel.bankCard.name,
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
-                            )
+    CollapsingToolbarScaffold(
+        topBarState = topBarState,
+        contentState = contentState,
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = {
+                    Text(
+                        text = viewModel.bankCard.name.ifBlank {
+                            stringResource(R.string.bank_card)
                         },
-                        navigationIcon = {
-                            IconButton(onClick = navigateBack) {
-                                Icon(
-                                    imageVector = Icons.Rounded.ArrowBackIosNew,
-                                    contentDescription = null,
-                                    modifier = Modifier.scale(1.2f)
-                                )
-                            }
-                        },
-                        actions = {
-                            IconButton(
-                                onClick = {
-                                    viewModel.onItemClick {
-                                        viewModel.push(
-                                            BankCardViewingAction.OpenDialog(
-                                                DialogType.ConfirmDeletion(viewModel.bankCard)
-                                            )
-                                        )
-                                    }
-                                }
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Rounded.DeleteOutline,
-                                    contentDescription = "delete card",
-                                    modifier = Modifier.scale(1.2f)
-                                )
-                            }
-
-                            IconButton(
-                                onClick = { viewModel.push(BankCardViewingAction.Edit) }
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Outlined.Edit,
-                                    contentDescription = "edit card",
-                                    modifier = Modifier.scale(1.2f)
-                                )
-                            }
-                        },
-                        colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = .6f)
-                                .mix(MaterialTheme.colorScheme.primary)
-                                .ratio(topBarState.overlappedFraction),
-                            navigationIconContentColor = MaterialTheme.colorScheme.onPrimary.animate(),
-                            titleContentColor = MaterialTheme.colorScheme.onPrimary.animate(),
-                            actionIconContentColor = MaterialTheme.colorScheme.onPrimary.animate()
-                        )
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
                     )
                 },
-                snackbarHost = {
-                    SnackbarHost(snackbarState) {
-                        Snackbar(
-                            snackbarData = it,
-                            containerColor = MaterialTheme.colorScheme.onBackground,
-                            contentColor = MaterialTheme.colorScheme.background,
-                            shape = MaterialTheme.shapes.medium
+                navigationIcon = {
+                    IconButton(onClick = navigateBack) {
+                        Icon(
+                            imageVector = Icons.Rounded.ArrowBackIosNew,
+                            contentDescription = null,
+                            modifier = Modifier.scale(1.2f)
                         )
                     }
-                }
-            ) {
-                ScreenContent(
+                },
+                actions = {
+                    AnimatedVisibility(
+                        visible = viewModel.state != ScreenState.Loading,
+                        enter = fadeIn(),
+                        exit = fadeOut()
+                    ) {
+                        IconButton(
+                            onClick = {
+                                viewModel.onItemClick {
+                                    viewModel.push(
+                                        BankCardViewingAction.OpenDialog(
+                                            DialogType.ConfirmDeletion(viewModel.bankCard)
+                                        )
+                                    )
+                                }
+                            }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.DeleteOutline,
+                                contentDescription = "delete card",
+                                modifier = Modifier.scale(1.2f)
+                            )
+                        }
+                    }
+
+                    AnimatedVisibility(
+                        visible = viewModel.state != ScreenState.Loading,
+                        enter = fadeIn(),
+                        exit = fadeOut()
+                    ) {
+                        IconButton(
+                            onClick = { viewModel.push(BankCardViewingAction.Edit) }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Edit,
+                                contentDescription = "edit card",
+                                modifier = Modifier.scale(1.2f)
+                            )
+                        }
+                    }
+                },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = .6f)
+                        .mix(MaterialTheme.colorScheme.primary)
+                        .ratio(topBarState.overlappedFraction),
+                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary.animate(),
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary.animate(),
+                    actionIconContentColor = MaterialTheme.colorScheme.onPrimary.animate()
+                )
+            )
+        },
+        snackbarHost = {
+            SnackbarHost(snackbarState) {
+                Snackbar(
+                    snackbarData = it,
+                    containerColor = MaterialTheme.colorScheme.onBackground,
+                    contentColor = MaterialTheme.colorScheme.background,
+                    shape = MaterialTheme.shapes.medium
+                )
+            }
+        }
+    ) {
+        Crossfade(
+            targetState = viewModel.state,
+            animationSpec = tween(durationMillis = 300, easing = LinearEasing),
+            label = "state animation"
+        ) { state ->
+            when (state) {
+                ScreenState.Loading -> LoadingInBox()
+                ScreenState.Showing -> ScreenContent(
                     bankCard = viewModel.bankCard,
                     pushAction = viewModel::push,
                     scrollState = contentState,
@@ -210,6 +233,7 @@ private fun ScreenContent(
     scrollState: ScrollState = rememberScrollState()
 ) {
     val context = LocalContext.current
+    val screenConfiguration = LocalConfiguration.current
 
     Column(
         verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -218,7 +242,7 @@ private fun ScreenContent(
             .then(modifier)
             .fillMaxSize()
             .verticalScroll(scrollState)
-            .padding(16.dp)
+            .padding(vertical = 16.dp)
     ) {
         BankCard(
             bankCard = bankCard,
@@ -231,33 +255,45 @@ private fun ScreenContent(
                 pushAction(BankCardViewingAction.ShowSnackbar(snackbarText))
             },
             modifier = Modifier
-                .padding(horizontal = 4.dp)
-                .fillMaxWidth()
+                .padding(bottom = 16.dp)
+                .padding(horizontal = 16.dp)
+                .width(
+                    width = minOf(
+                        screenConfiguration.screenWidthDp,
+                        screenConfiguration.screenHeightDp
+                    ).dp
+                )
         )
 
-        DataTextField(
-            text = bankCard.name,
-            heading = stringResource(R.string.card_name),
-            trailingActions = {
-                IconButton(
-                    onClick = {
-                        pushAction(BankCardViewingAction.CopyText(AnnotatedString(bankCard.name)))
-                        pushAction(
-                            BankCardViewingAction.ShowSnackbar(
-                                context.getString(R.string.text_is_copied)
+        if (bankCard.name.isNotBlank()) {
+            DataTextField(
+                text = bankCard.name,
+                heading = stringResource(R.string.card_name),
+                trailingActions = {
+                    IconButton(
+                        onClick = {
+                            pushAction(BankCardViewingAction.CopyText(AnnotatedString(bankCard.name)))
+                            pushAction(
+                                BankCardViewingAction.ShowSnackbar(
+                                    context.getString(
+                                        R.string.card_part_text_is_copied,
+                                        context.getString(R.string.card_name_for_copy)
+                                    )
+                                )
                             )
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.ContentCopy,
+                            contentDescription = "copy card name"
                         )
                     }
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.ContentCopy,
-                        contentDescription = "copy card name"
-                    )
-                }
-            }
-        )
+                },
+                modifier = Modifier.padding(horizontal = 16.dp)
+            )
 
-        HorizontalDivider()
+            HorizontalDivider()
+        }
 
         var isPinVisible by rememberSaveable { mutableStateOf(false) }
         DataTextField(
@@ -281,22 +317,56 @@ private fun ScreenContent(
                         pushAction(BankCardViewingAction.CopyText(AnnotatedString(bankCard.pin)))
                         pushAction(
                             BankCardViewingAction.ShowSnackbar(
-                                context.getString(R.string.text_is_copied)
+                                context.getString(
+                                    R.string.card_part_text_is_copied,
+                                    context.getString(R.string.pin_for_copy)
+                                )
                             )
                         )
                     }
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.ContentCopy,
-                        contentDescription = "copy card's pin code"
+                        contentDescription = "copy card pin code"
                     )
                 }
-            }
+            },
+            modifier = Modifier.padding(horizontal = 16.dp)
         )
 
-        HorizontalDivider()
+        bankCard.maxCashbacksNumber?.toString()?.let { maxCashbacksNumber ->
+            HorizontalDivider()
+
+            DataTextField(
+                text = maxCashbacksNumber,
+                heading = stringResource(R.string.cashbacks_month_limit),
+                trailingActions = {
+                    IconButton(
+                        onClick = {
+                            pushAction(BankCardViewingAction.CopyText(AnnotatedString(maxCashbacksNumber)))
+                            pushAction(
+                                BankCardViewingAction.ShowSnackbar(
+                                    context.getString(
+                                        R.string.card_part_text_is_copied,
+                                        context.getString(R.string.number_for_copy)
+                                    )
+                                )
+                            )
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.ContentCopy,
+                            contentDescription = "copy number"
+                        )
+                    }
+                },
+                modifier = Modifier.padding(horizontal = 16.dp),
+            )
+        }
 
         if (bankCard.comment.isNotBlank()) {
+            HorizontalDivider()
+
             DataTextField(
                 text = bankCard.comment,
                 heading = stringResource(R.string.comment),
@@ -306,7 +376,10 @@ private fun ScreenContent(
                             pushAction(BankCardViewingAction.CopyText(AnnotatedString(bankCard.comment)))
                             pushAction(
                                 BankCardViewingAction.ShowSnackbar(
-                                    context.getString(R.string.text_is_copied)
+                                    context.getString(
+                                        R.string.card_part_text_is_copied,
+                                        context.getString(R.string.comment_for_copy)
+                                    )
                                 )
                             )
                         }
@@ -316,7 +389,8 @@ private fun ScreenContent(
                             contentDescription = "copy card comment"
                         )
                     }
-                }
+                },
+                modifier = Modifier.padding(horizontal = 16.dp)
             )
         }
     }

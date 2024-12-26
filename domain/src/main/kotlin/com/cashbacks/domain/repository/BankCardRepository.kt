@@ -10,7 +10,7 @@ interface BankCardRepository {
 
     suspend fun updateBankCard(bankCard: FullBankCard): Result<Unit>
 
-    fun fetchBankCards(): Flow<List<PrimaryBankCard>>
+    fun fetchAllBankCards(): Flow<List<PrimaryBankCard>>
 
     suspend fun searchBankCards(query: String): List<PrimaryBankCard>
 

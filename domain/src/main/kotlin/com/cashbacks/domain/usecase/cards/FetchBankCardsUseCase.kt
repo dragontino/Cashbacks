@@ -10,7 +10,7 @@ class FetchBankCardsUseCase(
     private val repository: BankCardRepository,
     private val dispatcher: CoroutineDispatcher
 ) {
-    fun fetchBankCards(): Flow<List<PrimaryBankCard>> {
-        return repository.fetchBankCards().flowOn(dispatcher)
+    fun fetchAllBankCards(): Flow<List<PrimaryBankCard>> {
+        return repository.fetchAllBankCards().flowOn(dispatcher)
     }
 }

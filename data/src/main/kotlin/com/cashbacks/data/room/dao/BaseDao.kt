@@ -24,7 +24,8 @@ interface BaseDao {
                    cash.id AS cashback_id, cash.amount AS cashback_amount,
                    cash.expirationDate AS cashback_expirationDate, cash.comment AS cashback_comment,
                    card.id AS cashback_card_id, card.name AS cashback_card_name,
-                   card.number AS cashback_card_number, card.paymentSystem AS cashback_card_paymentSystem
+                   card.number AS cashback_card_number, card.paymentSystem AS cashback_card_paymentSystem,
+                   card.maxCashbacksNumber AS cashback_card_maxCashbacksNumber
             FROM Shops AS s
             LEFT JOIN Cashbacks AS cash
             ON s.id = cash.shopId AND cash.amount = (
@@ -44,7 +45,8 @@ interface BaseDao {
                    card.id AS card_id,
                    card.name AS card_name,
                    card.number AS card_number,
-                   card.paymentSystem AS card_paymentSystem
+                   card.paymentSystem AS card_paymentSystem,
+                   card.maxCashbacksNumber AS card_maxCashbacksNumber
             FROM Cashbacks AS cash 
             INNER JOIN (SELECT * FROM Cards) AS card ON card.id = cash.bankCardId
             WHERE cash.categoryId = :categoryId
@@ -60,7 +62,8 @@ interface BaseDao {
                    card.id AS card_id,
                    card.name AS card_name,
                    card.number AS card_number,
-                   card.paymentSystem AS card_paymentSystem
+                   card.paymentSystem AS card_paymentSystem,
+                   card.maxCashbacksNumber AS card_maxCashbacksNumber
             FROM Cashbacks AS cash
             INNER JOIN (SELECT * FROM Cards) AS card ON card.id = cash.bankCardId
         """
@@ -74,7 +77,8 @@ interface BaseDao {
                    card.id AS card_id,
                    card.name AS card_name,
                    card.number AS card_number,
-                   card.paymentSystem AS card_paymentSystem
+                   card.paymentSystem AS card_paymentSystem,
+                   card.maxCashbacksNumber AS card_maxCashbacksNumber
             FROM Cashbacks AS cash 
             INNER JOIN (SELECT * FROM Cards) AS card ON card.id = cash.bankCardId
             WHERE cash.categoryId = :categoryId
@@ -89,7 +93,8 @@ interface BaseDao {
                    card.id AS card_id,
                    card.name AS card_name,
                    card.number AS card_number,
-                   card.paymentSystem AS card_paymentSystem
+                   card.paymentSystem AS card_paymentSystem,
+                   card.maxCashbacksNumber AS card_maxCashbacksNumber
             FROM Cashbacks AS cash 
             INNER JOIN (SELECT * FROM Cards) AS card ON card.id = cash.bankCardId
             WHERE cash.shopId = :shopId

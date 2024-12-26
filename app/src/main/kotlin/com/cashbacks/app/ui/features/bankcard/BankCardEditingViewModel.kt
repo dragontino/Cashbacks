@@ -16,6 +16,7 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.delay
+import kotlin.onSuccess
 
 class BankCardEditingViewModel @AssistedInject constructor(
     private val getBankCardUseCase: GetBankCardUseCase,
@@ -27,9 +28,12 @@ class BankCardEditingViewModel @AssistedInject constructor(
     var state by mutableStateOf(ScreenState.Showing)
         private set
 
-    val bankCard by lazy { ComposableBankCard(id = bankCardId) }
+    internal val bankCard by lazy { ComposableBankCard(id = bankCardId) }
 
     var showPaymentSystemSelection by mutableStateOf(false)
+        private set
+
+    var showErrors by mutableStateOf(false)
         private set
 
     override suspend fun bootstrap() {
@@ -57,42 +61,71 @@ class BankCardEditingViewModel @AssistedInject constructor(
             }
 
             is BankCardEditingAction.Save -> {
-                state = ScreenState.Loading
-                delay(100)
-                saveCard(bankCard)
-                    .onSuccess {
-                        bankCard.id = it
-                        action.onSuccess()
+                showErrors = true
+                bankCard.updateAllErrors(messageHandler)
+
+                when {
+                    bankCard.haveErrors -> bankCard.errorMessage?.let {
+                        return push(BankCardEditingEvent.ShowSnackbar(it))
                     }
-                    .onFailure { throwable ->
-                        messageHandler.getExceptionMessage(throwable)
-                            ?.takeIf { it.isNotBlank() }
-                            ?.let { push(BankCardEditingEvent.ShowSnackbar(it)) }
+
+                    !bankCard.haveChanges -> return action.onSuccess()
+
+                    else -> {
+                        state = ScreenState.Loading
+                        delay(100)
+                        saveCard().onSuccess {
+                            action.onSuccess()
+                        }.onFailure { throwable ->
+                            messageHandler.getExceptionMessage(throwable)
+                                ?.takeIf { it.isNotBlank() }
+                                ?.let { push(BankCardEditingEvent.ShowSnackbar(it)) }
+                        }
+
+                        state = ScreenState.Showing
                     }
-                state = ScreenState.Showing
+                }
             }
 
-            is BankCardEditingAction.OpenDialog -> {
+            is BankCardEditingAction.ShowDialog -> {
                 push(BankCardEditingEvent.ChangeOpenedDialog(action.type))
             }
 
-            is BankCardEditingAction.CloseDialog -> {
+            is BankCardEditingAction.HideDialog -> {
                 push(BankCardEditingEvent.ChangeOpenedDialog(null))
             }
-            BankCardEditingAction.ShowPaymentSystemSelection -> showPaymentSystemSelection = true
 
-            BankCardEditingAction.HidePaymentSystemSelection -> showPaymentSystemSelection = false
+            is BankCardEditingAction.ShowBottomSheet -> {
+                push(BankCardEditingEvent.OpenBottomSheet(action.type))
+            }
 
+            is BankCardEditingAction.HideBottomSheet -> push(BankCardEditingEvent.CloseBottomSheet)
+
+            is BankCardEditingAction.ShowPaymentSystemSelection -> {
+                showPaymentSystemSelection = true
+            }
+
+            is BankCardEditingAction.HidePaymentSystemSelection -> {
+                showPaymentSystemSelection = false
+            }
+
+            is BankCardEditingAction.UpdateErrorMessage -> {
+                bankCard.updateErrorMessage(action.error, messageHandler)
+            }
         }
     }
 
-    private suspend fun saveCard(card: ComposableBankCard): Result<Long> {
-        return when {
-            !card.haveChanges -> Result.success(card.id!!)
-            card.id == null -> editBankCardUseCase.addBankCard(bankCard.mapToBankCard())
-            else -> editBankCardUseCase.updateBankCard(bankCard.mapToBankCard()).map { card.id!! }
+
+    private suspend fun saveCard(): Result<Unit> {
+        return when (bankCard.id) {
+            null -> editBankCardUseCase.addBankCard(bankCard.mapToBankCard())
+                .onSuccess { bankCard.id = it }
+                .map {}
+
+            else -> editBankCardUseCase.updateBankCard(bankCard.mapToBankCard())
         }
     }
+
 
     @AssistedFactory
     interface Factory {

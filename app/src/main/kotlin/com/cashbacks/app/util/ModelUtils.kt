@@ -101,12 +101,13 @@ internal data object CashbackUtils {
 
 
 internal data object PaymentSystemUtils {
-    val PaymentSystem?.title @Composable
-    get(): String {
-        if (this == null) return stringResource(R.string.value_not_selected)
-        val titles = stringArrayResource(R.array.payment_systems)
-        return PaymentSystem.entries.indexOf(this).let { titles[it] }
-    }
+    val PaymentSystem?.title
+        @Composable
+        get(): String {
+            if (this == null) return stringResource(R.string.value_not_selected)
+            val titles = stringArrayResource(R.array.payment_systems)
+            return PaymentSystem.entries.indexOf(this).let { titles[it] }
+        }
 
     @Composable
     fun PaymentSystemImage(
@@ -131,6 +132,7 @@ internal data object PaymentSystemUtils {
                 .clip(MaterialTheme.shapes.extraSmall)
                 .background(Color.White)
                 .padding(5.dp)
+
             else -> Modifier
         }
 
@@ -147,15 +149,35 @@ internal data object PaymentSystemUtils {
 }
 
 
-data object BankCardUtils {
-    fun addSpacesToCardNumber(numberWithoutSpaces: String) = buildString {
-        for (i in numberWithoutSpaces.indices) {
-            if (i > 0 && i % 4 == 0) append(" ")
-            append(numberWithoutSpaces[i])
-        }
-    }.trimIndent()
+internal data object BankCardUtils {
+    fun String.withSpaces(): String = chunked(4).joinToString(" ")
 
     fun removeSpacesFromNumber(cardNumber: String) = cardNumber.filter { it != ' ' }
+
+    fun BasicBankCard.hideNumber(): String {
+        if (number.length < 2) return number
+
+        val showingLength = number.length / 2
+        val startIndex = showingLength / 2
+        val hiddenLength = number.length - showingLength
+        return number.replaceRange(
+            range = startIndex..<(startIndex + hiddenLength),
+            replacement = getHidden(hiddenLength)
+        )
+    }
+
+    fun BasicBankCard.getDisplayableString() = buildString {
+        if (name.isNotBlank()) {
+            append(name, " ")
+        }
+        append(hideNumber().takeLast(8).withSpaces())
+    }
+
+    fun getHidden(length: Int, mask: Char = '\u2022') = buildString {
+        repeat(length) {
+            append(mask)
+        }
+    }
 }
 
 

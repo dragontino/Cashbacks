@@ -37,7 +37,8 @@ interface CategoriesDao : BaseDao {
                cash.id AS cashback_id, cash.amount AS cashback_amount, 
                cash.expirationDate AS cashback_expirationDate, cash.comment AS cashback_comment,
                card.id AS cashback_card_id, card.name AS cashback_card_name,
-               card.number AS cashback_card_number, card.paymentSystem AS cashback_card_paymentSystem
+               card.number AS cashback_card_number, card.paymentSystem AS cashback_card_paymentSystem,
+               card.maxCashbacksNumber AS cashback_card_maxCashbacksNumber
         FROM Categories AS cat
         LEFT JOIN (SELECT * FROM Cashbacks) AS cash 
         ON cat.id = cash.categoryId AND cash.amount = (
@@ -56,7 +57,8 @@ interface CategoriesDao : BaseDao {
                cash.id AS cashback_id, cash.amount AS cashback_amount, 
                cash.expirationDate AS cashback_expirationDate, cash.comment AS cashback_comment,
                card.id AS cashback_card_id, card.name AS cashback_card_name,
-               card.number AS cashback_card_number, card.paymentSystem AS cashback_card_paymentSystem
+               card.number AS cashback_card_number, card.paymentSystem AS cashback_card_paymentSystem,
+               card.maxCashbacksNumber AS cashback_card_maxCashbacksNumber
         FROM Categories AS cat
         LEFT JOIN (SELECT * FROM Cashbacks) AS cash 
         ON cat.id = cash.categoryId AND cash.amount = (
@@ -76,7 +78,8 @@ interface CategoriesDao : BaseDao {
                cash.id AS cashback_id, cash.amount AS cashback_amount, 
                cash.expirationDate AS cashback_expirationDate, cash.comment AS cashback_comment,
                card.id AS cashback_card_id, card.name AS cashback_card_name,
-               card.number AS cashback_card_number, card.paymentSystem AS cashback_card_paymentSystem
+               card.number AS cashback_card_number, card.paymentSystem AS cashback_card_paymentSystem,
+               card.maxCashbacksNumber AS cashback_card_maxCashbacksNumber
         FROM Categories AS cat
         LEFT JOIN (SELECT * FROM Cashbacks) AS cash 
         ON cat.id = cash.categoryId AND cash.amount = (
@@ -96,7 +99,8 @@ interface CategoriesDao : BaseDao {
                cash.id AS cashback_id, cash.amount AS cashback_amount, 
                cash.expirationDate AS cashback_expirationDate, cash.comment AS cashback_comment,
                card.id AS cashback_card_id, card.name AS cashback_card_name,
-               card.number AS cashback_card_number, card.paymentSystem AS cashback_card_paymentSystem
+               card.number AS cashback_card_number, card.paymentSystem AS cashback_card_paymentSystem,
+               card.maxCashbacksNumber AS cashback_card_maxCashbacksNumber
         FROM Categories AS cat
         LEFT JOIN (SELECT * FROM Cashbacks) AS cash 
         ON cat.id = cash.categoryId AND cash.amount = (

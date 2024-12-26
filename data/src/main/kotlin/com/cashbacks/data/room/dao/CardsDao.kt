@@ -20,21 +20,22 @@ interface CardsDao {
 
     @Query(
         """
-            SELECT id, name, number, paymentSystem, holder, validityPeriod, cvv
+            SELECT id, name, number, paymentSystem, holder, validityPeriod, cvv, maxCashbacksNumber
             FROM Cards 
-            ORDER BY name ASC
+            ORDER BY name, number ASC
         """
     )
-    fun fetchBankCards(): Flow<List<PrimaryBankCardDB>>
+    fun fetchAllBankCards(): Flow<List<PrimaryBankCardDB>>
 
     @Query(
         """
-            SELECT id, name, number, paymentSystem, holder, validityPeriod, cvv
+            SELECT id, name, number, paymentSystem, holder, validityPeriod, cvv, maxCashbacksNumber
             FROM Cards
             WHERE name LIKE '%' || :query || '%' OR number LIKE '%' || :query || '%'
                 OR paymentSystem LIKE '%' || :query || '%' OR holder LIKE '%' || :query || '%'
                 OR validityPeriod LIKE '%' || :query || '%' OR comment LIKE '%' || :query || '%'
-            ORDER BY name ASC
+                OR maxCashbacksNumber LIKE '%' || :query || '%' 
+            ORDER BY name, number ASC
         """
     )
     suspend fun searchBankCards(query: String): List<PrimaryBankCardDB>
