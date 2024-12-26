@@ -272,7 +272,7 @@
       },
       {
         "tableName": "Settings",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL DEFAULT 1, `colorDesign` TEXT NOT NULL, `dynamicColor` INTEGER NOT NULL, `timeZoneId` TEXT NOT NULL DEFAULT 'Default', PRIMARY KEY(`id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL DEFAULT 1, `colorDesign` TEXT NOT NULL, `dynamicColor` INTEGER NOT NULL, `auto_delete` INTEGER NOT NULL DEFAULT 1, PRIMARY KEY(`id`))",
         "fields": [
           {
             "fieldPath": "id",
