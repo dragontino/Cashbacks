@@ -51,7 +51,9 @@ class CategoryRepositoryImpl(private val dao: CategoriesDao) : CategoryRepositor
 
 
     override fun fetchCategoriesWithCashback(): Flow<List<BasicCategory>> {
-        return dao.fetchCategoriesWithCashback().map { list -> list.map { it.mapToDomainCategory() } }
+        return dao.fetchCategoriesWithCashback().map { list ->
+            list.map { it.mapToDomainCategory() }
+        }
     }
 
 

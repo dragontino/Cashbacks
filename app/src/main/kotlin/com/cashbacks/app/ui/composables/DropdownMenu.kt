@@ -29,6 +29,7 @@ import com.cashbacks.app.ui.managment.ListState
 import com.cashbacks.app.ui.theme.CashbacksTheme
 import com.cashbacks.app.util.Loading
 import com.cashbacks.app.util.animate
+import com.cashbacks.app.util.composableLet
 import kotlinx.coroutines.flow.StateFlow
 
 
@@ -120,7 +121,7 @@ internal fun <T : Any> ColumnScope.DropdownMenuListContent(
 
             },
             onClick = { onClick(item) },
-            leadingIcon = { leadingIcon?.invoke(item) },
+            leadingIcon = leadingIcon?.composableLet { leadingIcon(item) },
             trailingIcon = {
                 if (selected(item)) {
                     Icon(imageVector = Icons.Rounded.Check, contentDescription = null)

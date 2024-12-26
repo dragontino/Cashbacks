@@ -1,5 +1,6 @@
 package com.cashbacks.app.model
 
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateMapOf
@@ -10,6 +11,7 @@ import com.cashbacks.domain.model.Cashback
 import com.cashbacks.domain.model.Category
 import com.cashbacks.domain.model.FullCategory
 
+@Stable
 class ComposableCategory(
     id: Long = 0L,
     name: String = "",

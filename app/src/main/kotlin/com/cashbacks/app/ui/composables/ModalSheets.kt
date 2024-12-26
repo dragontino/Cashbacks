@@ -5,9 +5,12 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
@@ -32,6 +35,7 @@ import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.ModalDrawerSheet
@@ -61,6 +65,7 @@ import androidx.compose.ui.unit.dp
 import com.cashbacks.app.R
 import com.cashbacks.app.ui.theme.DarkerGray
 import com.cashbacks.app.util.animate
+import com.cashbacks.app.util.composableLet
 import kotlinx.coroutines.launch
 
 
@@ -165,7 +170,7 @@ private fun NavHeader(
 /* --- BOTTOM SHEET ---- */
 
 
-@OptIn(ExperimentalMaterial3Api::class)
+@ExperimentalMaterial3Api
 @Composable
 fun ModalBottomSheet(
     onClose: () -> Unit,
@@ -173,6 +178,7 @@ fun ModalBottomSheet(
     title: String = "",
     subtitle: String = "",
     beautifulDesign: Boolean = false,
+    actions: @Composable (RowScope.() -> Unit)? = null,
     contentWindowInsets: WindowInsets = ModalSheetDefaults.contentWindowInsets,
     bodyContent: @Composable (ColumnScope.() -> Unit)
 ) {
@@ -180,18 +186,20 @@ fun ModalBottomSheet(
         onClose = onClose,
         state = state,
         header = Header(title, subtitle, beautifulDesign),
+        actions = actions,
         contentWindowInsets = contentWindowInsets,
         bodyContent = bodyContent
     )
 }
 
 
-@OptIn(ExperimentalMaterial3Api::class)
+@ExperimentalMaterial3Api
 @Composable
 fun ModalBottomSheet(
     onClose: () -> Unit,
     state: SheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
     header: Header = Header(),
+    actions: @Composable (RowScope.() -> Unit)? = null,
     contentWindowInsets: WindowInsets = ModalSheetDefaults.contentWindowInsets,
     bodyContent: @Composable (ColumnScope.() -> Unit)
 ) {
@@ -249,6 +257,7 @@ fun ModalBottomSheet(
         BottomSheetContent(
             modifier = scrollModifier,
             header = header,
+            actions = actions,
             contentWindowInsets = with(contentWindowInsets) {
                 this.exclude(this.only(WindowInsetsSides.Top))
                     .union(WindowInsets(top = topPadding.value))
@@ -263,6 +272,7 @@ fun ModalBottomSheet(
 private fun ColumnScope.BottomSheetContent(
     modifier: Modifier = Modifier,
     header: Header = Header(),
+    actions: @Composable (RowScope.() -> Unit)? = null,
     contentWindowInsets: WindowInsets = ModalSheetDefaults.contentWindowInsets,
     bodyContent: @Composable (ColumnScope.() -> Unit),
 ) {
@@ -273,8 +283,8 @@ private fun ColumnScope.BottomSheetContent(
             .windowInsetsPadding(contentWindowInsets)
             .padding(bottom = 16.dp)
     ) {
-        if (!header.isEmpty()) {
-            BottomSheetHeader(header = header)
+        if (header.isEmpty().not() || actions != null) {
+            BottomSheetHeader(header = header, actions = actions)
         }
         bodyContent()
     }
@@ -284,44 +294,62 @@ private fun ColumnScope.BottomSheetContent(
 @Composable
 private fun ColumnScope.BottomSheetHeader(
     header: Header,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    actions: @Composable (RowScope.() -> Unit)? = null
 ) {
-    Column(
-        modifier = Modifier
-            .then(modifier)
-            .padding(top = 16.dp)
-            .align(Alignment.Start)
-            .fillMaxWidth()
-    ) {
-        val style = when {
-            header.beautifulDesign -> MaterialTheme.typography.headlineLarge
-            else -> MaterialTheme.typography.titleMedium
-        }
+    @Composable
+    fun Title() {
         Text(
             text = header.title,
-            style = style,
-            color = MaterialTheme.colorScheme.onBackground.animate(),
+            style = when {
+                header.beautifulDesign -> MaterialTheme.typography.headlineLarge
+                else -> MaterialTheme.typography.titleMedium
+            },
+            color = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier
                 .padding(start = 16.dp)
                 .fillMaxWidth()
         )
+    }
 
-        if (header.subtitle.isNotBlank()) {
-            val style1 = MaterialTheme.typography.titleSmall
-            Text(
-                text = header.subtitle,
-                color = DarkerGray,
-                style = style1,
-                modifier = Modifier
-                    .padding(start = 16.dp, bottom = 4.dp)
-                    .fillMaxWidth()
-            )
-        }
-
-        HorizontalDivider(
-            modifier = Modifier.padding(top = 16.dp),
-            color = DarkerGray
+    @Composable
+    fun Subtitle() {
+        Text(
+            text = header.subtitle,
+            color = DarkerGray,
+            style = MaterialTheme.typography.titleSmall,
+            modifier = Modifier
+                .padding(start = 16.dp, bottom = 4.dp)
+                .fillMaxWidth()
         )
+    }
+
+
+    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        ListItem(
+            overlineContent = header.subtitle
+                .takeIf { it.isNotBlank() }
+                ?.composableLet { Title() },
+            headlineContent = {
+                when {
+                    header.subtitle.isBlank() -> Title()
+                    else -> Subtitle()
+                }
+            },
+            trailingContent = actions?.composableLet { actions ->
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    actions()
+                }
+            },
+            modifier = modifier
+                .padding(top = 16.dp)
+                .fillMaxWidth()
+        )
+
+        HorizontalDivider(color = DarkerGray)
     }
 }
 
