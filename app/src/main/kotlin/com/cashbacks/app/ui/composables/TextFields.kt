@@ -67,12 +67,15 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.cashbacks.app.ui.theme.CashbacksTheme
 import com.cashbacks.app.util.animate
+import com.cashbacks.app.util.composableBlock
+import com.cashbacks.app.util.composableLet
 import kotlinx.coroutines.delay
 
 
@@ -184,12 +187,13 @@ fun EditableTextField(
     value: TextFieldValue,
     onValueChange: (TextFieldValue) -> Unit,
     modifier: Modifier = Modifier,
-    label: String = "",
+    label: String? = null,
+    placeholder: String? = null,
     enabled: Boolean = true,
     readOnly: Boolean = false,
     singleLine: Boolean = true,
     error: Boolean = false,
-    errorMessage: String = "",
+    errorMessage: String? = null,
     textStyle: TextStyle = when {
         enabled -> MaterialTheme.typography.bodyMedium
         else -> MaterialTheme.typography.bodyLarge.copy(
@@ -205,7 +209,7 @@ fun EditableTextField(
     onImeActionClick: KeyboardActionScope.(text: String) -> Unit = {},
     visualTransformation: VisualTransformation = VisualTransformation.None,
     leadingIcon: @Composable (() -> Unit)? = null,
-    trailingActions: @Composable (RowScope.() -> Unit) = {},
+    trailingActions: @Composable (RowScope.() -> Unit)? = null,
     prefix: @Composable (() -> Unit)? = null,
     suffix: @Composable (() -> Unit)? = null,
     shape: Shape = MaterialTheme.shapes.medium,
@@ -217,6 +221,7 @@ fun EditableTextField(
         text = value.text,
         modifier = modifier,
         label = label,
+        placeholder = placeholder,
         enabled = enabled,
         readOnly = readOnly,
         singleLine = singleLine,
@@ -246,12 +251,13 @@ fun EditableTextField(
     text: String,
     onTextChange: (String) -> Unit,
     modifier: Modifier = Modifier,
-    label: String = "",
+    label: String? = null,
+    placeholder: String? = null,
     enabled: Boolean = true,
     readOnly: Boolean = false,
     singleLine: Boolean = true,
     error: Boolean = false,
-    errorMessage: String = "",
+    errorMessage: String? = null,
     textStyle: TextStyle = when {
         enabled -> MaterialTheme.typography.bodyMedium
         else -> MaterialTheme.typography.bodyLarge.copy(
@@ -267,7 +273,7 @@ fun EditableTextField(
     onImeActionClick: KeyboardActionScope.(text: String) -> Unit = {},
     visualTransformation: VisualTransformation = VisualTransformation.None,
     leadingIcon: @Composable (() -> Unit)? = null,
-    trailingActions: @Composable (RowScope.() -> Unit) = {},
+    trailingActions: @Composable (RowScope.() -> Unit)? = null,
     prefix: @Composable (() -> Unit)? = null,
     suffix: @Composable (() -> Unit)? = null,
     shape: Shape = MaterialTheme.shapes.medium,
@@ -279,6 +285,7 @@ fun EditableTextField(
         text = text,
         modifier = modifier,
         label = label,
+        placeholder = placeholder,
         enabled = enabled,
         readOnly = readOnly,
         singleLine = singleLine,
@@ -309,12 +316,13 @@ private fun <T> EditableTextField(
     onValueChange: (Any) -> Unit,
     text: String,
     modifier: Modifier,
-    label: String,
+    label: String?,
+    placeholder: String?,
     enabled: Boolean,
     readOnly: Boolean,
     singleLine: Boolean,
     error: Boolean,
-    errorMessage: String,
+    errorMessage: String?,
     textStyle: TextStyle,
     maxLines: Int,
     keyboardType: KeyboardType,
@@ -323,7 +331,7 @@ private fun <T> EditableTextField(
     onImeActionClick: KeyboardActionScope.(text: String) -> Unit,
     visualTransformation: VisualTransformation,
     leadingIcon: @Composable (() -> Unit)?,
-    trailingActions: @Composable (RowScope.() -> Unit),
+    trailingActions: @Composable (RowScope.() -> Unit)?,
     prefix: @Composable (() -> Unit)?,
     suffix: @Composable (() -> Unit)?,
     shape: Shape,
@@ -345,60 +353,58 @@ private fun <T> EditableTextField(
         }
     }
 
+    val interactionSource = remember { MutableInteractionSource() }
+    val isFocused by interactionSource.collectIsFocusedAsState()
 
     val borderBrush = when {
-        error -> SolidColor(MaterialTheme.colorScheme.error.animate())
-        readOnly -> SolidColor(MaterialTheme.colorScheme.onBackground.animate())
-        else -> Brush.horizontalGradient(colors = colors.borderColors(enabled).map { it.animate() })
+        error -> SolidColor(MaterialTheme.colorScheme.error)
+        readOnly -> SolidColor(colors.focusedTextColor)
+        else -> colors.borderColors(enabled)
+            .takeIf { it.isNotEmpty() }
+            ?.let { Brush.horizontalGradient(colors = it.toList()) }
     }
     val cursorBrush = when {
         error || readOnly -> borderBrush
-        else -> Brush.verticalGradient(
-            colors = colors.cursorColors.map { it.animate() },
-            tileMode = TileMode.Mirror
-        )
-    }
-
-    val interactionSource = remember { MutableInteractionSource() }
-
-    val textColor = MaterialTheme.colorScheme.onBackground
-    val unfocusedTextColor = textColor.copy(alpha = 0.7f)
-    val containerColor = Color.Transparent
-
-    val isFocused by interactionSource.collectIsFocusedAsState()
+        else -> colors.cursorColors
+            .takeIf { it.isNotEmpty() }
+            ?.let { Brush.verticalGradient(colors = it.toList(), tileMode = TileMode.Mirror) }
+    } ?: SolidColor(colors.textColor(enabled, readOnly = false, isError = false, isFocused))
 
 
-    val basicTextFieldModifier = Modifier
-        .then(modifier)
-        .fillMaxWidth()
-    val decorationBox: @Composable (innerTextField: @Composable () -> Unit) -> Unit = { innerTextField ->
-        OutlinedTextFieldDefaults.DecorationBox(
-            value = text,
-            innerTextField = innerTextField,
-            enabled = enabled,
-            singleLine = singleLine,
-            visualTransformation = visualTransformation,
-            interactionSource = interactionSource,
-            isError = error,
-            label = {
-                Text(
-                    text = label,
-                    style = when {
-                        text.isEmpty() && !isFocused -> MaterialTheme.typography.bodyMedium
-                        else -> MaterialTheme.typography.bodySmall
-                    },
-                    maxLines = 1,
-                    color = when {
-                        error -> MaterialTheme.colorScheme.error
-                        readOnly -> textColor
-                        text.isEmpty() && !isFocused -> unfocusedTextColor
-                        else -> MaterialTheme.colorScheme.primary
-                    }.animate()
-                )
-            },
-            supportingText = {
+    @Composable
+    fun DecorationBox(innerTextField: @Composable () -> Unit) {
+        val label: @Composable (() -> Unit)? = label?.composableLet { label ->
+            Text(
+                text = label,
+                style = when {
+                    text.isEmpty() && !isFocused -> MaterialTheme.typography.bodyMedium
+                    else -> MaterialTheme.typography.bodySmall
+                },
+                maxLines = 1,
+                color = when {
+                    error -> colors.errorLabelColor
+                    readOnly -> colors.disabledLabelColor
+                    text.isEmpty() && !isFocused -> colors.unfocusedLabelColor
+                    else -> colors.focusedLabelColor
+                }
+            )
+        }
+
+        val placeholder: @Composable (() -> Unit)? = placeholder?.composableLet { placeholder ->
+            Text(
+                text = placeholder,
+                style = MaterialTheme.typography.bodyMedium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                color = colors.unfocusedTextColor
+            )
+        }
+
+        val supportingText: @Composable (() -> Unit)? = errorMessage
+            ?.takeIf { enabled && error && errorMessage.isNotBlank() }
+            ?.composableLet {
                 AnimatedVisibility(
-                    visible = enabled && error && errorMessage.isNotEmpty() && showSupportingText,
+                    visible = showSupportingText,
                     enter = expandVertically(
                         animationSpec = tween(
                             durationMillis = 250,
@@ -417,61 +423,103 @@ private fun <T> EditableTextField(
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
-            },
-            leadingIcon = leadingIcon,
-            trailingIcon = {
-                if (error) {
-                    IconButton(
-                        onClick = { showSupportingText = !showSupportingText },
-                        colors = IconButtonDefaults.iconButtonColors(
-                            containerColor = Color.Transparent,
-                            contentColor = MaterialTheme.colorScheme.error
-                        ),
-                        modifier = Modifier.padding(horizontal = 2.dp, vertical = 4.dp)
-                    ) {
-                        Icon(imageVector = Icons.Rounded.Error, contentDescription = "error")
-                    }
-                } else {
-                    Row(
-                        verticalAlignment = Alignment.Bottom,
-                        horizontalArrangement = Arrangement.SpaceAround
-                    ) {
-                        Spacer(modifier = Modifier.width(4.dp))
-                        trailingActions()
-                    }
-                }
-            },
-            prefix = prefix,
-            suffix = suffix,
-            contentPadding = TextFieldDefaults.contentPaddingWithLabel(
-                top = 16.dp,
-                bottom = 16.dp
-            ),
-            colors = colors.textFieldColors,
-            container = {
-                val borderModifier = Modifier.border(
-                    border = animateBorderStrokeAsState(
-                        borderBrush = borderBrush,
-                        enabled = !readOnly,
-                        interactionSource = interactionSource,
-                        focusedBorderThickness = 2.dp,
-                        unfocusedBorderThickness = 1.dp
-                    ).value,
-                    shape = shape
-                )
-
-                Box(
-                    modifier = Modifier
-                        .then(borderModifier)
-                        .background(color = containerColor, shape = shape)
-                )
             }
-        )
+
+        val leadingIcon: @Composable (() -> Unit)? = composableBlock(
+            condition = error || leadingIcon != null
+        ) {
+            when {
+                error -> IconButton(
+                    onClick = { showSupportingText = !showSupportingText },
+                    colors = IconButtonDefaults.iconButtonColors(
+                        containerColor = Color.Transparent,
+                        contentColor = MaterialTheme.colorScheme.error
+                    ),
+                    modifier = Modifier.padding(horizontal = 2.dp, vertical = 4.dp)
+                ) {
+                    Icon(imageVector = Icons.Rounded.Error, contentDescription = "error")
+                }
+
+                leadingIcon != null -> leadingIcon()
+            }
+        }
+
+        val trailingIcon: @Composable (() -> Unit)? = trailingActions?.composableLet {
+            Row(
+                verticalAlignment = Alignment.Bottom,
+                horizontalArrangement = Arrangement.SpaceAround
+            ) {
+                Spacer(modifier = Modifier.width(4.dp))
+                trailingActions()
+            }
+        }
+
+
+        when (borderBrush) {
+            null -> TextFieldDefaults.DecorationBox(
+                value = text,
+                innerTextField = innerTextField,
+                enabled = enabled,
+                singleLine = singleLine,
+                visualTransformation = visualTransformation,
+                interactionSource = interactionSource,
+                isError = error,
+                label = label,
+                placeholder = placeholder,
+                supportingText = supportingText,
+                leadingIcon = leadingIcon,
+                trailingIcon = trailingIcon,
+                prefix = prefix,
+                suffix = suffix,
+                contentPadding = TextFieldDefaults.contentPaddingWithLabel(),
+                colors = colors.textFieldColors
+            )
+
+            else -> OutlinedTextFieldDefaults.DecorationBox(
+                value = text,
+                innerTextField = innerTextField,
+                enabled = enabled,
+                singleLine = singleLine,
+                visualTransformation = visualTransformation,
+                interactionSource = interactionSource,
+                isError = error,
+                label = label,
+                placeholder = placeholder,
+                supportingText = supportingText,
+                leadingIcon = leadingIcon,
+                trailingIcon = trailingIcon,
+                prefix = prefix,
+                suffix = suffix,
+                contentPadding = OutlinedTextFieldDefaults.contentPadding(),
+                colors = colors.textFieldColors,
+                container = {
+                    val borderModifier = Modifier.border(
+                        border = animateBorderStrokeAsState(
+                            borderBrush = borderBrush,
+                            enabled = !readOnly,
+                            interactionSource = interactionSource,
+                            focusedBorderThickness = 2.dp,
+                            unfocusedBorderThickness = 1.dp
+                        ).value,
+                        shape = shape
+                    )
+
+                    Box(
+                        modifier = Modifier
+                            .then(borderModifier)
+                            .background(
+                                color = colors.containerColor(enabled, error, isFocused),
+                                shape = shape
+                            )
+                    )
+                }
+            )
+        }
     }
 
     when (value) {
         is String -> BasicTextField(
-            modifier = basicTextFieldModifier,
+            modifier = modifier.padding(vertical = 2.dp),
             text = value,
             onTextChange = onValueChange,
             readOnly = readOnly,
@@ -479,15 +527,15 @@ private fun <T> EditableTextField(
             maxLines = maxLines,
             enabled = enabled,
             cursorBrush = cursorBrush,
-            textStyle = textStyle.copy(color = textColor.animate()),
+            textStyle = textStyle.copy(color = colors.textColor(enabled, readOnly, error, isFocused)),
             interactionSource = interactionSource,
             keyboardParams = keyboardParams,
             visualTransformation = visualTransformation,
-            decorationBox = decorationBox
+            decorationBox = { DecorationBox(it) }
         )
 
         is TextFieldValue -> BasicTextField(
-            modifier = basicTextFieldModifier,
+            modifier = modifier.padding(top = 1.dp),
             text = value,
             onTextChange = onValueChange,
             readOnly = readOnly,
@@ -495,11 +543,11 @@ private fun <T> EditableTextField(
             maxLines = maxLines,
             enabled = enabled,
             cursorBrush = cursorBrush,
-            textStyle = textStyle.copy(color = textColor.animate()),
+            textStyle = textStyle.copy(color = colors.textColor(enabled, readOnly, error, isFocused)),
             interactionSource = interactionSource,
             keyboardParams = keyboardParams,
             visualTransformation = visualTransformation,
-            decorationBox = decorationBox
+            decorationBox = { DecorationBox(it) }
         )
     }
 }
@@ -623,9 +671,9 @@ object EditableTextFieldDefaults {
     @Composable
     fun colors(
         focusedTextColor: Color = MaterialTheme.colorScheme.onBackground,
-        unfocusedTextColor: Color = focusedTextColor.copy(alpha = 0.7f),
+        unfocusedTextColor: Color = focusedTextColor,
         disabledTextColor: Color = focusedTextColor,
-        errorTextColor: Color = Color.Unspecified,
+        errorTextColor: Color = focusedTextColor,
         focusedContainerColor: Color = Color.Transparent,
         unfocusedContainerColor: Color = Color.Transparent,
         disabledContainerColor: Color = Color.Transparent,
@@ -638,10 +686,18 @@ object EditableTextFieldDefaults {
         unfocusedTrailingActionsColor: Color = Color.Unspecified,
         disabledTrailingActionsColor: Color = Color.Unspecified,
         errorTrailingActionsColor: Color = MaterialTheme.colorScheme.error,
+        focusedLabelColor: Color = MaterialTheme.colorScheme.primary,
+        unfocusedLabelColor: Color = disabledTextColor,
+        disabledLabelColor: Color = disabledTextColor,
+        errorLabelColor: Color = MaterialTheme.colorScheme.error,
         focusedSupportingTextColor: Color = MaterialTheme.colorScheme.error,
         unfocusedSupportingTextColor: Color = MaterialTheme.colorScheme.error,
         disabledSupportingTextColor: Color = MaterialTheme.colorScheme.error,
         errorSupportingTextColor: Color = MaterialTheme.colorScheme.error,
+        focusedIndicatorColor: Color = Color.Unspecified,
+        unfocusedIndicatorColor: Color = focusedIndicatorColor,
+        disabledIndicatorColor: Color = focusedIndicatorColor,
+        errorIndicatorColor: Color = focusedIndicatorColor,
         enabledBorderColors: Collection<Color> = listOf(
             MaterialTheme.colorScheme.primary,
             MaterialTheme.colorScheme.primaryContainer,
@@ -667,10 +723,18 @@ object EditableTextFieldDefaults {
         unfocusedTrailingActionsColor = unfocusedTrailingActionsColor,
         disabledTrailingActionsColor = disabledTrailingActionsColor,
         errorTrailingActionsColor = errorTrailingActionsColor,
+        focusedLabelColor = focusedLabelColor,
+        unfocusedLabelColor = unfocusedLabelColor,
+        disabledLabelColor = disabledLabelColor,
+        errorLabelColor = errorLabelColor,
         focusedSupportingTextColor = focusedSupportingTextColor,
         unfocusedSupportingTextColor = unfocusedSupportingTextColor,
         disabledSupportingTextColor = disabledSupportingTextColor,
         errorSupportingTextColor = errorSupportingTextColor,
+        focusedIndicatorColor = focusedIndicatorColor,
+        unfocusedIndicatorColor = unfocusedIndicatorColor,
+        disabledIndicatorColor = disabledIndicatorColor,
+        errorIndicatorColor = errorIndicatorColor,
         enabledBorderColors = enabledBorderColors,
         disabledBorderColors = disabledBorderColors,
         cursorColors = cursorColors
@@ -701,10 +765,18 @@ data class EditableTextFieldColors(
     val unfocusedTrailingActionsColor: Color,
     val disabledTrailingActionsColor: Color,
     val errorTrailingActionsColor: Color,
+    val focusedLabelColor: Color,
+    val unfocusedLabelColor: Color,
+    val disabledLabelColor: Color,
+    val errorLabelColor: Color,
     val focusedSupportingTextColor: Color,
     val unfocusedSupportingTextColor: Color,
     val disabledSupportingTextColor: Color,
     val errorSupportingTextColor: Color,
+    val focusedIndicatorColor: Color,
+    val unfocusedIndicatorColor: Color,
+    val disabledIndicatorColor: Color,
+    val errorIndicatorColor: Color,
     val enabledBorderColors: Collection<Color>,
     val disabledBorderColors: Collection<Color>,
     val cursorColors: Collection<Color>,
@@ -712,7 +784,7 @@ data class EditableTextFieldColors(
     val textFieldColors: TextFieldColors
         @Composable
         @Stable
-        get() = OutlinedTextFieldDefaults.colors(
+        get() = TextFieldDefaults.colors(
             focusedTextColor = focusedTextColor.animate(),
             unfocusedTextColor = unfocusedTextColor.animate(),
             disabledTextColor = disabledTextColor.animate(),
@@ -733,13 +805,41 @@ data class EditableTextFieldColors(
             unfocusedSupportingTextColor = unfocusedSupportingTextColor.animate(),
             disabledSupportingTextColor = disabledSupportingTextColor.animate(),
             errorSupportingTextColor = errorSupportingTextColor.animate(),
+            focusedIndicatorColor = focusedIndicatorColor.animate(),
+            unfocusedIndicatorColor = unfocusedIndicatorColor.animate(),
+            disabledIndicatorColor = disabledIndicatorColor.animate(),
+            errorIndicatorColor = errorIndicatorColor.animate()
         )
 
 
     @Stable
-    fun borderColors(enabled: Boolean) = when {
+    internal fun borderColors(enabled: Boolean) = when {
         enabled -> enabledBorderColors
         else -> disabledBorderColors
+    }
+
+    @Stable
+    internal fun textColor(
+        enabled: Boolean,
+        readOnly: Boolean,
+        isError: Boolean,
+        focused: Boolean
+    ): Color = when {
+        !enabled || readOnly -> disabledTextColor
+        isError -> errorTextColor
+        focused -> focusedTextColor
+        else -> unfocusedTextColor
+    }
+
+    internal fun containerColor(
+        enabled: Boolean,
+        isError: Boolean,
+        focused: Boolean
+    ): Color = when {
+        !enabled -> disabledContainerColor
+        isError -> errorContainerColor
+        focused -> focusedContainerColor
+        else -> unfocusedContainerColor
     }
 }
 
