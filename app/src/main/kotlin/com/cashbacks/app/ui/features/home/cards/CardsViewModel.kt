@@ -11,7 +11,9 @@ import com.cashbacks.app.ui.features.home.HomeTopAppBarState
 import com.cashbacks.app.ui.features.home.cards.mvi.CardsAction
 import com.cashbacks.app.ui.features.home.cards.mvi.CardsEvent
 import com.cashbacks.app.ui.managment.ScreenState
+import com.cashbacks.domain.model.MessageHandler
 import com.cashbacks.domain.model.PrimaryBankCard
+import com.cashbacks.domain.usecase.cards.DeleteBankCardUseCase
 import com.cashbacks.domain.usecase.cards.FetchBankCardsUseCase
 import com.cashbacks.domain.usecase.cards.SearchBankCardsUseCase
 import kotlinx.coroutines.delay
@@ -23,7 +25,9 @@ import javax.inject.Inject
 
 class CardsViewModel @Inject constructor(
     fetchBankCardsUseCase: FetchBankCardsUseCase,
-    searchBankCardsUseCase: SearchBankCardsUseCase
+    searchBankCardsUseCase: SearchBankCardsUseCase,
+    private val deleteBankCardUseCase: DeleteBankCardUseCase,
+    private val messageHandler: MessageHandler
 ) : MviViewModel<CardsAction, CardsEvent>() {
     var state by mutableStateOf(ScreenState.Showing)
         private set
@@ -31,9 +35,15 @@ class CardsViewModel @Inject constructor(
     internal var appBarState: HomeTopAppBarState by mutableStateOf(HomeTopAppBarState.TopBar)
         private set
 
+    var swipedCardId: Long? by mutableStateOf(null)
+        private set
+
+    var expandedCardId: Long? by mutableStateOf(null)
+        private set
+
     val cardsFlow: StateFlow<List<PrimaryBankCard>?> by lazy {
         combineTransform(
-            flow = fetchBankCardsUseCase.fetchBankCards(),
+            flow = fetchBankCardsUseCase.fetchAllBankCards(),
             flow2 = snapshotFlow { appBarState }
         ) { allCards, appBarState ->
             state = ScreenState.Loading
@@ -57,6 +67,10 @@ class CardsViewModel @Inject constructor(
         when (action) {
             is CardsAction.ShowSnackbar -> push(CardsEvent.ShowSnackbar(action.message))
 
+            is CardsAction.ShowDialog -> push(CardsEvent.ChangeOpenedDialog(action.type))
+
+            is CardsAction.HideDialog -> push(CardsEvent.ChangeOpenedDialog(null))
+
             is CardsAction.ClickNavigationIcon -> push(CardsEvent.OpenNavigationDrawer)
 
             is CardsAction.UpdateAppBarState -> appBarState = action.state
@@ -66,10 +80,30 @@ class CardsViewModel @Inject constructor(
             }
 
             is CardsAction.OpenBankCardDetails -> {
-                push(CardsEvent.NavigateToBankCard(
-                    args = BankCardArgs(id = action.cardId, isEditing = false)
-                ))
+                val args = BankCardArgs(id = action.cardId, isEditing = false)
+                push(CardsEvent.NavigateToBankCard(args))
             }
+
+            is CardsAction.EditBankCard -> {
+                val args = BankCardArgs(id = action.cardId, isEditing = true)
+                push(CardsEvent.NavigateToBankCard(args))
+            }
+
+            is CardsAction.DeleteBankCard -> {
+                state = ScreenState.Loading
+                delay(100)
+                deleteBankCardUseCase.deleteBankCard(action.card).onFailure { throwable ->
+                    messageHandler.getExceptionMessage(throwable)
+                        ?.takeIf { it.isNotBlank() }
+                        ?.let { push(CardsEvent.ShowSnackbar(it)) }
+                }
+                state = ScreenState.Showing
+            }
+
+            is CardsAction.SwipeCard -> swipedCardId = action.cardId.takeIf { action.isSwiped }
+
+            is CardsAction.ExpandCard -> expandedCardId = action.cardId.takeIf { action.isExpanded }
+
         }
     }
 }
