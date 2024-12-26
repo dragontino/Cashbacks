@@ -16,6 +16,7 @@
         <activity
             android:name=".ui.MainActivity"
             android:exported="true"
+            android:label="@string/activity_name"
             android:theme="@style/Theme.Cashbacks"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
