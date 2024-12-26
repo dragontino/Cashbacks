@@ -254,7 +254,7 @@ internal fun ShopScreenScaffold(
                 navigationIcon = {
                     Crossfade(
                         targetState = viewModel.shop.haveChanges,
-                        label = "is changed anim",
+                        label = "shop nav icon anim",
                         animationSpec = tween(durationMillis = 500, easing = LinearEasing)
                     ) { isChanged ->
                         IconButton(
@@ -484,7 +484,7 @@ private fun ShopScreenContent(
                                 && viewModel.shop.errors[ShopError.Name] != null,
                         errorMessage = viewModel.shop.errors[ShopError.Name] ?: "",
                         enabled = viewModel.viewModelState == ViewModelState.Editing,
-                        modifier = Modifier.padding(horizontal = 16.dp)
+                        modifier = Modifier.padding(horizontal = 16.dp).fillMaxWidth()
                     )
 
                     HorizontalDivider(Modifier.padding(horizontal = 8.dp))
@@ -531,7 +531,8 @@ private fun ShopScreenContent(
                                 )
                             )
                         }
-                    }
+                    },
+                    modifier = Modifier.padding(horizontal = 16.dp)
                 )
             }
         }

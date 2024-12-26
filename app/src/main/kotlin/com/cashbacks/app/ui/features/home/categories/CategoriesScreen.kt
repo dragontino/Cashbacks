@@ -252,7 +252,7 @@ private fun CategoriesList(
     Crossfade(
         targetState = categoriesState.value,
         label = "Content loading animation",
-        animationSpec = AnimationDefaults.loadingContentAnimation()
+        animationSpec = AnimationDefaults.loadingContentAnimationSpec()
     ) { categoriesList ->
         when (val listState = ListState.fromList(categoriesList)) {
             is ListState.Loading -> {
@@ -265,7 +265,7 @@ private fun CategoriesList(
                 Crossfade(
                     targetState = viewModel.appBarState to viewModel.viewModelState,
                     label = "emptyList",
-                    animationSpec = AnimationDefaults.loadingContentAnimation()
+                    animationSpec = AnimationDefaults.loadingContentAnimationSpec()
                 ) { (appBarState, viewModelState) ->
                     EmptyList(
                         text = when (appBarState) {

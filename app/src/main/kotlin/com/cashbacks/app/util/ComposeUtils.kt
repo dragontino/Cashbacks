@@ -173,3 +173,19 @@ data class ColorPair(val firstColor: Color, val secondColor: Color) {
 
 infix fun Color.mix(otherColor: Color) =
     ColorPair(firstColor = this, secondColor = otherColor)
+
+
+@Composable
+fun <T, R> T.composableLet(block: @Composable (T) -> R): @Composable () -> R = {
+    block(this)
+}
+
+
+@Composable
+fun <R> composableBlock(
+    condition: Boolean,
+    block: @Composable () -> R
+): @Composable (() -> R)? = when {
+    condition -> block
+    else -> null
+}
