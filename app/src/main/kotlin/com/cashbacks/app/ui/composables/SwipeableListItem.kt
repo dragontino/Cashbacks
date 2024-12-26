@@ -1,6 +1,7 @@
 package com.cashbacks.app.ui.composables
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Indication
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -23,10 +24,13 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.rounded.DeleteForever
 import androidx.compose.material.icons.rounded.DeleteOutline
+import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonColors
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
@@ -51,34 +55,35 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
-import com.cashbacks.app.ui.managment.ScrollableListItemState
-import com.cashbacks.app.ui.managment.rememberScrollableListItemState
+import com.cashbacks.app.ui.managment.SwipeableListItemState
+import com.cashbacks.app.ui.managment.rememberSwipeableListItemState
 import com.cashbacks.app.ui.theme.CashbacksTheme
 import com.cashbacks.app.util.OnClick
-import com.cashbacks.app.util.animate
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
 @Composable
-fun ScrollableListItem(
+fun SwipeableListItem(
     modifier: Modifier = Modifier,
-    state: ScrollableListItemState = rememberScrollableListItemState(
-        minOffset = ScrollableListItemDefaults.initialMinOffset,
+    state: SwipeableListItemState = rememberSwipeableListItemState(
+        minOffset = SwipeableListItemDefaults.initialMinOffset,
         initialIsSwiped = false
     ),
     onClick: OnClick? = null,
+    clickIndication: Indication? = LocalIndication.current,
+    swipeEnabled: Boolean = true,
     hiddenContent: @Composable (RowScope.() -> Unit) = {},
-    shape: Shape = ScrollableListItemDefaults.shape,
-    contentWindowInsets: WindowInsets = ScrollableListItemDefaults.contentWindowInsets,
-    border: BorderStroke = ScrollableListItemDefaults.borderStroke,
+    shape: Shape = SwipeableListItemDefaults.shape,
+    contentWindowInsets: WindowInsets = SwipeableListItemDefaults.contentWindowInsets,
+    border: BorderStroke? = SwipeableListItemDefaults.borderStroke,
     containerColor: Color = MaterialTheme.colorScheme.surface,
     contentColor: Color = contentColorFor(containerColor),
     mainContent: @Composable (() -> Unit)
 ) {
     val scope = rememberCoroutineScope()
     val scrollableState = rememberScrollableState { delta ->
-        if (state.canSwipe(delta)) {
-            scope.launch { state.onScroll(delta) }
+        if (swipeEnabled && state.canSwipe(delta)) {
+            scope.launch { state.onSwipe(delta) }
             return@rememberScrollableState delta
         } else {
             return@rememberScrollableState 0f
@@ -90,6 +95,8 @@ fun ScrollableListItem(
             modifier = modifier,
             contentAlignment = Alignment.Center
         ) {
+            val borderModifier = border?.let { Modifier.border(it, shape) } ?: Modifier
+
             Box(
                 modifier = Modifier
                     .offset {
@@ -100,10 +107,10 @@ fun ScrollableListItem(
                     }
                     .shadow(elevation = 4.dp, shape = shape)
                     .clip(shape)
-                    .border(border, shape)
-                    .background(containerColor.animate())
+                    .then(borderModifier)
+                    .background(containerColor)
                     .clickable(
-                        indication = LocalIndication.current,
+                        indication = clickIndication,
                         interactionSource = remember(::MutableInteractionSource),
                         role = Role.Button,
                         onClick = {
@@ -130,9 +137,7 @@ fun ScrollableListItem(
                 horizontalArrangement = Arrangement.End,
                 modifier = Modifier
                     .zIndex(1f)
-                    .onGloballyPositioned {
-                        state.updateMinOffset(-it.size.width - 16f)
-                    }
+                    .onGloballyPositioned { state.coerceMinOffset(-it.size.width - 16f) }
                     .windowInsetsPadding(contentWindowInsets)
                     .align(Alignment.CenterEnd)
                     .wrapContentSize(),
@@ -143,18 +148,20 @@ fun ScrollableListItem(
 }
 
 
-object ScrollableListItemDefaults {
+object SwipeableListItemDefaults {
     val borderStroke: BorderStroke
         @Composable
-        get() = BorderStroke(
-            width = 1.5.dp,
-            brush = Brush.linearGradient(
-                colors = listOf(
-                    MaterialTheme.colorScheme.primary,
-                    MaterialTheme.colorScheme.secondary,
-                    MaterialTheme.colorScheme.tertiary,
-                ).map { it.animate() }
-            )
+        get() = BorderStroke(width = 1.5.dp, brush = borderBrush())
+
+    @Composable
+    fun borderBrush(colors: List<Color> = borderColors): Brush = Brush.linearGradient(colors)
+
+    val borderColors: List<Color>
+        @Composable
+        get() = listOf(
+            MaterialTheme.colorScheme.primary,
+            MaterialTheme.colorScheme.secondary,
+            MaterialTheme.colorScheme.tertiary
         )
 
     val shape
@@ -173,31 +180,27 @@ object ScrollableListItemDefaults {
 
 
 @Composable
-internal fun EditDeleteContent(
+internal fun RowScope.EditDeleteContent(
     onEditClick: () -> Unit,
-    onDeleteClick: () -> Unit
+    onDeleteClick: () -> Unit,
+    editButtonColors: IconButtonColors = IconButtonDefaults.iconButtonColors(
+        contentColor = MaterialTheme.colorScheme.primary
+    ),
+    deleteButtonColors: IconButtonColors = IconButtonDefaults.iconButtonColors(
+        contentColor = MaterialTheme.colorScheme.primary
+    )
 ) {
-    IconButton(
-        onClick = onEditClick,
-        colors = IconButtonDefaults.iconButtonColors(
-            contentColor = MaterialTheme.colorScheme.primary.animate()
-        )
-    ) {
+    IconButton(onClick = onEditClick, colors = editButtonColors) {
         Icon(
-            imageVector = Icons.Outlined.Edit,
+            imageVector = Icons.Rounded.Edit,
             contentDescription = "edit",
             modifier = Modifier.scale(1.1f)
         )
     }
 
-    IconButton(
-        onClick = onDeleteClick,
-        colors = IconButtonDefaults.iconButtonColors(
-            contentColor = MaterialTheme.colorScheme.primary.animate()
-        )
-    ) {
+    IconButton(onClick = onDeleteClick, colors = deleteButtonColors) {
         Icon(
-            imageVector = Icons.Rounded.DeleteOutline,
+            imageVector = Icons.Rounded.DeleteForever,
             contentDescription = "delete",
             modifier = Modifier.scale(1.1f)
         )
@@ -209,7 +212,7 @@ internal fun EditDeleteContent(
 @Composable
 private fun ScrollableListItemPreview() {
     CashbacksTheme(isDarkTheme = false) {
-        ScrollableListItem(
+        SwipeableListItem(
             hiddenContent = {
                 Icon(imageVector = Icons.Outlined.Edit, contentDescription = null)
                 Icon(imageVector = Icons.Rounded.DeleteOutline, contentDescription = null)
