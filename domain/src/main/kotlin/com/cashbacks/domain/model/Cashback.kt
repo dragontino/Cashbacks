@@ -14,7 +14,7 @@ sealed interface Cashback : Parcelable {
     val bankCard: BasicBankCard
     val amount: String
     val measureUnit: MeasureUnit
-    val startDate: LocalDate
+    val startDate: LocalDate?
     val expirationDate: LocalDate?
     val comment: String
 }
@@ -27,7 +27,7 @@ data class BasicCashback(
     override val bankCard: BasicBankCard,
     override val amount: String,
     override val measureUnit: MeasureUnit = MeasureUnit.Percent,
-    override val startDate: @WriteWith<LocalDateParceler> LocalDate = Clock.System.today(),
+    override val startDate: @WriteWith<LocalDateParceler> LocalDate? = Clock.System.today(),
     override val expirationDate: @WriteWith<LocalDateParceler> LocalDate? = null,
     override val comment: String = ""
 ) : Cashback
@@ -41,7 +41,7 @@ data class FullCashback(
     override val bankCard: BasicBankCard,
     override val amount: String,
     override val measureUnit: MeasureUnit = MeasureUnit.Percent,
-    override val startDate: @WriteWith<LocalDateParceler> LocalDate = Clock.System.today(),
+    override val startDate: @WriteWith<LocalDateParceler> LocalDate? = Clock.System.today(),
     override val expirationDate: @WriteWith<LocalDateParceler> LocalDate? = null,
     override val comment: String = ""
 ) : Cashback {

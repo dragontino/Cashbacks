@@ -21,7 +21,7 @@ interface CashbacksDao : BaseDao {
 
     @Query(
         """
-            SELECT cash.id, cash.amount, cash.expirationDate, cash.comment,
+            SELECT cash.id, cash.amount, cash.measureUnit, cash.startDate, cash.expirationDate, cash.comment,
                    cat.id AS category_id, cat.name AS category_name,
                    s.id AS shop_id, s.categoryId AS shop_categoryId, s.name AS shop_name,
                    card.id AS card_id, card.name AS card_name, 
@@ -39,7 +39,7 @@ interface CashbacksDao : BaseDao {
 
     @Query(
         """
-            SELECT cash.id, cash.amount, cash.expirationDate, cash.comment,
+            SELECT cash.id, cash.amount, cash.measureUnit, cash.startDate, cash.expirationDate, cash.comment,
                    card.id AS card_id,
                    card.name AS card_name,
                    card.number AS card_number,
@@ -56,7 +56,7 @@ interface CashbacksDao : BaseDao {
 
     @Query(
         """
-            SELECT cash.id, cash.amount, cash.expirationDate, cash.comment,
+            SELECT cash.id, cash.amount, cash.measureUnit, cash.startDate, cash.expirationDate, cash.comment,
                    cat.id AS category_id, cat.name AS category_name,
                    s.id AS shop_id, s.categoryId AS shop_categoryId, s.name AS shop_name,
                    card.id AS card_id, card.name AS card_name, card.number AS card_number, 
@@ -74,7 +74,7 @@ interface CashbacksDao : BaseDao {
     @Transaction
     @Query(
         """
-            SELECT cash.id, cash.amount, cash.expirationDate, cash.comment,
+            SELECT cash.id, cash.amount, cash.measureUnit, cash.startDate, cash.expirationDate, cash.comment,
                    cat.id AS category_id, cat.name AS category_name,
                    s.id AS shop_id, s.categoryId AS shop_categoryId, s.name AS shop_name,
                    card.id AS card_id, card.name AS card_name, card.number AS card_number, 
@@ -83,12 +83,13 @@ interface CashbacksDao : BaseDao {
             LEFT JOIN Categories AS cat ON cash.categoryId = cat.id
             LEFT JOIN Shops AS s ON cash.shopId = s.id
             LEFT JOIN Cards AS card ON card.id = cash.bankCardId
-            WHERE cash.categoryId IS NOT NULL OR cash.shopId IS NOT NULL
+            WHERE (cash.categoryId IS NOT NULL OR cash.shopId IS NOT NULL)
             AND (
                 amount LIKE '%' || :query || '%' OR category_name LIKE '%' || :query || '%' 
-                OR shop_name LIKE '%' || :query || '%' OR expirationDate LIKE '%' || :query || '%' 
-                OR cash.comment LIKE '%' || :query || '%' OR card_name LIKE '%' || :query || '%' 
-                OR card_number LIKE '%' || :query || '%' OR card_paymentSystem LIKE '%' || :query || '%'
+                OR shop_name LIKE '%' || :query || '%' OR startDate LIKE '%' || :query || '%' 
+                OR expirationDate LIKE '%' || :query || '%' OR cash.comment LIKE '%' || :query || '%' 
+                OR card_name LIKE '%' || :query || '%' OR card_number LIKE '%' || :query || '%' 
+                OR card_paymentSystem LIKE '%' || :query || '%'
             )
         """
     )

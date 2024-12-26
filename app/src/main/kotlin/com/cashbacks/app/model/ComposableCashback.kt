@@ -18,6 +18,8 @@ import com.cashbacks.domain.model.MeasureUnit
 import com.cashbacks.domain.model.MessageHandler
 import com.cashbacks.domain.model.Shop
 import com.cashbacks.domain.model.ShopNotSelectedException
+import com.cashbacks.domain.util.today
+import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDate
 
 @Stable
@@ -28,9 +30,10 @@ internal class ComposableCashback private constructor(
     bankCard: BasicBankCard?,
     amount: String,
     measureUnit: MeasureUnit,
+    startDate: LocalDate?,
     expirationDate: LocalDate?,
     comment: String
-) : Updatable {
+) : Updatable, ErrorHolder<CashbackError> {
 
     constructor(ownerType: CashbackOwnerType) : this(
         id = null,
@@ -39,6 +42,7 @@ internal class ComposableCashback private constructor(
         bankCard = null,
         amount = "",
         measureUnit = MeasureUnit.Percent,
+        startDate = Clock.System.today(),
         expirationDate = null,
         comment = ""
     )
@@ -48,11 +52,12 @@ internal class ComposableCashback private constructor(
     var measureUnit by mutableStateOf(measureUnit)
     var owner by mutableStateOf(owner)
     var bankCard by mutableStateOf(bankCard)
+    var startDate by mutableStateOf(startDate)
     var expirationDate by mutableStateOf(expirationDate)
     var comment by mutableStateOf(comment)
 
     private val errorMessages = mutableStateMapOf<CashbackError, String>()
-    val errors: Map<CashbackError, String> = errorMessages.toMap()
+    override val errors: Map<CashbackError, String> get() = errorMessages.toMap()
 
     override val updatedProperties = mutableStateMapOf<String, Pair<String, String>>()
 
@@ -64,20 +69,52 @@ internal class ComposableCashback private constructor(
         if (this.ownerType == ownerType) {
             id = cashback.id
             owner = cashback.owner
+            bankCard = cashback.bankCard
             amount = cashback.roundedAmount
             measureUnit = cashback.measureUnit
-            bankCard = cashback.bankCard
+            startDate = cashback.startDate
             expirationDate = cashback.expirationDate
             comment = cashback.comment
         }
     }
 
 
-    val haveErrors: Boolean get() = errorMessages.isNotEmpty()
-    val errorMessage: String? get() = CashbackError.entries.firstNotNullOfOrNull { errorMessages[it] }
+    override val errorMessage: String? get() = CashbackError.entries.firstNotNullOfOrNull { errorMessages[it] }
 
 
-    fun updateErrorMessage(error: CashbackError, messageHandler: MessageHandler) {
+    fun updateStartDate(newDate: LocalDate?) {
+        val newDate = newDate ?: Clock.System.today()
+        ::startDate updateTo newDate
+        expirationDate
+            ?.takeIf { it < newDate }
+            ?.let { ::expirationDate updateTo null }
+    }
+
+    fun updateAmount(newAmount: String) {
+        val doubleAmount = newAmount.toDoubleOrNull()
+        val isAmountCorrect = when {
+            doubleAmount == null -> true
+            measureUnit is MeasureUnit.Currency -> doubleAmount >= 0
+            doubleAmount in 0.0..100.0 -> true
+            else -> false
+        }
+        if (isAmountCorrect) {
+            ::amount updateTo newAmount
+        }
+    }
+
+    fun updateMeasureUnit(newUnit: MeasureUnit) {
+        ::measureUnit updateTo newUnit
+        if (
+            newUnit is MeasureUnit.Percent &&
+            amount.toDoubleOrNull()?.let { it !in 0.0..100.0 } == true
+        ) {
+            ::amount updateTo ""
+        }
+    }
+
+
+    override fun updateErrorMessage(error: CashbackError, messageHandler: MessageHandler) {
         val message = when (error) {
             CashbackError.Owner -> {
                 when (owner) {
@@ -92,11 +129,14 @@ internal class ComposableCashback private constructor(
                 }
             }
 
-            CashbackError.BankCard -> when {
-                bankCard == null || bankCard?.id == 0L -> messageHandler
-                    .getExceptionMessage(BankCardNotSelectedException)
+            CashbackError.BankCard -> {
+                val card = bankCard
+                when {
+                    card == null || card.id == 0L -> messageHandler
+                        .getExceptionMessage(BankCardNotSelectedException)
 
-                else -> null
+                    else -> null
+                }
             }
             CashbackError.Amount -> {
                 val doubleAmount = amount.toDoubleOrNull()
@@ -132,6 +172,7 @@ internal class ComposableCashback private constructor(
             bankCard = bankCard ?: return null,
             amount = this.amount,
             measureUnit = measureUnit,
+            startDate = startDate,
             expirationDate = expirationDate,
             comment = this.comment
         )

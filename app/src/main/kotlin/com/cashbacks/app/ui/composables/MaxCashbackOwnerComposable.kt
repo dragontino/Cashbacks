@@ -1,10 +1,9 @@
 package com.cashbacks.app.ui.composables
 
-import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.TweenSpec
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -36,11 +35,15 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.cashbacks.app.ui.managment.rememberScrollableListItemState
+import com.cashbacks.app.ui.managment.rememberSwipeableListItemState
 import com.cashbacks.app.ui.theme.CashbacksTheme
 import com.cashbacks.app.ui.theme.VerdanaFont
+import com.cashbacks.app.util.AnimationDefaults
+import com.cashbacks.app.util.BankCardUtils.hideNumber
+import com.cashbacks.app.util.BankCardUtils.withSpaces
 import com.cashbacks.app.util.CashbackUtils.displayableAmount
-import com.cashbacks.app.util.CashbackUtils.getDisplayableExpirationDate
+import com.cashbacks.app.util.CashbackUtils.getDatesTitle
+import com.cashbacks.app.util.CashbackUtils.getDisplayableDatesText
 import com.cashbacks.app.util.OnClick
 import com.cashbacks.app.util.animate
 import com.cashbacks.domain.R
@@ -50,17 +53,6 @@ import com.cashbacks.domain.model.Category
 import com.cashbacks.domain.model.MaxCashbackOwner
 import com.cashbacks.domain.model.ParentCashbackOwner
 import com.cashbacks.domain.model.Shop
-
-private object Animations {
-    const val DURATION_MILLIS = 300
-    fun <T> expandedAnimationSpec(): TweenSpec<T> = tween<T>(
-        durationMillis = DURATION_MILLIS,
-        easing = FastOutSlowInEasing
-    )
-}
-
-
-
 
 @Composable
 internal fun MaxCashbackOwnerComposable(
@@ -73,7 +65,7 @@ internal fun MaxCashbackOwnerComposable(
     onEdit: () -> Unit = {},
     onDelete: () -> Unit = {},
 ) {
-    val listItemState = rememberScrollableListItemState(isSwiped)
+    val listItemState = rememberSwipeableListItemState(isSwiped)
     val onClickState = rememberUpdatedState(onClick)
     val expandedState = rememberSaveable { mutableStateOf(false) }
 
@@ -99,11 +91,11 @@ internal fun MaxCashbackOwnerComposable(
 
         arrowRotationAnimation.animateTo(
             targetValue = targetDegrees,
-            animationSpec = Animations.expandedAnimationSpec()
+            animationSpec = AnimationDefaults.expandedAnimationSpec()
         )
     }
 
-    ScrollableListItem(
+    SwipeableListItem(
         state = listItemState,
         onClick = onClickState.value.takeIf { !isEditing },
         hiddenContent = {
@@ -118,9 +110,7 @@ internal fun MaxCashbackOwnerComposable(
         Column(
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier
-                .animateContentSize()
-                .fillMaxWidth()
+            modifier = Modifier.fillMaxWidth()
         ) {
             Row(
                 modifier = Modifier
@@ -189,7 +179,11 @@ internal fun MaxCashbackOwnerComposable(
             }
 
             cashbackOwner.maxCashback?.let { cashback ->
-                if (expandedState.value) {
+                AnimatedVisibility(
+                    visible = expandedState.value,
+                    enter = expandVertically(animationSpec = AnimationDefaults.expandedAnimationSpec()),
+                    exit = shrinkVertically(animationSpec = AnimationDefaults.expandedAnimationSpec())
+                ) {
                     HorizontalDivider()
 
                     Column(
@@ -212,7 +206,7 @@ internal fun MaxCashbackOwnerComposable(
                             )
 
                             Text(
-                                text = cashback.bankCard.hiddenLastDigitsOfNumber,
+                                text = cashback.bankCard.hideNumber().takeLast(8).withSpaces(),
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontFamily = FontFamily(VerdanaFont),
                                 fontWeight = FontWeight.Bold,
@@ -220,24 +214,22 @@ internal fun MaxCashbackOwnerComposable(
                             )
                         }
 
-                        cashback.expirationDate?.let { expirationDate ->
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.expires),
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = cashback.getDatesTitle(),
+                                style = MaterialTheme.typography.bodyMedium
+                            )
 
-                                Text(
-                                    text = cashback.getDisplayableExpirationDate(),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontFamily = FontFamily(VerdanaFont),
-                                    fontWeight = FontWeight.Bold,
-                                    textAlign = TextAlign.End
-                                )
-                            }
+                            Text(
+                                text = cashback.getDisplayableDatesText(),
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontFamily = FontFamily(VerdanaFont),
+                                fontWeight = FontWeight.Bold,
+                                textAlign = TextAlign.End
+                            )
                         }
                     }
                 }

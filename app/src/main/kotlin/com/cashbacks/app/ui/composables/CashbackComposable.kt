@@ -8,7 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.DeleteOutline
+import androidx.compose.material.icons.rounded.DeleteForever
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -26,18 +26,20 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.cashbacks.app.ui.managment.rememberScrollableListItemState
+import com.cashbacks.app.ui.managment.rememberSwipeableListItemState
 import com.cashbacks.app.ui.theme.CashbacksTheme
-import com.cashbacks.app.util.CashbackUtils.calculateNumberOfDaysBeforeExpiration
+import com.cashbacks.app.util.BankCardUtils.hideNumber
+import com.cashbacks.app.util.BankCardUtils.withSpaces
 import com.cashbacks.app.util.CashbackUtils.displayableAmount
-import com.cashbacks.app.util.CashbackUtils.getDisplayableExpirationDate
+import com.cashbacks.app.util.CashbackUtils.getDatesTitle
+import com.cashbacks.app.util.CashbackUtils.getDisplayableDatesText
 import com.cashbacks.app.util.animate
 import com.cashbacks.domain.R
 import com.cashbacks.domain.model.BasicCategory
-import com.cashbacks.domain.model.MeasureUnit
 import com.cashbacks.domain.model.Cashback
 import com.cashbacks.domain.model.Category
 import com.cashbacks.domain.model.FullCashback
+import com.cashbacks.domain.model.MeasureUnit
 import com.cashbacks.domain.model.PaymentSystem
 import com.cashbacks.domain.model.PreviewBankCard
 import com.cashbacks.domain.model.Shop
@@ -52,7 +54,7 @@ fun CashbackComposable(
     onSwipe: suspend (isSwiped: Boolean) -> Unit = {},
     onDelete: () -> Unit = {}
 ) {
-    val state = rememberScrollableListItemState(isSwiped)
+    val state = rememberSwipeableListItemState(isSwiped)
     val verticalPadding = 12.dp
     val horizontalPadding = 12.dp
 
@@ -68,7 +70,7 @@ fun CashbackComposable(
         }
     }
 
-    ScrollableListItem(
+    SwipeableListItem(
         state = state,
         onClick = onClick,
         shape = MaterialTheme.shapes.medium,
@@ -80,7 +82,7 @@ fun CashbackComposable(
                 )
             ) {
                 Icon(
-                    imageVector = Icons.Rounded.DeleteOutline,
+                    imageVector = Icons.Rounded.DeleteForever,
                     contentDescription = "delete",
                     modifier = Modifier.scale(1.2f)
                 )
@@ -90,7 +92,7 @@ fun CashbackComposable(
         modifier = modifier
     ) {
         Column(
-            verticalArrangement =  Arrangement.spacedBy(verticalPadding),
+            verticalArrangement = Arrangement.spacedBy(verticalPadding),
             modifier = Modifier
                 .padding(vertical = verticalPadding)
                 .fillMaxWidth()
@@ -112,24 +114,20 @@ fun CashbackComposable(
                 modifier = Modifier.padding(horizontal = horizontalPadding)
             )
 
-            cashback.expirationDate?.let { expirationDate ->
-                CashbackRow(
-                    title = when {
-                        cashback.calculateNumberOfDaysBeforeExpiration() < 0 -> {
-                            stringResource(R.string.expired)
-                        }
-                        else -> {
-                            stringResource(R.string.expires)
-                        }
-                    },
-                    content = cashback.getDisplayableExpirationDate(),
-                    modifier = Modifier.padding(horizontal = horizontalPadding)
-                )
-            }
+            CashbackRow(
+                title = cashback.getDatesTitle(),
+                content = cashback.getDisplayableDatesText(),
+                modifier = Modifier.padding(horizontal = horizontalPadding)
+            )
 
             CashbackRow(
                 title = stringResource(R.string.on_card),
-                content = "${cashback.bankCard.hiddenLastDigitsOfNumber}\t(${cashback.bankCard.name})",
+                content = buildString {
+                    append(cashback.bankCard.hideNumber().takeLast(8).withSpaces())
+                    if (cashback.bankCard.name.isNotBlank()) {
+                        append("\t\t(", cashback.bankCard.name, ")")
+                    }
+                },
                 modifier = Modifier.padding(horizontal = horizontalPadding)
 
             )

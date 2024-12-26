@@ -15,8 +15,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -26,9 +26,9 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Save
 import androidx.compose.material.icons.rounded.ArrowBackIosNew
@@ -105,11 +105,12 @@ import com.cashbacks.app.ui.managment.ListState
 import com.cashbacks.app.ui.managment.ScreenState
 import com.cashbacks.app.ui.theme.CashbacksTheme
 import com.cashbacks.app.ui.theme.VerdanaFont
+import com.cashbacks.app.util.BankCardUtils.getDisplayableString
+import com.cashbacks.app.util.DateUtils.getDisplayableString
 import com.cashbacks.app.util.Loading
 import com.cashbacks.app.util.LoadingInBox
 import com.cashbacks.app.util.PaymentSystemUtils
 import com.cashbacks.app.util.animate
-import com.cashbacks.app.util.getDisplayableString
 import com.cashbacks.app.util.keyboardAsState
 import com.cashbacks.app.util.mix
 import com.cashbacks.domain.R
@@ -212,15 +213,17 @@ internal fun CashbackScreen(
             DatePickerDialog(
                 date = type.date,
                 onConfirm = {
-                    viewModel.cashback.apply { ::expirationDate updateTo it }
+                    viewModel.cashback.apply {
+                        when (type) {
+                            is StartDatePicker -> updateStartDate(it)
+                            is EndDatePicker -> ::expirationDate updateTo it
+                        }
+                    }
                 },
                 onClose = { viewModel.push(CashbackAction.HideDialog) },
                 isDateSelectable = { date ->
                     val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
-                    when (type) {
-                        is StartDatePicker -> date <= today
-                        is EndDatePicker -> date >= today
-                    }
+                    type is StartDatePicker || date >= today
                 }
             )
         }
@@ -229,17 +232,7 @@ internal fun CashbackScreen(
             UnitSelectionDialog(
                 measureUnitsFlow = viewModel.measureUnitsStateFlow,
                 selectedUnit = viewModel.cashback.measureUnit,
-                onConfirm = {
-                    viewModel.cashback.apply {
-                        ::measureUnit updateTo it
-                        if (
-                            it is MeasureUnit.Percent &&
-                            amount.toDoubleOrNull()?.let { it !in 0.0..100.0 } == true
-                        ) {
-                            ::amount updateTo ""
-                        }
-                    }
-                },
+                onConfirm = viewModel.cashback::updateMeasureUnit,
                 onClose = { viewModel.push(CashbackAction.HideDialog) }
             )
         }
@@ -253,19 +246,11 @@ internal fun CashbackScreen(
             .imePadding()
             .fillMaxSize()
     ) {
-        Crossfade(
-            targetState = viewModel.state,
-            label = "loading animation",
-            animationSpec = tween(durationMillis = 100, easing = LinearEasing),
-            modifier = Modifier
-                .imePadding()
-                .fillMaxSize()
-        ) { state ->
-            when (state) {
-                ScreenState.Loading -> LoadingInBox()
-                ScreenState.Showing -> CashbackContent(viewModel, snackbarHostState)
-            }
-        }
+        CashbackContent(
+            viewModel = viewModel,
+            snackbarHostState = snackbarHostState,
+            modifier = Modifier.fillMaxSize()
+        )
 
         AnimatedVisibility(
             visible = viewModel.state != ScreenState.Loading && viewModel.isCreatingCategory,
@@ -294,10 +279,11 @@ internal fun CashbackScreen(
 @Composable
 private fun CashbackContent(
     viewModel: CashbackViewModel,
-    snackbarHostState: SnackbarHostState
+    snackbarHostState: SnackbarHostState,
+    modifier: Modifier = Modifier
 ) {
     val topBarState = rememberTopAppBarState()
-    val contentState = rememberScrollState()
+    val contentState = rememberLazyListState()
 
     CollapsingToolbarScaffold(
         topBarState = topBarState,
@@ -315,7 +301,10 @@ private fun CashbackContent(
                     IconButton(
                         onClick = {
                             val action = when {
-                                viewModel.cashback.haveChanges -> CashbackAction.ShowDialog(DialogType.Save)
+                                viewModel.cashback.haveChanges -> CashbackAction.ShowDialog(
+                                    DialogType.Save
+                                )
+
                                 else -> CashbackAction.ClickButtonBack
                             }
                             viewModel.push(action)
@@ -332,7 +321,11 @@ private fun CashbackContent(
                     }
                 },
                 actions = {
-                    if (viewModel.cashback.id != null) {
+                    AnimatedVisibility(
+                        visible = with(viewModel) {
+                            cashback.id != null && state != ScreenState.Loading
+                        }
+                    ) {
                         IconButton(
                             onClick = {
                                 viewModel.cashback.mapToCashback()?.let {
@@ -342,7 +335,8 @@ private fun CashbackContent(
                                         )
                                     )
                                 }
-                            }
+                            },
+                            enabled = viewModel.state != ScreenState.Loading
                         ) {
                             Icon(
                                 imageVector = Icons.Rounded.DeleteOutline,
@@ -352,20 +346,23 @@ private fun CashbackContent(
                         }
                     }
 
-                    IconButton(
-                        onClick = {
-                            viewModel.push(
-                                CashbackAction.SaveData {
-                                    viewModel.push(CashbackAction.ClickButtonBack)
-                                }
+                    AnimatedVisibility(visible = viewModel.state != ScreenState.Loading) {
+                        IconButton(
+                            onClick = {
+                                viewModel.push(
+                                    CashbackAction.SaveData {
+                                        viewModel.push(CashbackAction.ClickButtonBack)
+                                    }
+                                )
+                            },
+                            enabled = viewModel.state != ScreenState.Loading
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Save,
+                                contentDescription = "save",
+                                modifier = Modifier.scale(1.3f)
                             )
                         }
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.Save,
-                            contentDescription = "save",
-                            modifier = Modifier.scale(1.3f)
-                        )
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
@@ -387,16 +384,44 @@ private fun CashbackContent(
                     shape = MaterialTheme.shapes.medium
                 )
             }
-        }
+        },
+        modifier = modifier
     ) {
-        Column(
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
+        Crossfade(
+            targetState = viewModel.state,
+            label = "loading animation",
+            animationSpec = tween(durationMillis = 100, easing = LinearEasing),
             modifier = Modifier
+                .imePadding()
                 .fillMaxSize()
-                .verticalScroll(contentState)
-                .padding(vertical = 16.dp)
-        ) {
+        ) { state ->
+            when (state) {
+                ScreenState.Loading -> LoadingInBox()
+                ScreenState.Showing -> CashbackFields(contentState, viewModel)
+            }
+        }
+    }
+}
+
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun CashbackFields(
+    listState: LazyListState,
+    viewModel: CashbackViewModel,
+    modifier: Modifier = Modifier
+) {
+    val interactionSource = remember(::MutableInteractionSource)
+    val verticalPadding = 16.dp
+    val horizontalPadding = 16.dp
+
+    LazyColumn(
+        state = listState,
+        horizontalAlignment = Alignment.CenterHorizontally,
+        contentPadding = PaddingValues(vertical = 16.dp),
+        modifier = modifier.fillMaxSize()
+    ) {
+        item {
             ExposedDropdownMenuBox(
                 expanded = viewModel.showOwnersSelection,
                 onExpandedChange = { expanded ->
@@ -405,7 +430,8 @@ private fun CashbackContent(
                         else -> CashbackAction.HideOwnersSelection
                     }
                     viewModel.push(action)
-                }
+                },
+                modifier = Modifier.padding(horizontal = horizontalPadding)
             ) {
                 EditableTextField(
                     text = viewModel.cashback.owner?.name
@@ -417,8 +443,7 @@ private fun CashbackContent(
                     },
                     enabled = false,
                     textStyle = MaterialTheme.typography.bodyMedium,
-                    error = viewModel.showErrors
-                            && viewModel.cashback.errors[CashbackError.Owner] != null,
+                    error = viewModel.showErrors && CashbackError.Owner in viewModel.cashback.errors,
                     errorMessage = viewModel.cashback.errors[CashbackError.Owner] ?: "",
                     trailingActions = {
                         ExposedDropdownMenuDefaults.TrailingIcon(
@@ -427,8 +452,8 @@ private fun CashbackContent(
                     },
                     shape = MaterialTheme.shapes.medium,
                     modifier = Modifier
-                        .padding(horizontal = 16.dp)
                         .menuAnchor(MenuAnchorType.PrimaryNotEditable)
+                        .padding(bottom = verticalPadding)
                         .fillMaxWidth()
                 )
 
@@ -445,9 +470,7 @@ private fun CashbackContent(
                             viewModel.cashback.apply { ::owner updateTo it }
                             if (viewModel.showErrors) {
                                 viewModel.push(
-                                    CashbackAction.UpdateCashbackErrorMessage(
-                                        CashbackError.Owner
-                                    )
+                                    CashbackAction.UpdateCashbackErrorMessage(CashbackError.Owner)
                                 )
                             }
                             viewModel.push(CashbackAction.HideOwnersSelection)
@@ -479,9 +502,13 @@ private fun CashbackContent(
                     )
                 }
             }
+        }
 
+        item {
             HorizontalDivider()
+        }
 
+        item {
             ExposedDropdownMenuBox(
                 expanded = viewModel.showBankCardsSelection,
                 onExpandedChange = { expanded ->
@@ -491,19 +518,19 @@ private fun CashbackContent(
                     }
                     viewModel.push(action)
                 },
+                modifier = Modifier.padding(horizontal = 16.dp)
             ) {
                 EditableTextField(
-                    text = viewModel.cashback.bankCard?.toString()
+                    text = viewModel.cashback.bankCard?.getDisplayableString()
                         ?: stringResource(R.string.value_not_selected),
                     onTextChange = {},
                     label = stringResource(R.string.bank_card),
                     enabled = false,
                     textStyle = MaterialTheme.typography.bodyMedium,
-                    error = viewModel.showErrors
-                            && viewModel.cashback.errors[CashbackError.BankCard] != null,
+                    error = viewModel.showErrors && CashbackError.BankCard in viewModel.cashback.errors,
                     errorMessage = viewModel.cashback.errors[CashbackError.BankCard] ?: "",
-                    leadingIcon = {
-                        viewModel.cashback.bankCard?.paymentSystem?.let {
+                    leadingIcon = viewModel.cashback.bankCard?.paymentSystem?.let {
+                        {
                             PaymentSystemUtils.PaymentSystemImage(
                                 paymentSystem = it,
                                 maxWidth = 30.dp,
@@ -518,8 +545,8 @@ private fun CashbackContent(
                     },
                     shape = MaterialTheme.shapes.medium,
                     modifier = Modifier
-                        .padding(horizontal = 16.dp)
                         .menuAnchor(MenuAnchorType.PrimaryNotEditable)
+                        .padding(vertical = verticalPadding)
                         .fillMaxWidth()
                 )
 
@@ -540,7 +567,7 @@ private fun CashbackContent(
                                 )
                             }
                         },
-                        title = { it.name },
+                        title = { it.getDisplayableString() },
                         onClick = {
                             viewModel.cashback.apply { ::bankCard updateTo it }
                             if (viewModel.showErrors) {
@@ -564,23 +591,16 @@ private fun CashbackContent(
                     )
                 }
             }
+        }
 
+        item {
             EditableTextField(
                 text = viewModel.cashback.amount,
-                onTextChange = { stringAmount ->
+                onTextChange = {
                     with(viewModel) {
-                        val amount = stringAmount.toDoubleOrNull()
-                        val isAmountCorrect = when {
-                            amount == null -> true
-                            cashback.measureUnit is MeasureUnit.Currency -> amount >= 0
-                            amount in 0.0 .. 100.0 -> true
-                            else -> false
-                        }
-                        if (isAmountCorrect) {
-                            cashback.apply { ::amount updateTo stringAmount }
-                            if (showErrors) {
-                                push(CashbackAction.UpdateCashbackErrorMessage(CashbackError.Amount))
-                            }
+                        cashback.updateAmount(it)
+                        if (showErrors) {
+                            push(CashbackAction.UpdateCashbackErrorMessage(CashbackError.Amount))
                         }
                     }
                 },
@@ -600,20 +620,55 @@ private fun CashbackContent(
                     focusedTrailingActionsColor = MaterialTheme.colorScheme.onBackground,
                     unfocusedTrailingActionsColor = MaterialTheme.colorScheme.onBackground
                 ),
-                error = viewModel.showErrors
-                        && viewModel.cashback.errors[CashbackError.Amount] != null,
+                error = viewModel.showErrors && CashbackError.Amount in viewModel.cashback.errors,
                 errorMessage = viewModel.cashback.errors[CashbackError.Amount] ?: "",
                 label = stringResource(R.string.amount),
                 keyboardType = KeyboardType.Number,
-                modifier = Modifier.padding(horizontal = 16.dp)
+                modifier = Modifier
+                    .padding(bottom = verticalPadding)
+                    .padding(horizontal = horizontalPadding)
+                    .fillMaxWidth()
             )
+        }
 
+        item {
+            EditableTextField(
+                text = viewModel.cashback.startDate?.getDisplayableString() ?: "",
+                onTextChange = {},
+                label = buildString {
+                    append(
+                        stringResource(R.string.valid),
+                        " ",
+                        stringResource(R.string.valid_from).lowercase()
+                    )
+                },
+                textStyle = MaterialTheme.typography.bodyMedium,
+                enabled = false,
+                modifier = Modifier
+                    .padding(bottom = verticalPadding)
+                    .padding(horizontal = horizontalPadding)
+                    .clickable(interactionSource, indication = null) {
+                        viewModel.push(
+                            CashbackAction.ShowDialog(
+                                StartDatePicker(viewModel.cashback.startDate)
+                            )
+                        )
+                    }
+                    .fillMaxWidth()
+            )
+        }
 
-
+        item {
             EditableTextField(
                 text = viewModel.cashback.expirationDate?.getDisplayableString() ?: "",
                 onTextChange = {},
-                label = stringResource(R.string.validity_period),
+                label = buildString {
+                    append(
+                        stringResource(R.string.valid),
+                        " ",
+                        stringResource(R.string.valid_through).lowercase()
+                    )
+                },
                 trailingActions = {
                     if (viewModel.cashback.expirationDate != null) {
                         IconButton(
@@ -631,11 +686,9 @@ private fun CashbackContent(
                 textStyle = MaterialTheme.typography.bodyMedium,
                 enabled = false,
                 modifier = Modifier
-                    .padding(horizontal = 16.dp)
-                    .clickable(
-                        interactionSource = remember(::MutableInteractionSource),
-                        indication = null
-                    ) {
+                    .padding(bottom = verticalPadding)
+                    .padding(horizontal = horizontalPadding)
+                    .clickable(interactionSource, indication = null) {
                         viewModel.push(
                             CashbackAction.ShowDialog(
                                 EndDatePicker(viewModel.cashback.expirationDate)
@@ -644,7 +697,9 @@ private fun CashbackContent(
                     }
                     .fillMaxWidth()
             )
+        }
 
+        item {
             EditableTextField(
                 text = viewModel.cashback.comment,
                 onTextChange = {
@@ -653,8 +708,15 @@ private fun CashbackContent(
                 label = stringResource(R.string.comment),
                 singleLine = false,
                 imeAction = ImeAction.Default,
-                modifier = Modifier.padding(horizontal = 16.dp)
+                modifier = Modifier
+                    .padding(bottom = verticalPadding)
+                    .padding(horizontal = horizontalPadding)
+                    .fillMaxWidth()
             )
+        }
+
+        item {
+            Spacer(Modifier.height(64.dp))
         }
     }
 }
@@ -690,6 +752,7 @@ private fun DatePickerDialog(
 ) {
     val datePickerState = rememberDatePickerState(
         initialSelectedDateMillis = date?.epochMillis(),
+        yearRange = 2000..2100,
         selectableDates = object : SelectableDates {
             override fun isSelectableDate(utcTimeMillis: Long): Boolean {
                 return isDateSelectable(LocalDate(utcTimeMillis))

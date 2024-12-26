@@ -20,7 +20,6 @@ import com.cashbacks.domain.model.Category
 import com.cashbacks.domain.model.FullCashback
 import com.cashbacks.domain.model.MeasureUnit
 import com.cashbacks.domain.model.MessageHandler
-import com.cashbacks.domain.model.PrimaryBankCard
 import com.cashbacks.domain.model.Shop
 import com.cashbacks.domain.usecase.cards.FetchBankCardsUseCase
 import com.cashbacks.domain.usecase.cashbacks.DeleteCashbacksUseCase
@@ -37,7 +36,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.suspendCancellableCoroutine
 import java.util.Currency
@@ -88,14 +86,11 @@ class CashbackViewModel @AssistedInject constructor(
 
 
     val bankCardsStateFlow: StateFlow<List<BasicBankCard>?> by lazy {
-        fetchBankCardsUseCase
-            .fetchBankCards()
-            .map { it.map(PrimaryBankCard::getBasicInfo) }
-            .stateIn(
-                scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5000L),
-                initialValue = null
-            )
+        fetchBankCardsUseCase.fetchAllBankCards().stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5000L),
+            initialValue = null
+        )
     }
 
 
@@ -210,24 +205,28 @@ class CashbackViewModel @AssistedInject constructor(
             )
 
             is CashbackAction.SaveData -> {
-                if (!cashback.haveChanges) return action.onSuccess()
-
                 showErrors = true
                 cashback.updateAllErrors(messageHandler)
 
-                if (cashback.haveErrors) {
-                    cashback.errorMessage?.let { push(CashbackEvent.ShowSnackbar(it)) }
-                } else {
-                    state = ScreenState.Loading
-                    delay(300)
-                    saveCashback(cashback = cashback.mapToCashback()!!)
-                        .onSuccess { action.onSuccess() }
-                        .onFailure { throwable ->
-                            messageHandler.getExceptionMessage(throwable)
-                                ?.takeIf { it.isNotBlank() }
-                                ?.let { push(CashbackEvent.ShowSnackbar(it)) }
-                        }
-                    state = ScreenState.Showing
+                when {
+                    cashback.haveErrors -> cashback.errorMessage?.let {
+                        return push(CashbackEvent.ShowSnackbar(it))
+                    }
+
+                    cashback.haveChanges.not() -> return action.onSuccess()
+
+                    else -> {
+                        state = ScreenState.Loading
+                        delay(300)
+                        saveCashback(cashback = cashback.mapToCashback()!!)
+                            .onSuccess { action.onSuccess() }
+                            .onFailure { throwable ->
+                                messageHandler.getExceptionMessage(throwable)
+                                    ?.takeIf { it.isNotBlank() }
+                                    ?.let { push(CashbackEvent.ShowSnackbar(it)) }
+                            }
+                        state = ScreenState.Showing
+                    }
                 }
             }
 

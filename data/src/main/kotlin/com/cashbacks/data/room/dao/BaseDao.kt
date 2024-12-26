@@ -21,8 +21,10 @@ interface BaseDao {
     @Query(
         """
             SELECT s.id, s.name,
-                   cash.id AS cashback_id, cash.amount AS cashback_amount,
-                   cash.expirationDate AS cashback_expirationDate, cash.comment AS cashback_comment,
+                   cash.id AS cashback_id, 
+                   cash.amount AS cashback_amount, cash.measureUnit AS cashback_measureUnit,
+                   cash.startDate AS cashback_startDate, cash.expirationDate AS cashback_expirationDate, 
+                   cash.comment AS cashback_comment,
                    card.id AS cashback_card_id, card.name AS cashback_card_name,
                    card.number AS cashback_card_number, card.paymentSystem AS cashback_card_paymentSystem,
                    card.maxCashbacksNumber AS cashback_card_maxCashbacksNumber
@@ -41,7 +43,7 @@ interface BaseDao {
 
     @Query(
         """
-            SELECT cash.id, cash.amount, cash.expirationDate, cash.comment,
+            SELECT cash.id, cash.amount, cash.measureUnit, cash.startDate, cash.expirationDate, cash.comment,
                    card.id AS card_id,
                    card.name AS card_name,
                    card.number AS card_number,
@@ -58,7 +60,7 @@ interface BaseDao {
 
     @Query(
         """
-            SELECT cash.id, cash.amount, cash.expirationDate, cash.comment,
+            SELECT cash.id, cash.amount, cash.measureUnit, cash.startDate, cash.expirationDate, cash.comment,
                    card.id AS card_id,
                    card.name AS card_name,
                    card.number AS card_number,
@@ -73,7 +75,7 @@ interface BaseDao {
 
     @Query(
         """
-            SELECT cash.id, cash.amount, cash.expirationDate, cash.comment,
+            SELECT cash.id, cash.amount, cash.measureUnit, cash.startDate, cash.expirationDate, cash.comment,
                    card.id AS card_id,
                    card.name AS card_name,
                    card.number AS card_number,
@@ -89,7 +91,7 @@ interface BaseDao {
 
     @Query(
         """
-            SELECT cash.id, cash.amount, cash.expirationDate, cash.comment,
+            SELECT cash.id, cash.amount, cash.measureUnit, cash.startDate, cash.expirationDate, cash.comment,
                    card.id AS card_id,
                    card.name AS card_name,
                    card.number AS card_number,
@@ -101,4 +103,20 @@ interface BaseDao {
         """
     )
     suspend fun getAllCashbacksFromShop(shopId: Long): List<BasicCashbackDB>
+
+
+    @Query(
+        """
+            SELECT cash.id, cash.amount, cash.measureUnit, cash.startDate, cash.expirationDate, cash.comment,
+                   card.id AS card_id,
+                   card.name AS card_name,
+                   card.number AS card_number,
+                   card.paymentSystem AS card_paymentSystem,
+                   card.maxCashbacksNumber AS card_maxCashbacksNumber
+            FROM Cashbacks AS cash 
+            INNER JOIN Cards AS card ON card.id = cash.bankCardId
+            WHERE cash.bankCardId = :bankCardId
+        """
+    )
+    suspend fun getAllCashbacksWithBankCard(bankCardId: Long): List<BasicCashbackDB>
 }

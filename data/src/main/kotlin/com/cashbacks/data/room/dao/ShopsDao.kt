@@ -32,16 +32,22 @@ interface ShopsDao : BaseDao {
     @Query(
         """
             SELECT s.id, s.name,
-                   cash.id AS cashback_id, cash.amount AS cashback_amount, 
-                   cash.expirationDate AS cashback_expirationDate, cash.comment AS cashback_comment,
+                   cash.id AS cashback_id,
+                   cash.amount AS cashback_amount, cash.measureUnit AS cashback_measureUnit,
+                   cash.startDate AS cashback_startDate, cash.expirationDate AS cashback_expirationDate,
+                   cash.comment AS cashback_comment,
                    card.id AS cashback_card_id, card.name AS cashback_card_name,
                    card.number AS cashback_card_number, card.paymentSystem AS cashback_card_paymentSystem,
                    card.maxCashbacksNumber AS cashback_card_maxCashbacksNumber
             FROM Shops AS s
             LEFT JOIN Cashbacks AS cash 
-            ON s.id = cash.shopId AND cash.amount = (
-                SELECT MAX(amount) FROM Cashbacks WHERE shopId = s.id
-            )
+                ON s.id = cash.shopId AND cash.amount = (
+                    SELECT MAX(amount) 
+                    FROM Cashbacks 
+                    WHERE shopId = s.id
+                        AND (startDate IS NULL OR strftime('%d/%m/%Y', 'now', 'localtime') >= startDate) 
+                        AND (expirationDate IS NULL OR strftime('%d/%m/%Y', 'now', 'localtime') <= expirationDate)
+                )
             LEFT JOIN Cards AS card ON cash.bankCardId = card.id
             WHERE s.categoryId = :categoryId
             ORDER BY s.name ASC
@@ -54,17 +60,23 @@ interface ShopsDao : BaseDao {
         """
         SELECT s.id, s.name,
                cat.id AS category_id, cat.name AS category_name,
-               cash.id AS cashback_id, cash.amount AS cashback_amount, 
-               cash.expirationDate AS cashback_expirationDate, cash.comment AS cashback_comment,
+               cash.id AS cashback_id, 
+               cash.amount AS cashback_amount, cash.measureUnit AS cashback_measureUnit, 
+               cash.startDate AS cashback_startDate, cash.expirationDate AS cashback_expirationDate, 
+               cash.comment AS cashback_comment,
                card.id AS cashback_card_id, card.name AS cashback_card_name,
                card.number AS cashback_card_number, card.paymentSystem AS cashback_card_paymentSystem,
                card.maxCashbacksNumber AS cashback_card_maxCashbacksNumber
         FROM Shops AS s
-        LEFT JOIN (SELECT id, name FROM Categories) AS cat ON s.categoryId = cat.id
-        LEFT JOIN (SELECT * FROM Cashbacks) AS cash
-        ON s.id = cash.shopId AND cash.amount = (
-            SELECT MAX(amount) FROM Cashbacks WHERE shopId = s.id
-        )
+        LEFT JOIN Categories AS cat ON s.categoryId = cat.id
+        LEFT JOIN Cashbacks AS cash
+            ON s.id = cash.shopId AND cash.amount = (
+                SELECT MAX(amount) 
+                FROM Cashbacks 
+                WHERE shopId = s.id
+                    AND (startDate IS NULL OR strftime('%d/%m/%Y', 'now', 'localtime') >= startDate) 
+                    AND (expirationDate IS NULL OR strftime('%d/%m/%Y', 'now', 'localtime') <= expirationDate)
+            )
         LEFT JOIN Cards AS card ON cash.bankCardId = card.id
         ORDER BY s.name ASC
         """
@@ -75,17 +87,23 @@ interface ShopsDao : BaseDao {
         """
         SELECT s.id, s.name,
                cat.id AS category_id, cat.name AS category_name,
-               cash.id AS cashback_id, cash.amount AS cashback_amount, 
-               cash.expirationDate AS cashback_expirationDate, cash.comment AS cashback_comment,
+               cash.id AS cashback_id, 
+               cash.amount AS cashback_amount, cash.measureUnit AS cashback_measureUnit, 
+               cash.startDate AS cashback_startDate, cash.expirationDate AS cashback_expirationDate, 
+               cash.comment AS cashback_comment,
                card.id AS cashback_card_id, card.name AS cashback_card_name,
                card.number AS cashback_card_number, card.paymentSystem AS cashback_card_paymentSystem,
                card.maxCashbacksNumber AS cashback_card_maxCashbacksNumber
         FROM Shops AS s
-        LEFT JOIN (SELECT id, name FROM Categories) AS cat ON s.categoryId = cat.id
-        LEFT JOIN (SELECT * FROM Cashbacks) AS cash 
-        ON s.id = cash.shopId AND cash.amount = (
-            SELECT MAX(amount) FROM Cashbacks WHERE shopId = s.id
-        )
+        LEFT JOIN Categories AS cat ON s.categoryId = cat.id
+        LEFT JOIN Cashbacks AS cash 
+            ON s.id = cash.shopId AND cash.amount = (
+                SELECT MAX(amount) 
+                FROM Cashbacks 
+                WHERE shopId = s.id
+                    AND (startDate IS NULL OR strftime('%d/%m/%Y', 'now', 'localtime') >= startDate) 
+                    AND (expirationDate IS NULL OR strftime('%d/%m/%Y', 'now', 'localtime') <= expirationDate)
+            )
         LEFT JOIN Cards AS card ON cash.bankCardId = card.id
         WHERE cash.id IS NOT NULL
         ORDER BY s.name ASC
@@ -97,17 +115,23 @@ interface ShopsDao : BaseDao {
         """
         SELECT s.id, s.name,
                cat.id AS category_id, cat.name AS category_name,
-               cash.id AS cashback_id, cash.amount AS cashback_amount, 
-               cash.expirationDate AS cashback_expirationDate, cash.comment AS cashback_comment,
+               cash.id AS cashback_id, 
+               cash.amount AS cashback_amount, cash.measureUnit AS cashback_measureUnit, 
+               cash.startDate AS cashback_startDate, cash.expirationDate AS cashback_expirationDate, 
+               cash.comment AS cashback_comment,
                card.id AS cashback_card_id, card.name AS cashback_card_name,
                card.number AS cashback_card_number, card.paymentSystem AS cashback_card_paymentSystem,
                card.maxCashbacksNumber AS cashback_card_maxCashbacksNumber
         FROM Shops AS s
-        LEFT JOIN (SELECT id, name FROM Categories) AS cat ON s.categoryId = cat.id
-        LEFT JOIN (SELECT * FROM Cashbacks) AS cash 
-        ON s.id = cash.shopId AND cash.amount = (
-            SELECT MAX(amount) FROM Cashbacks WHERE shopId = s.id
-        )
+        LEFT JOIN Categories AS cat ON s.categoryId = cat.id
+        LEFT JOIN Cashbacks AS cash 
+            ON s.id = cash.shopId AND cash.amount = (
+                SELECT MAX(amount) 
+                FROM Cashbacks 
+                WHERE shopId = s.id
+                    AND (startDate IS NULL OR strftime('%d/%m/%Y', 'now', 'localtime') >= startDate) 
+                    AND (expirationDate IS NULL OR strftime('%d/%m/%Y', 'now', 'localtime') <= expirationDate)
+            )
         LEFT JOIN Cards AS card ON cash.bankCardId = card.id
         WHERE s.name LIKE '%' || :query || '%' OR category_name LIKE '%' || :query || '%'
         ORDER BY s.name ASC
@@ -120,17 +144,24 @@ interface ShopsDao : BaseDao {
         """
         SELECT s.id, s.name,
                cat.id AS category_id, cat.name AS category_name,
-               cash.id AS cashback_id, cash.amount AS cashback_amount, 
-               cash.expirationDate AS cashback_expirationDate, cash.comment AS cashback_comment,
+               cash.id AS cashback_id, 
+               cash.amount AS cashback_amount, cash.measureUnit AS cashback_measureUnit, 
+               cash.startDate AS cashback_startDate, cash.expirationDate AS cashback_expirationDate, 
+               cash.comment AS cashback_comment,
                card.id AS cashback_card_id, card.name AS cashback_card_name,
                card.number AS cashback_card_number, card.paymentSystem AS cashback_card_paymentSystem,
                card.maxCashbacksNumber AS cashback_card_maxCashbacksNumber
         FROM Shops AS s
         LEFT JOIN Categories AS cat ON s.categoryId = cat.id
-        LEFT JOIN Cashbacks AS cash ON 
-            s.id = cash.shopId AND 
-            cash.amount = (SELECT MAX(amount) FROM Cashbacks WHERE shopId = s.id)
-        LEFT JOIN (SELECT id, name, number, paymentSystem FROM Cards) AS card ON cash.bankCardId = card.id
+        LEFT JOIN Cashbacks AS cash 
+            ON s.id = cash.shopId AND cash.amount = (
+                SELECT MAX(amount) 
+                FROM Cashbacks 
+                WHERE shopId = s.id
+                    AND (startDate IS NULL OR strftime('%d/%m/%Y', 'now', 'localtime') >= startDate) 
+                    AND (expirationDate IS NULL OR strftime('%d/%m/%Y', 'now', 'localtime') <= expirationDate)
+            )
+        LEFT JOIN Cards AS card ON cash.bankCardId = card.id
         WHERE cash.id IS NOT NULL AND (
             s.name LIKE '%' || :query || '%' OR category_name LIKE '%' || :query || '%'
         ) 
@@ -147,17 +178,24 @@ interface ShopsDao : BaseDao {
         """
         SELECT s.id, s.name, 
                c.id AS category_id, c.name AS category_name,
-               cash.id AS cashback_id, cash.amount AS cashback_amount,
-               cash.expirationDate AS cashback_expirationDate, cash.comment AS cashback_comment,
+               cash.id AS cashback_id, 
+               cash.amount AS cashback_amount, cash.measureUnit AS cashback_measureUnit, 
+               cash.startDate AS cashback_startDate, cash.expirationDate AS cashback_expirationDate, 
+               cash.comment AS cashback_comment,
                card.id AS cashback_card_id, card.name AS cashback_card_name,
                card.number AS cashback_card_number, card.paymentSystem AS cashback_card_paymentSystem,
                card.maxCashbacksNumber AS cashback_card_maxCashbacksNumber
         FROM Shops AS s
         LEFT JOIN Categories AS c ON s.categoryId = c.id
-        LEFT JOIN Cashbacks AS cash ON 
-            s.id = cash.shopId AND 
-            cash.amount = (SELECT MAX(amount) FROM Cashbacks WHERE shopId = s.id)
-        LEFT JOIN (SELECT id, name, number, paymentSystem FROM Cards) AS card ON cash.bankCardId = card.id
+        LEFT JOIN Cashbacks AS cash 
+            ON s.id = cash.shopId AND cash.amount = (
+                SELECT MAX(amount) 
+                FROM Cashbacks 
+                WHERE shopId = s.id
+                    AND (startDate IS NULL OR strftime('%d/%m/%Y', 'now', 'localtime') >= startDate) 
+                    AND (expirationDate IS NULL OR strftime('%d/%m/%Y', 'now', 'localtime') <= expirationDate)
+            )
+        LEFT JOIN Cards AS card ON cash.bankCardId = card.id
         WHERE s.id = :id
         """
     )

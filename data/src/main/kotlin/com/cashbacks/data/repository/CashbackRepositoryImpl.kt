@@ -3,33 +3,50 @@ package com.cashbacks.data.repository
 import com.cashbacks.data.model.CashbackDB
 import com.cashbacks.data.model.FullCashbackDB
 import com.cashbacks.data.room.dao.CashbacksDao
+import com.cashbacks.data.util.getDateRange
 import com.cashbacks.domain.model.BasicCashback
 import com.cashbacks.domain.model.Cashback
 import com.cashbacks.domain.model.DeletionException
 import com.cashbacks.domain.model.EntityException
 import com.cashbacks.domain.model.EntityNotFoundException
 import com.cashbacks.domain.model.FullCashback
+import com.cashbacks.domain.model.InsertCashbackException
 import com.cashbacks.domain.model.InsertionException
 import com.cashbacks.domain.model.UpdateException
 import com.cashbacks.domain.repository.CashbackRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.plus
 
 class CashbackRepositoryImpl(private val dao: CashbacksDao) : CashbackRepository {
     override suspend fun addCashbackToCategory(
         categoryId: Long,
         cashback: Cashback
     ): Result<Long> {
-        val cashbacksDB = CashbackDB(cashback, categoryId = categoryId)
-        return addCashback(cashbacksDB)
+        when (val overflowingMonth = getOverflowingMonthOfCashback(cashback)) {
+            null -> {
+                val cashbacksDB = CashbackDB(cashback, categoryId = categoryId)
+                return addCashback(cashbacksDB)
+            }
+
+            else -> return Result.failure(InsertCashbackException(cashback, overflowingMonth))
+        }
     }
 
     override suspend fun addCashbackToShop(
         shopId: Long,
         cashback: Cashback
     ): Result<Long> {
-        val cashbackDB = CashbackDB(cashback, shopId = shopId)
-        return addCashback(cashbackDB)
+        when (val overflowMonth = getOverflowingMonthOfCashback(cashback)) {
+            null -> {
+                val cashbackDB = CashbackDB(cashback, shopId = shopId)
+                return addCashback(cashbackDB)
+            }
+
+            else -> return Result.failure(InsertCashbackException(cashback, overflowMonth))
+        }
     }
 
 
@@ -46,12 +63,52 @@ class CashbackRepositoryImpl(private val dao: CashbacksDao) : CashbackRepository
     }
 
 
+    private suspend fun getOverflowingMonthOfCashback(cashback: Cashback): LocalDate? {
+        val maxCashbacksNumber = cashback.bankCard.maxCashbacksNumber ?: return null
+        val affectedDates = cashback.getDateRange().let { it.start..it.endInclusive }
+        val cardCashbacksDates = dao
+            .getAllCashbacksWithBankCard(cashback.bankCard.id)
+            .map { it.getDateRange() }
+            .filter { it.start in affectedDates || it.endInclusive in affectedDates }
+
+        val cashbackCountInMonths = mutableMapOf<Int, Int>()
+        for (dates in cardCashbacksDates) {
+            var date = dates.start
+            while (date < dates.endInclusive) {
+                val monthNumberSince2000 = date.convertToMonthNumberSince2000()
+                val monthCashbacksCount = cashbackCountInMonths
+                    .getOrDefault(monthNumberSince2000, 0) + 1
+
+                cashbackCountInMonths[monthNumberSince2000] = monthCashbacksCount
+
+                if (monthCashbacksCount >= maxCashbacksNumber) {
+                    return date
+                }
+
+                date = date.plus(value = 1, unit = DateTimeUnit.MONTH)
+            }
+        }
+
+        return null
+    }
+
+    private fun LocalDate.convertToMonthNumberSince2000(): Int {
+        return monthNumber + (year - 2000).coerceAtLeast(0) * 12
+    }
+
+
     override suspend fun updateCashbackInCategory(
         categoryId: Long,
         cashback: Cashback
     ): Result<Unit> {
-        val cashbackDB = CashbackDB(cashback, categoryId = categoryId)
-        return updateCashback(cashbackDB)
+        when (val overflowMonth = getOverflowingMonthOfCashback(cashback)) {
+            null -> {
+                val cashbackDB = CashbackDB(cashback, categoryId = categoryId)
+                return updateCashback(cashbackDB)
+            }
+
+            else -> return Result.failure(InsertCashbackException(cashback, overflowMonth))
+        }
     }
 
 
@@ -59,8 +116,14 @@ class CashbackRepositoryImpl(private val dao: CashbacksDao) : CashbackRepository
         shopId: Long,
         cashback: Cashback
     ): Result<Unit> {
-        val cashbackDB = CashbackDB(cashback, shopId = shopId)
-        return updateCashback(cashbackDB)
+        when (val overflowMonth = getOverflowingMonthOfCashback(cashback)) {
+            null -> {
+                val cashbackDB = CashbackDB(cashback, shopId = shopId)
+                return updateCashback(cashbackDB)
+            }
+
+            else -> return Result.failure(InsertCashbackException(cashback, overflowMonth))
+        }
     }
 
 

@@ -11,10 +11,7 @@ import com.cashbacks.domain.model.Cashback
 import com.cashbacks.domain.model.FullCashback
 import com.cashbacks.domain.model.MeasureUnit
 import com.cashbacks.domain.model.PreviewBankCard
-import com.cashbacks.domain.util.format
-import com.cashbacks.domain.util.parseToDate
-import com.cashbacks.domain.util.today
-import kotlinx.datetime.Clock
+import kotlinx.datetime.LocalDate
 
 data class AmountDB(val value: Double) : Comparable<AmountDB> {
     constructor(value: String) : this(value.toDoubleOrNull() ?: -1.0)
@@ -65,8 +62,8 @@ data class CashbackDB(
     @ColumnInfo(defaultValue = MeasureUnit.PERCENT_MARK)
     val measureUnit: MeasureUnit,
     @ColumnInfo(defaultValue = "null")
-    val startDate: String?,
-    val expirationDate: String?,
+    val startDate: LocalDate?,
+    val expirationDate: LocalDate?,
     val comment: String
 ) {
     constructor(
@@ -80,8 +77,8 @@ data class CashbackDB(
         bankCardId = cashback.bankCard.id,
         amount = AmountDB(cashback.amount),
         measureUnit = cashback.measureUnit,
-        startDate = cashback.startDate.format(),
-        expirationDate = cashback.expirationDate?.format(),
+        startDate = cashback.startDate,
+        expirationDate = cashback.expirationDate,
         comment = cashback.comment
     )
 }
@@ -93,8 +90,8 @@ data class BasicCashbackDB(
     val bankCard: PreviewBankCard,
     val amount: AmountDB,
     val measureUnit: MeasureUnit,
-    val startDate: String?,
-    val expirationDate: String?,
+    val startDate: LocalDate?,
+    val expirationDate: LocalDate?,
     val comment: String
 ) {
     fun mapToDomainCashback() = BasicCashback(
@@ -102,8 +99,8 @@ data class BasicCashbackDB(
         bankCard = bankCard,
         amount = amount.toString(),
         measureUnit = measureUnit,
-        startDate = startDate?.parseToDate() ?: Clock.System.today(),
-        expirationDate = expirationDate?.parseToDate(),
+        startDate = startDate,
+        expirationDate = expirationDate,
         comment = comment
     )
 }

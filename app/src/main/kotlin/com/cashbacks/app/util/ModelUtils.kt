@@ -27,15 +27,19 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.cashbacks.app.util.DateUtils.calculateDaysBetweenToday
+import com.cashbacks.app.util.DateUtils.getDisplayableString
 import com.cashbacks.domain.R
+import com.cashbacks.domain.model.BasicBankCard
 import com.cashbacks.domain.model.Cashback
 import com.cashbacks.domain.model.ColorDesign
 import com.cashbacks.domain.model.PaymentSystem
+import com.cashbacks.domain.util.today
 import kotlinx.datetime.Clock
-import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
-import kotlinx.datetime.until
+import java.util.Locale
 
 internal data object ColorDesignUtils {
     val ColorDesign.icon get() = when (this) {
@@ -54,6 +58,7 @@ internal data object ColorDesignUtils {
 
 
 internal data object CashbackUtils {
+
     val Cashback.roundedAmount: String get() = amount
         .toDoubleOrNull()
         ?.takeIf { it % 1 == 0.0 }
@@ -63,39 +68,102 @@ internal data object CashbackUtils {
 
     val Cashback.displayableAmount get() = "$roundedAmount${measureUnit.getDisplayableString()}"
 
+
     @Composable
-    fun Cashback.getDisplayableExpirationDate(
-        timeZone: TimeZone = TimeZone.currentSystemDefault()
-    ): AnnotatedString = buildAnnotatedString {
-        val numberOfDaysBeforeExpiration = calculateNumberOfDaysBeforeExpiration(timeZone)
-        val text = when (numberOfDaysBeforeExpiration) {
+    fun formatDateStatus(
+        targetDate: LocalDate,
+        shorted: Boolean = false,
+        timeZone: TimeZone = TimeZone.currentSystemDefault(),
+        locale: Locale = Locale.getDefault()
+    ): String {
+        return when (targetDate.calculateDaysBetweenToday(timeZone)) {
             -2 -> stringResource(R.string.before_yesterday)
             -1 -> stringResource(R.string.yesterday)
             0 -> stringResource(R.string.today)
             1 -> stringResource(R.string.tomorrow)
             2 -> stringResource(R.string.after_tomorrow)
-            else -> expirationDate?.getDisplayableString()
-        }?.lowercase()
-
-        val color = when (numberOfDaysBeforeExpiration) {
-            in 0..2 -> MaterialTheme.colorScheme.error
-            else -> MaterialTheme.colorScheme.onBackground
-        }
-
-        if (text != null) {
-            withStyle(SpanStyle(color = color)) {
-                append(text)
+            else -> {
+                val today = Clock.System.todayIn(timeZone)
+                val shortDate = shorted && today.year == targetDate.year
+                targetDate.getDisplayableString(shortDate, locale)
             }
         }
     }
 
 
-    fun Cashback.calculateNumberOfDaysBeforeExpiration(
-        timeZone: TimeZone = TimeZone.currentSystemDefault()
-    ): Int {
-        val today = Clock.System.todayIn(timeZone)
-        val expirationDate = expirationDate ?: return Int.MAX_VALUE
-        return today.until(expirationDate, DateTimeUnit.DAY)
+    @Composable
+    fun Cashback.getDatesTitle(timeZone: TimeZone = TimeZone.currentSystemDefault()): String {
+        val startDate = remember(startDate) {
+            startDate?.takeIf {
+                it.calculateDaysBetweenToday(timeZone) > 0 || expirationDate == null
+            }
+        }
+        val expirationDate = remember(expirationDate) {
+            expirationDate?.takeIf { it.calculateDaysBetweenToday(timeZone) >= 0 }
+        }
+
+        return when {
+            startDate != null -> stringResource(R.string.valid)
+            expirationDate != null -> stringResource(R.string.expires)
+            else -> stringResource(R.string.expired)
+        }
+    }
+
+    @Composable
+    fun Cashback.getDisplayableDatesText(
+        timeZone: TimeZone = TimeZone.currentSystemDefault(),
+        locale: Locale = Locale.getDefault()
+    ): AnnotatedString = buildAnnotatedString {
+        val today = Clock.System.today()
+        val startDate = remember(startDate) {
+            startDate?.takeIf {
+                it.calculateDaysBetweenToday() > 0 || expirationDate == null
+            }
+        }
+        val expirationDate = expirationDate
+
+        when {
+            startDate != null -> {
+                append(stringResource(R.string.valid_from).lowercase(), " ")
+                append(
+                    startDate.getDisplayableString(
+                        short = today.year == startDate.year,
+                        locale = locale
+                    )
+                )
+
+                if (expirationDate != null) {
+                    append(" ", stringResource(R.string.valid_through).lowercase(), " ")
+                    append(
+                        expirationDate.getDisplayableString(
+                            short = today.year == expirationDate.year,
+                            locale = locale
+                        )
+                    )
+                }
+            }
+
+            expirationDate != null -> {
+                val color = when (expirationDate.calculateDaysBetweenToday()) {
+                    in 0..2 -> MaterialTheme.colorScheme.error
+                    else -> MaterialTheme.colorScheme.onBackground
+                }
+
+                withStyle(SpanStyle(color = color)) {
+                    append(
+                        formatDateStatus(
+                            targetDate = expirationDate,
+                            shorted = true,
+                            timeZone = timeZone,
+                            locale = locale
+                        )
+                    )
+                }
+            }
+            else -> {
+                append(stringResource(R.string.indefinitely_period))
+            }
+        }
     }
 }
 
@@ -190,11 +258,11 @@ sealed class CopyableBankCardPart {
     }
 
     data object Number : CopyableBankCardPart() {
-        override val descriptionRes: Int = R.string.card_number
+        override val descriptionRes: Int = R.string.card_number_for_copy
     }
 
     data object Holder : CopyableBankCardPart() {
-        override val descriptionRes: Int = R.string.full_name
+        override val descriptionRes: Int = R.string.full_name_for_copy
 
     }
 

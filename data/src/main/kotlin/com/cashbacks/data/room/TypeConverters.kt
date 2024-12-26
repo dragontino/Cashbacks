@@ -4,6 +4,9 @@ import androidx.room.TypeConverter
 import com.cashbacks.data.model.AmountDB
 import com.cashbacks.domain.model.MeasureUnit
 import com.cashbacks.domain.model.PaymentSystem
+import com.cashbacks.domain.util.format
+import com.cashbacks.domain.util.parseToDate
+import kotlinx.datetime.LocalDate
 
 internal object PaymentSystemConverter {
     @TypeConverter
@@ -29,4 +32,13 @@ internal object MeasureUnitConverter {
 
     @TypeConverter
     fun String.convertToMeasureUnit() = MeasureUnit(this)
+}
+
+
+internal object LocalDateConverter {
+    @TypeConverter
+    fun LocalDate?.convertToString(): String? = this?.format()
+
+    @TypeConverter
+    fun String?.convertToLocalDate(): LocalDate? = this?.parseToDate()
 }

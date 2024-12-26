@@ -29,7 +29,8 @@ import com.cashbacks.data.room.dao.ShopsDao
 @TypeConverters(
     PaymentSystemConverter::class,
     AmountConverter::class,
-    MeasureUnitConverter::class
+    MeasureUnitConverter::class,
+    LocalDateConverter::class
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun cardsDao(): CardsDao

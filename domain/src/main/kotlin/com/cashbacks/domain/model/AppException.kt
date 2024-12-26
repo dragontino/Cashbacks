@@ -2,6 +2,9 @@ package com.cashbacks.domain.model
 
 import android.content.res.Resources
 import com.cashbacks.domain.R
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.toJavaLocalDate
+import java.time.format.DateTimeFormatter
 
 sealed class AppException : Exception() {
     protected fun readResolve(): Any = Exception()
@@ -112,9 +115,43 @@ data object IncorrectCashbackAmountException : AppException() {
     }
 }
 
+data class InsertCashbackException(val cashback: Cashback, val failedMonth: LocalDate) : AppException() {
+    override fun getMessage(resources: Resources): String {
+        return resources.getString(
+            R.string.insert_cashback_exception,
+            cashback.bankCard.name.ifBlank { cashback.bankCard.number },
+            failedMonth.toJavaLocalDate().format(DateTimeFormatter.ofPattern("MMMM uuuu"))
+        )
+    }
+
+}
+
 data object BankCardNotSelectedException : AppException() {
     override fun getMessage(resources: Resources): String {
         return resources.getString(R.string.bank_card_not_selected)
     }
+}
 
+data object IncorrectCardNumberException : AppException() {
+    override fun getMessage(resources: Resources): String {
+        return resources.getString(R.string.incorrect_card_number)
+    }
+}
+
+data object EmptyCardValidityPeriodException : AppException() {
+    override fun getMessage(resources: Resources): String {
+        return resources.getString(R.string.empty_card_validity_period_exception)
+    }
+}
+
+data object IncorrectCardCvvException : AppException() {
+    override fun getMessage(resources: Resources): String {
+        return resources.getString(R.string.incorrect_card_cvv)
+    }
+}
+
+data object EmptyPinCodeException : AppException() {
+    override fun getMessage(resources: Resources): String {
+        return resources.getString(R.string.empty_pin_code)
+    }
 }
