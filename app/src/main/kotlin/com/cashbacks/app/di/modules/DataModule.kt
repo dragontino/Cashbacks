@@ -5,12 +5,14 @@ import com.cashbacks.data.repository.BankCardRepositoryImpl
 import com.cashbacks.data.repository.CashbackRepositoryImpl
 import com.cashbacks.data.repository.CategoryRepositoryImpl
 import com.cashbacks.data.repository.SettingsRepositoryImpl
+import com.cashbacks.data.repository.ShareDataRepositoryImpl
 import com.cashbacks.data.repository.ShopRepositoryImpl
 import com.cashbacks.data.room.AppDatabase
 import com.cashbacks.domain.repository.BankCardRepository
 import com.cashbacks.domain.repository.CashbackRepository
 import com.cashbacks.domain.repository.CategoryRepository
 import com.cashbacks.domain.repository.SettingsRepository
+import com.cashbacks.domain.repository.ShareDataRepository
 import com.cashbacks.domain.repository.ShopRepository
 import dagger.Module
 import dagger.Provides
@@ -47,6 +49,12 @@ class DataModule(private val context: Context) {
     @Singleton
     fun provideBankCardRepository(database: AppDatabase): BankCardRepository {
         return BankCardRepositoryImpl(database.cardsDao())
+    }
+
+    @Provides
+    @Singleton
+    fun provideShareDataRepository(database: AppDatabase): ShareDataRepository {
+        return ShareDataRepositoryImpl(database)
     }
 
     @Provides

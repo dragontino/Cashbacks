@@ -71,6 +71,7 @@ class HomeFeature(private val application: App) : FeatureApi {
                         launchSingleTop = true
                     }
                 },
+                provideHomeViewModel = application.appComponent::homeViewModel,
                 provideCategoriesViewModel = application.appComponent::categoriesViewModel,
                 provideShopsViewModel = application.appComponent::shopsViewModel,
                 // TODO: 17.02.2024 доделать

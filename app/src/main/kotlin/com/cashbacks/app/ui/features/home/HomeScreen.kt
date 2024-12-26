@@ -1,6 +1,9 @@
 package com.cashbacks.app.ui.features.home
 
-import androidx.annotation.StringRes
+import android.content.Context
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
@@ -10,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Category
 import androidx.compose.material.icons.outlined.Payments
@@ -22,27 +26,36 @@ import androidx.compose.material.icons.rounded.Store
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -60,16 +73,19 @@ import com.cashbacks.app.ui.features.home.cashbacks.CashbacksScreen
 import com.cashbacks.app.ui.features.home.cashbacks.CashbacksViewModel
 import com.cashbacks.app.ui.features.home.categories.CategoriesScreen
 import com.cashbacks.app.ui.features.home.categories.CategoriesViewModel
+import com.cashbacks.app.ui.features.home.mvi.HomeAction
+import com.cashbacks.app.ui.features.home.mvi.HomeEvent
 import com.cashbacks.app.ui.features.home.shops.ShopsScreen
 import com.cashbacks.app.ui.features.home.shops.ShopsViewModel
 import com.cashbacks.app.ui.features.shop.ShopArgs
 import com.cashbacks.app.ui.navigation.AppBarItem
 import com.cashbacks.app.ui.navigation.enterScreenTransition
 import com.cashbacks.app.ui.navigation.exitScreenTransition
+import com.cashbacks.app.ui.theme.VerdanaFont
 import com.cashbacks.app.util.animate
 import com.cashbacks.app.util.getActivity
+import com.cashbacks.app.util.reversed
 import com.cashbacks.domain.R
-import kotlinx.coroutines.launch
 
 @Suppress("DEPRECATION")
 @Composable
@@ -81,6 +97,7 @@ internal fun HomeScreen(
     navigateToShop: (args: ShopArgs) -> Unit,
     navigateToCashback: (args: CashbackArgs) -> Unit,
     navigateToCard: (args: BankCardArgs) -> Unit,
+    provideHomeViewModel: () -> HomeViewModel,
     provideCategoriesViewModel: () -> CategoriesViewModel,
     provideShopsViewModel: () -> ShopsViewModel,
     provideCashbacksViewModel: () -> CashbacksViewModel,
@@ -88,8 +105,20 @@ internal fun HomeScreen(
     modifier: Modifier = Modifier
 ) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
-    val scope = rememberCoroutineScope()
     val context = LocalContext.current
+    val snackbarHostState = remember(::SnackbarHostState)
+
+    val homeViewModel = viewModel {
+        provideHomeViewModel()
+    }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        val message = if (isGranted) "Разрешение получено!" else "Разрешение отклонено"
+        homeViewModel.push(HomeAction.ShowMessage(message))
+    }
+
 
     val navController = rememberNavController()
     val currentBackStackEntry = navController.currentBackStackEntryAsState()
@@ -114,30 +143,25 @@ internal fun HomeScreen(
         HomeDestination.Cards
     ).associate { it.route to rememberLazyListState() }
 
+    val bottomHeightPx = rememberSaveable { mutableFloatStateOf(0f) }
 
-    val openDrawer = remember {
-        fun() {
-            scope.launch {
-                drawerState.animateTo(
+    LaunchedEffect(Unit) {
+        homeViewModel.eventFlow.collect { event ->
+            when (event) {
+                is HomeEvent.NavigateToSettings -> navigateToSettings()
+                is HomeEvent.ShowSnackbar -> snackbarHostState.showSnackbar(event.message)
+                HomeEvent.OpenDrawer -> drawerState.animateTo(
                     targetValue = DrawerValue.Open,
                     anim = ModalSheetDefaults.drawerAnimationSpec
                 )
-            }
-        }
-    }
 
-    val closeDrawer = remember {
-        fun() {
-            scope.launch {
-                drawerState.animateTo(
+                HomeEvent.CloseDrawer -> drawerState.animateTo(
                     targetValue = DrawerValue.Closed,
                     anim = ModalSheetDefaults.drawerAnimationSpec
                 )
             }
         }
     }
-
-    val bottomHeightPx = rememberSaveable { mutableFloatStateOf(0f) }
 
 
     ModalNavigationDrawer(
@@ -149,7 +173,7 @@ internal fun HomeScreen(
                     icon = Icons.Rounded.Home,
                     iconTintColor = MaterialTheme.colorScheme.primary.animate(),
                     selected = true,
-                    onClick = { closeDrawer() }
+                    onClick = { homeViewModel.push(HomeAction.ClickButtonCloseDrawer) }
                 )
 
                 HorizontalDivider(Modifier.padding(top = 8.dp, bottom = 4.dp))
@@ -160,9 +184,25 @@ internal fun HomeScreen(
                     iconTintColor = MaterialTheme.colorScheme.primary.animate(),
                     selected = false
                 ) {
-                    closeDrawer()
-                    navigateToSettings()
+                    homeViewModel.push(HomeAction.ClickButtonCloseDrawer)
+                    homeViewModel.push(HomeAction.ClickButtonOpenSettings)
                 }
+
+
+                /*IconTextItem(
+                    text = stringResource(R.string.download_saved_data),
+                    icon = Icons.Rounded.Download,
+                    iconTintColor = MaterialTheme.colorScheme.primary.animate()
+                ) {
+                    homeViewModel.push(HomeAction.ClickButtonCloseDrawer)
+                    usePermissions(
+                        Manifest.permission.READ_EXTERNAL_STORAGE,
+                        Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                        context = context,
+                        onGranted = { homeViewModel.push(HomeAction.ClickButtonExportData()) },
+                        onDenied = { permissionLauncher.launch(it) }
+                    )
+                }*/
             }
         },
         gesturesEnabled = drawerState.isOpen,
@@ -195,7 +235,7 @@ internal fun HomeScreen(
                         bottomPadding = with(LocalDensity.current) {
                             bottomHeightPx.floatValue.toDp().animate()
                         },
-                        openDrawer = openDrawer,
+                        openDrawer = { homeViewModel.push(HomeAction.ClickButtonOpenDrawer) },
                         navigateToCategory = navigateToCategory,
                         navigateBack = { context.getActivity()?.finish() }
                     )
@@ -224,7 +264,7 @@ internal fun HomeScreen(
                         bottomPadding = with(LocalDensity.current) {
                             bottomHeightPx.floatValue.toDp().animate()
                         },
-                        openDrawer = openDrawer,
+                        openDrawer = { homeViewModel.push(HomeAction.ClickButtonOpenDrawer) },
                         navigateToShop = navigateToShop,
                         navigateBack = navController::popBackStack
                     )
@@ -253,7 +293,7 @@ internal fun HomeScreen(
                         bottomPadding = with(LocalDensity.current) {
                             bottomHeightPx.floatValue.toDp().animate()
                         },
-                        openDrawer = openDrawer,
+                        openDrawer = { homeViewModel.push(HomeAction.ClickButtonOpenDrawer) },
                         navigateToCashback = navigateToCashback,
                         navigateBack = navController::popBackStack
                     )
@@ -270,11 +310,34 @@ internal fun HomeScreen(
                         bottomPadding = with(LocalDensity.current) {
                             bottomHeightPx.floatValue.toDp().animate()
                         },
-                        openDrawer = openDrawer,
+                        openDrawer = { homeViewModel.push(HomeAction.ClickButtonOpenDrawer) },
                         navigateToCard = navigateToCard
                     )
                 }
             }
+
+
+            SnackbarHost(
+                hostState = snackbarHostState,
+                modifier = Modifier
+                    .zIndex(1.4f)
+                    .padding(horizontal = 16.dp)
+                    .padding(
+                        bottom = with(LocalDensity.current) { bottomHeightPx.floatValue.toDp() }
+                    )
+                    .align(Alignment.BottomCenter)
+            ) {
+                Snackbar(
+                    snackbarData = it,
+                    containerColor = MaterialTheme.colorScheme.background.reversed.animate(),
+                    contentColor = MaterialTheme.colorScheme.onBackground.reversed.animate(),
+                    actionColor = MaterialTheme.colorScheme.primary.animate(),
+                    actionContentColor = MaterialTheme.colorScheme.primary.animate(),
+                    actionOnNewLine = true,
+                    shape = MaterialTheme.shapes.medium
+                )
+            }
+
 
             BottomBar(
                 selectedDestination = currentDestination.value,
@@ -295,6 +358,27 @@ internal fun HomeScreen(
                     .fillMaxWidth()
             )
         }
+    }
+}
+
+
+
+private inline fun usePermissions(
+    vararg permissions: String,
+    context: Context,
+    onGranted: () -> Unit,
+    onDenied: (permission: String) -> Unit
+) {
+    var isAllPermissionsGranted = permissions.all { permission ->
+        val checkPermission = ContextCompat.checkSelfPermission(context, permission)
+        if (checkPermission == PackageManager.PERMISSION_DENIED) {
+            onDenied(permission)
+        }
+        return@all checkPermission == PackageManager.PERMISSION_GRANTED
+    }
+
+    if (isAllPermissionsGranted) {
+        onGranted()
     }
 }
 

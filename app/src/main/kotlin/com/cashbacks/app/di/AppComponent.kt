@@ -16,6 +16,7 @@ import com.cashbacks.app.ui.features.category.CategoryFeature
 import com.cashbacks.app.ui.features.category.editing.CategoryEditingViewModel
 import com.cashbacks.app.ui.features.category.viewing.CategoryViewingViewModel
 import com.cashbacks.app.ui.features.home.HomeFeature
+import com.cashbacks.app.ui.features.home.HomeViewModel
 import com.cashbacks.app.ui.features.home.cards.CardsViewModel
 import com.cashbacks.app.ui.features.home.cashbacks.CashbacksViewModel
 import com.cashbacks.app.ui.features.home.categories.CategoriesViewModel
@@ -45,6 +46,7 @@ interface AppComponent {
 
     fun settingsViewModel(): SettingsViewModel
 
+    fun homeViewModel(): HomeViewModel
     fun categoriesViewModel(): CategoriesViewModel
     fun shopsViewModel(): ShopsViewModel
     fun cashbacksViewModel(): CashbacksViewModel
