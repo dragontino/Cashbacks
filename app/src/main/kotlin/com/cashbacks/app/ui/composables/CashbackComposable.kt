@@ -1,12 +1,9 @@
 package com.cashbacks.app.ui.composables
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.DeleteForever
 import androidx.compose.material3.HorizontalDivider
@@ -17,14 +14,22 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.layout.Measurable
+import androidx.compose.ui.layout.MeasurePolicy
+import androidx.compose.ui.layout.MeasureResult
+import androidx.compose.ui.layout.MeasureScope
+import androidx.compose.ui.layout.Placeable
+import androidx.compose.ui.layout.layoutId
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.cashbacks.app.ui.managment.rememberSwipeableListItemState
 import com.cashbacks.app.ui.theme.CashbacksTheme
@@ -34,10 +39,13 @@ import com.cashbacks.app.util.CashbackUtils.displayableAmount
 import com.cashbacks.app.util.CashbackUtils.getDatesTitle
 import com.cashbacks.app.util.CashbackUtils.getDisplayableDatesText
 import com.cashbacks.app.util.animate
+import com.cashbacks.app.util.maxOfOrNull
 import com.cashbacks.domain.R
 import com.cashbacks.domain.model.BasicCategory
+import com.cashbacks.domain.model.BasicCategoryShop
 import com.cashbacks.domain.model.Cashback
 import com.cashbacks.domain.model.Category
+import com.cashbacks.domain.model.CategoryShop
 import com.cashbacks.domain.model.FullCashback
 import com.cashbacks.domain.model.MeasureUnit
 import com.cashbacks.domain.model.PaymentSystem
@@ -91,112 +99,340 @@ fun CashbackComposable(
         containerColor = MaterialTheme.colorScheme.background,
         modifier = modifier
     ) {
-        Column(
-            verticalArrangement = Arrangement.spacedBy(verticalPadding),
+        Layout(
+            measurePolicy = CashbackMeasurePolicy(
+                horizontalPadding = horizontalPadding,
+                verticalSpacing = verticalPadding
+            ),
+            content = {
+                if (cashback is FullCashback) {
+                    CashbackRowTitle(
+                        title = when (cashback.owner) {
+                            is Category -> stringResource(R.string.category_title)
+                            is Shop -> stringResource(R.string.shop_title)
+                        },
+                        modifier = Modifier.layoutId(LayoutIds.Owner.titleId)
+                    )
+                    CashbackRowContent(
+                        content = buildString {
+                            append(cashback.owner.name)
+                            if (cashback.owner is CategoryShop) {
+                                val parentName = (cashback.owner as CategoryShop).parent.name
+                                append(" ", "($parentName)")
+                            }
+                        },
+                        modifier = Modifier.layoutId(LayoutIds.Owner.contentId)
+                    )
+                }
+
+
+                CashbackRowTitle(
+                    title = stringResource(R.string.amount),
+                    modifier = Modifier.layoutId(LayoutIds.Amount.titleId)
+                )
+                CashbackRowContent(
+                    content = cashback.displayableAmount,
+                    modifier = Modifier.layoutId(LayoutIds.Amount.contentId)
+                )
+
+
+                CashbackRowTitle(
+                    title = cashback.getDatesTitle(),
+                    modifier = Modifier.layoutId(LayoutIds.Dates.titleId)
+                )
+                CashbackRowContent(
+                    content = cashback.getDisplayableDatesText(),
+                    modifier = Modifier.layoutId(LayoutIds.Dates.contentId)
+                )
+
+
+                CashbackRowTitle(
+                    title = stringResource(R.string.on_card),
+                    modifier = Modifier.layoutId(LayoutIds.Card.titleId)
+                )
+                CashbackRowContent(
+                    content = buildString {
+                        append(cashback.bankCard.hideNumber().takeLast(8).withSpaces())
+                        if (cashback.bankCard.name.isNotBlank()) {
+                            append("\t\t(", cashback.bankCard.name, ")")
+                        }
+                    },
+                    modifier = Modifier.layoutId(LayoutIds.Card.contentId)
+                )
+
+
+                if (cashback.comment.isNotBlank()) {
+                    HorizontalDivider(
+                        modifier = Modifier
+                            .layoutId(LayoutIds.DIVIDER)
+                            .fillMaxWidth()
+                    )
+                    CashbackRowTitle(
+                        title = stringResource(R.string.comment),
+                        modifier = Modifier.layoutId(LayoutIds.Comment.titleId)
+                    )
+                    CashbackRowContent(
+                        content = cashback.comment,
+                        modifier = Modifier.layoutId(LayoutIds.Comment.contentId)
+                    )
+                }
+            },
             modifier = Modifier
                 .padding(vertical = verticalPadding)
                 .fillMaxWidth()
-        ) {
-            if (cashback is FullCashback) {
-                CashbackRow(
-                    title = when (cashback.owner) {
-                        is Category -> stringResource(R.string.category_title)
-                        is Shop -> stringResource(R.string.shop_title)
-                    },
-                    content = cashback.owner.name,
-                    modifier = Modifier.padding(horizontal = horizontalPadding)
-                )
-            }
-
-            CashbackRow(
-                title = stringResource(R.string.amount),
-                content = cashback.displayableAmount,
-                modifier = Modifier.padding(horizontal = horizontalPadding)
-            )
-
-            CashbackRow(
-                title = cashback.getDatesTitle(),
-                content = cashback.getDisplayableDatesText(),
-                modifier = Modifier.padding(horizontal = horizontalPadding)
-            )
-
-            CashbackRow(
-                title = stringResource(R.string.on_card),
-                content = buildString {
-                    append(cashback.bankCard.hideNumber().takeLast(8).withSpaces())
-                    if (cashback.bankCard.name.isNotBlank()) {
-                        append("\t\t(", cashback.bankCard.name, ")")
-                    }
-                },
-                modifier = Modifier.padding(horizontal = horizontalPadding)
-
-            )
-
-            if (cashback.comment.isNotBlank()) {
-                HorizontalDivider()
-                CashbackRow(
-                    title = stringResource(R.string.comment),
-                    content = cashback.comment,
-                    modifier = Modifier.padding(horizontal = horizontalPadding)
-                )
-            }
-        }
+        )
     }
 }
 
 
 @Composable
-private fun CashbackRow(
+private fun CashbackRowTitle(
     title: CharSequence,
-    content: CharSequence,
-    modifier: Modifier = Modifier,
+    modifier: Modifier = Modifier
 ) {
-    val titleStyle = MaterialTheme.typography.labelSmall.copy(
+    val style = MaterialTheme.typography.labelSmall.copy(
         fontWeight = FontWeight.Bold,
         textAlign = TextAlign.Start
     )
-    val contentStyle = MaterialTheme.typography.bodyMedium.copy(
-        textAlign = TextAlign.Start
-    )
+    val modifier = modifier
+        .padding(end = 20.dp)
+        .wrapContentSize()
 
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(20.dp),
-        verticalAlignment = Alignment.Top,
-        modifier = Modifier
-            .then(modifier)
-            .height(IntrinsicSize.Min)
-            .fillMaxWidth()
-    ) {
-        when (title) {
-            is String -> Text(
-                text = title,
-                style = titleStyle
-            )
+    when (title) {
+        is String -> Text(
+            text = title,
+            style = style,
+            modifier = modifier
+        )
 
-            is AnnotatedString -> Text(
-                text = title,
-                style = titleStyle
-            )
-        }
-
-        when (content) {
-            is String -> Text(
-                text = content,
-                style = contentStyle,
-                modifier = Modifier.align(Alignment.CenterVertically)
-            )
-
-            is AnnotatedString -> Text(
-                text = content,
-                style = contentStyle,
-                modifier = Modifier.align(Alignment.CenterVertically)
-            )
-        }
+        is AnnotatedString -> Text(
+            text = title,
+            style = style,
+            modifier = modifier
+        )
     }
 }
 
 
-@Preview(locale = "ru")
+@Composable
+private fun CashbackRowContent(
+    content: CharSequence,
+    modifier: Modifier = Modifier
+) {
+    val style = MaterialTheme.typography.bodyMedium.copy(
+        textAlign = TextAlign.Start
+    )
+
+    when (content) {
+        is String -> Text(
+            text = content,
+            style = style,
+            modifier = modifier.wrapContentSize()
+        )
+
+        is AnnotatedString -> Text(
+            text = content,
+            style = style,
+            modifier = modifier.wrapContentWidth()
+        )
+    }
+}
+
+
+
+private class CashbackMeasurePolicy(val verticalSpacing: Dp, val horizontalPadding: Dp) : MeasurePolicy {
+    override fun MeasureScope.measure(
+        measurables: List<Measurable>,
+        constraints: Constraints
+    ): MeasureResult {
+        val constraints = constraints.copy(minWidth = 0, minHeight = 0)
+        val paddedConstraints = constraints.copy(
+            maxWidth = constraints.maxWidth - horizontalPadding.roundToPx() * 2
+        )
+
+        fun Map<String, Measurable>.measure(): Map<String, Placeable> {
+            var maxTitleWidth = 0
+            val resultMap = mutableMapOf<String, Placeable>()
+            LayoutIds.MainItems.forEach {
+                this[it.titleId]?.measure(
+                    constraints = paddedConstraints.copy(
+                        maxWidth = paddedConstraints.maxWidth / 2,
+                        maxHeight = paddedConstraints.maxWidth / 2
+                    )
+                )?.let { placeableTitle ->
+                    maxTitleWidth = maxOf(maxTitleWidth, placeableTitle.width)
+                    resultMap[it.titleId] = placeableTitle
+                }
+            }
+
+            LayoutIds.MainItems.forEach {
+                this[it.contentId]?.measure(
+                    constraints = paddedConstraints.copy(
+                        maxWidth = paddedConstraints.maxWidth - maxTitleWidth,
+                        maxHeight = paddedConstraints.maxWidth - maxTitleWidth
+                    )
+                )?.let { placeableContent ->
+                    resultMap[it.contentId] = placeableContent
+                }
+            }
+
+            this[LayoutIds.DIVIDER]?.measure(constraints)?.let {
+                resultMap[LayoutIds.DIVIDER] = it
+            }
+            LayoutIds.Comment.let { comment ->
+                this[comment.titleId]?.measure(
+                    constraints = paddedConstraints.copy(
+                        maxWidth = paddedConstraints.maxWidth / 2
+                    )
+                )?.let { resultMap[comment.titleId] = it }
+
+                this[comment.contentId]?.measure(
+                    constraints = paddedConstraints.copy(
+                        maxWidth = paddedConstraints.maxWidth - maxTitleWidth,
+                        maxHeight = paddedConstraints.maxWidth - maxTitleWidth
+                    )
+                )?.let { resultMap[comment.contentId] = it }
+            }
+
+            return resultMap
+        }
+
+
+        val measurables = measurables.associateBy { it.layoutId.toString() }
+        val placeables = measurables.measure()
+
+        val maxTitleWidth = placeables
+            .filter { LayoutIds.TITLE in it.key && it.key != LayoutIds.Comment.titleId }
+            .maxOf { it.value.width }
+
+        val layoutHeight = LayoutIds.AllItems
+            .mapNotNull {
+                maxOfOrNull(placeables[it.titleId]?.height, placeables[it.contentId]?.height)
+            }
+            .let { heights ->
+                placeables[LayoutIds.DIVIDER]?.height?.let { heights + it } ?: heights
+            }
+            .reduceOrNull { acc, height ->
+                acc + height + verticalSpacing.roundToPx()
+            }
+            ?: constraints.minHeight
+
+        return layout(
+            width = constraints.maxWidth,
+            height = layoutHeight.coerceIn(constraints.minHeight, constraints.maxHeight)
+        ) {
+            var currentY = placeMainInfo(
+                placeables = placeables,
+                titleWidth = maxTitleWidth,
+                verticalSpacingPx = verticalSpacing.roundToPx(),
+                horizontalPaddingPx = horizontalPadding.roundToPx()
+            )
+            placeables[LayoutIds.DIVIDER]?.also {
+                it.place(x = 0, y = currentY)
+                currentY += it.height + verticalSpacing.roundToPx()
+            }
+
+            placeComment(
+                placeables = placeables,
+                titleWidth = maxTitleWidth,
+                topPaddingPx = currentY,
+                horizontalPaddingPx = horizontalPadding.roundToPx()
+            )
+        }
+    }
+
+
+    private fun Placeable.PlacementScope.placeMainInfo(
+        placeables: Map<String, Placeable>,
+        titleWidth: Int,
+        verticalSpacingPx: Int,
+        horizontalPaddingPx: Int
+    ): Int {
+        var currentY = 0
+        LayoutIds.MainItems.forEach {
+            val lineHeight = maxOfOrNull(
+                placeables[it.titleId]?.height,
+                placeables[it.contentId]?.height
+            )
+
+            placeables[it.titleId]?.placeRelative(x = horizontalPaddingPx, y = currentY)
+            placeables[it.contentId]?.apply {
+                placeRelative(
+                    x = titleWidth + horizontalPaddingPx,
+                    y = currentY + (lineHeight!! - height) / 2
+                )
+            }
+            lineHeight?.let {
+                currentY += it + verticalSpacingPx
+            }
+        }
+        return currentY
+    }
+
+
+    private fun Placeable.PlacementScope.placeComment(
+        placeables: Map<String, Placeable>,
+        titleWidth: Int,
+        topPaddingPx: Int,
+        horizontalPaddingPx: Int
+    ) {
+        val titlePlaceable = placeables[LayoutIds.Comment.titleId]
+        val contentPlaceable = placeables[LayoutIds.Comment.contentId]
+        val lineHeight = maxOfOrNull(titlePlaceable?.height, contentPlaceable?.height)
+
+        titlePlaceable?.placeRelative(
+            x = horizontalPaddingPx,
+            y = topPaddingPx
+        )
+        contentPlaceable?.placeRelative(
+            x = maxOfOrNull(titlePlaceable?.width, titleWidth)!! + horizontalPaddingPx,
+            y = topPaddingPx + (lineHeight!! - contentPlaceable.height) / 2
+        )
+    }
+}
+
+
+
+private object LayoutIds {
+    const val TITLE = "Title"
+
+    interface RowType {
+        val titleId: String
+        val contentId: String
+    }
+
+    object Owner : RowType {
+        override val titleId = "Owner$TITLE"
+        override val contentId: String = "OwnerName"
+    }
+    object Amount : RowType {
+        override val titleId = "Amount$TITLE"
+        override val contentId = "Amount"
+    }
+    object Dates : RowType {
+        override val titleId = "Dates$TITLE"
+        override val contentId = "Dates"
+    }
+    object Card : RowType {
+        override val titleId = "Card$TITLE"
+        override val contentId = "Card"
+    }
+    object Comment : RowType {
+        override val titleId = "Comment$TITLE"
+        override val contentId = "Comment"
+    }
+    const val DIVIDER = "Divider"
+
+    val MainItems by lazy {
+        listOf(Owner, Amount, Dates, Card)
+    }
+    val AllItems by lazy {
+        MainItems + Comment
+    }
+}
+
+
+@Preview
 @Composable
 private fun CashbackComposablePreview() {
     CashbacksTheme(isDarkTheme = false) {
@@ -212,7 +448,11 @@ private fun CashbackComposablePreview() {
                 measureUnit = MeasureUnit.Percent,
                 expirationDate = LocalDate(dayOfMonth = 26, monthNumber = 10, year = 2024),
                 comment = "Hello world!\nGoodbye, Angels!",
-                owner = BasicCategory(name = "Groceries")
+                owner = BasicCategoryShop(
+                    name = "5ka",
+                    parent = BasicCategory(name = "Groceries"),
+                    maxCashback = emptySet()
+                )
             ),
             onClick = {},
             modifier = Modifier.padding(16.dp)
