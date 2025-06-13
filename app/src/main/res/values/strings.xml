@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Cashbook — The book of your cashbacks</string>
+    <string name="activity_name">My Cashbacks</string>
+    <string name="app_version_pattern">Version %1$s dated %2$s</string>
+</resources>

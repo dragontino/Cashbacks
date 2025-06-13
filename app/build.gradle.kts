@@ -1,19 +1,20 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.kotlin.kapt)
     alias(libs.plugins.compose.compiler)
-    alias(libs.plugins.kotlin.parcelize)
 }
 
 android {
     namespace = "com.cashbacks.app"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
 
+    val appDebugSuffix = "beta30"
+    val appVersionDate = "09/06/2025"
+
     defaultConfig {
         applicationId = "com.cashbacks.app"
         minSdk = libs.versions.android.minSdk.get().toInt()
-        targetSdk = 34
+        targetSdk = 35
         versionCode = libs.versions.app.android.get().split(".")[0].toInt()
         versionName = libs.versions.app.android.get()
 
@@ -27,7 +28,7 @@ android {
         buildConfigField(
             type = "String",
             name = "VERSION_DATE",
-            value = "\"${libs.versions.app.date.get()}\""
+            value = "\"$appVersionDate\""
         )
     }
 
@@ -42,7 +43,7 @@ android {
 
         debug {
             applicationIdSuffix = ".debug"
-            versionNameSuffix = "-${libs.versions.app.debug.suffix.get()}"
+            versionNameSuffix = "-$appDebugSuffix"
         }
     }
     compileOptions {
@@ -65,22 +66,54 @@ android {
 }
 
 dependencies {
-    implementation(project(":data"))
-    implementation(project(":domain"))
-    implementation(libs.kotlin.reflect)
-    implementation(libs.kotlinx.datetime)
+    api(project(":common:composables"))
+    api(project(":common:utils"))
+    api(project(":common:resources"))
+    api(project(":common:navigation"))
+    api(project(":core:database"))
+
+    api(project(":features:settings:domain"))
+    api(project(":features:settings:data"))
+    api(project(":features:settings:presentation"))
+
+    api(project(":features:bankcard:domain"))
+    api(project(":features:bankcard:data"))
+    api(project(":features:bankcard:presentation:api"))
+    api(project(":features:bankcard:presentation:impl"))
+
+    api(project(":features:cashback:domain"))
+    api(project(":features:cashback:data"))
+    api(project(":features:cashback:presentation:api"))
+    api(project(":features:cashback:presentation:impl"))
+
+    api(project(":features:shop:domain"))
+    api(project(":features:shop:data"))
+    api(project(":features:shop:presentation:api"))
+    api(project(":features:shop:presentation:impl"))
+
+    api(project(":features:category:domain"))
+    api(project(":features:category:data"))
+    api(project(":features:category:presentation:api"))
+    api(project(":features:category:presentation:impl"))
+
+    api(project(":features:home:api"))
+    api(project(":features:home:impl"))
+
+    api(project(":features:share:domain"))
+    api(project(":features:share:data"))
+
 
     coreLibraryDesugaring(libs.tools.desugaring)
 
     implementation(libs.androidx.core)
     implementation(libs.androidx.lifecycle.runtime)
+    implementation(libs.kotlinx.datetime)
 
-    //Compose
+    // Compose
     implementation(platform(libs.compose.bom))
     implementation(libs.compose.activity)
     implementation(libs.compose.navigation)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
-    implementation(libs.compose.constraintlayout)
     implementation(libs.compose.ui)
     implementation(libs.compose.ui.graphics)
     implementation(libs.compose.ui.tooling)
@@ -88,23 +121,24 @@ dependencies {
     implementation(libs.compose.icons.core)
     implementation(libs.compose.icons.extended)
     implementation(libs.compose.material3)
-    implementation(libs.compose.livedata)
 
-    //Room
-    implementation(libs.room.runtime)
-    implementation(libs.room.ktx)
-    implementation(libs.room.paging)
-
-    //Tests
+    // Tests
     testImplementation(libs.junit)
     androidTestImplementation(libs.junit.ext)
     androidTestImplementation(libs.espresso)
     androidTestImplementation(platform(libs.compose.bom))
     androidTestImplementation(libs.compose.junit4)
+    androidTestImplementation(libs.room.testing)
     debugImplementation(libs.compose.ui.tooling)
     debugImplementation(libs.compose.ui.test.manifest)
 
-    //DI
-    implementation(libs.dagger)
-    kapt(libs.dagger.compiler)
+    // DI
+    implementation(libs.koin.compose)
+
+    // MVI
+    implementation(libs.mvikotlin.main)
+    implementation(libs.mvikotlin.android)
+    implementation(libs.mvikotlin.coroutines)
+    implementation(libs.mvikotlin.logging)
+    implementation(libs.mvikotlin.timetravel)
 }

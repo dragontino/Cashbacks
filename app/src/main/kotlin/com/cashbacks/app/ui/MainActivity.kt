@@ -14,34 +14,41 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
 import com.cashbacks.app.app.App
-import com.cashbacks.app.ui.features.home.HomeFeature
 import com.cashbacks.app.ui.theme.CashbacksTheme
-import com.cashbacks.app.util.ColorDesignUtils.isDark
-import com.cashbacks.app.util.animate
-import com.cashbacks.app.util.register
-import com.cashbacks.app.util.reversed
-import com.cashbacks.app.viewmodel.MainViewModel
-import com.cashbacks.domain.R
+import com.cashbacks.common.composables.utils.animate
+import com.cashbacks.common.composables.utils.reversed
+import com.cashbacks.common.navigation.utils.register
+import com.cashbacks.common.resources.R
+import com.cashbacks.features.bankcard.presentation.impl.navigation.BankCardFeature
+import com.cashbacks.features.cashback.presentation.impl.navigation.CashbackFeature
+import com.cashbacks.features.category.presentation.impl.navigation.CategoryFeature
+import com.cashbacks.features.home.api.Home
+import com.cashbacks.features.home.impl.navigation.HomeFeature
+import com.cashbacks.features.settings.presentation.navigation.SettingsFeature
+import com.cashbacks.features.settings.presentation.utils.isDark
+import com.cashbacks.features.shop.presentation.impl.navigation.ShopFeature
 import kotlinx.coroutines.launch
+import org.koin.androidx.compose.KoinAndroidContext
+import org.koin.androidx.compose.koinViewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         setContent {
-            val mainViewModel: MainViewModel = viewModel {
-                (application as App).appComponent.mainViewModel()
-            }
+            val mainViewModel: MainViewModel = koinViewModel()
+            val settings by mainViewModel.settingsStateFlow.collectAsStateWithLifecycle()
 
             val snackbarHostState = remember(::SnackbarHostState)
             val scope = rememberCoroutineScope()
@@ -53,14 +60,20 @@ class MainActivity : ComponentActivity() {
             }
 
 
+            // TODO: переделать на service
             LaunchedEffect(Unit) {
                 if (
                     (application as App).checkExpiredCashbacks &&
-                    mainViewModel.settings.value.autoDeleteExpiredCashbacks
+                    settings.autoDeleteExpiredCashbacks
                 ) {
                     mainViewModel.deleteExpiredCashbacks(
-                        success = {
-                            showSnackbar(application.getString(R.string.expired_cashbacks_deletion_success))
+                        success = { count ->
+                            val message = application.resources.getQuantityString(
+                                R.plurals.expired_cashbacks_deletion_success,
+                                count,
+                                count
+                            )
+                            showSnackbar(message)
                         },
                         failure = showSnackbar
                     )
@@ -68,33 +81,36 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
-            CashbacksTheme(settings = mainViewModel.settings.value) {
-                val isDarkTheme = mainViewModel.settings.value.colorDesign.isDark
+            KoinAndroidContext {
+                CashbacksTheme(settings = settings) {
+                    val isDarkTheme = settings.colorDesign.isDark
 
-                enableEdgeToEdge(
-                    statusBarStyle = mainViewModel.statusBarStyle(isDarkTheme),
-                    navigationBarStyle = mainViewModel.navigationBarStyle(isDarkTheme),
-                )
-
-                Box {
-                    NavHost(modifier = Modifier
-                        .zIndex(1f)
-                        .fillMaxSize()
+                    enableEdgeToEdge(
+                        statusBarStyle = mainViewModel.statusBarStyle(isDarkTheme),
+                        navigationBarStyle = mainViewModel.navigationBarStyle(isDarkTheme),
                     )
 
-                    SnackbarHost(
-                        hostState = snackbarHostState,
-                        modifier = Modifier
-                            .padding(bottom = 180.dp)
-                            .align(Alignment.BottomCenter)
-                            .zIndex(2f)
-                    ) {
-                        Snackbar(
-                            snackbarData = it,
-                            shape = MaterialTheme.shapes.medium,
-                            containerColor = MaterialTheme.colorScheme.background.reversed.animate(),
-                            contentColor = MaterialTheme.colorScheme.onBackground.reversed.animate()
+                    Box {
+                        NavHost(
+                            modifier = Modifier
+                                .zIndex(1f)
+                                .fillMaxSize()
                         )
+
+                        SnackbarHost(
+                            hostState = snackbarHostState,
+                            modifier = Modifier
+                                .padding(bottom = 180.dp)
+                                .align(Alignment.BottomCenter)
+                                .zIndex(2f)
+                        ) {
+                            Snackbar(
+                                snackbarData = it,
+                                shape = MaterialTheme.shapes.medium,
+                                containerColor = MaterialTheme.colorScheme.background.reversed.animate(),
+                                contentColor = MaterialTheme.colorScheme.onBackground.reversed.animate()
+                            )
+                        }
                     }
                 }
             }
@@ -108,44 +124,23 @@ class MainActivity : ComponentActivity() {
 
         NavHost(
             navController = navController,
-            startDestination = HomeFeature.Home.destinationRoute,
+            startDestination = Home,
             modifier = Modifier.background(MaterialTheme.colorScheme.background.animate())
         ) {
-            register(
-                feature = (application as App).appComponent.homeFeature(),
-                navController = navController,
-                modifier = modifier
-            )
-
-            register(
-                feature = (application as App).appComponent.settingsFeature(),
-                navController = navController,
-                modifier = modifier
-            )
-
-            register(
-                feature = (application as App).appComponent.categoryFeature(),
-                navController = navController,
-                modifier = modifier
-            )
-
-            register(
-                feature = (application as App).appComponent.shopFeature(),
-                navController = navController,
-                modifier = modifier
-            )
-
-            register(
-                feature = (application as App).appComponent.cashbackFeature(),
-                navController = navController,
-                modifier = modifier
-            )
-
-            register(
-                feature = (application as App).appComponent.bankCardFeature(),
-                navController = navController,
-                modifier = modifier
-            )
+            arrayOf(
+                HomeFeature,
+                SettingsFeature,
+                CategoryFeature,
+                ShopFeature,
+                CashbackFeature,
+                BankCardFeature
+            ).forEach { feature ->
+                register(
+                    feature = feature,
+                    navController = navController,
+                    modifier = modifier
+                )
+            }
         }
     }
 }

@@ -11,11 +11,50 @@
           <set>
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/app" />
-            <option value="$PROJECT_DIR$/data" />
-            <option value="$PROJECT_DIR$/domain" />
+            <option value="$PROJECT_DIR$/common" />
+            <option value="$PROJECT_DIR$/common/composables" />
+            <option value="$PROJECT_DIR$/common/navigation" />
+            <option value="$PROJECT_DIR$/common/resources" />
+            <option value="$PROJECT_DIR$/common/utils" />
+            <option value="$PROJECT_DIR$/core" />
+            <option value="$PROJECT_DIR$/core/database" />
+            <option value="$PROJECT_DIR$/features" />
+            <option value="$PROJECT_DIR$/features/bankcard" />
+            <option value="$PROJECT_DIR$/features/bankcard/data" />
+            <option value="$PROJECT_DIR$/features/bankcard/domain" />
+            <option value="$PROJECT_DIR$/features/bankcard/presentation" />
+            <option value="$PROJECT_DIR$/features/bankcard/presentation/api" />
+            <option value="$PROJECT_DIR$/features/bankcard/presentation/impl" />
+            <option value="$PROJECT_DIR$/features/cashback" />
+            <option value="$PROJECT_DIR$/features/cashback/data" />
+            <option value="$PROJECT_DIR$/features/cashback/domain" />
+            <option value="$PROJECT_DIR$/features/cashback/presentation" />
+            <option value="$PROJECT_DIR$/features/cashback/presentation/api" />
+            <option value="$PROJECT_DIR$/features/cashback/presentation/impl" />
+            <option value="$PROJECT_DIR$/features/category" />
+            <option value="$PROJECT_DIR$/features/category/data" />
+            <option value="$PROJECT_DIR$/features/category/domain" />
+            <option value="$PROJECT_DIR$/features/category/presentation" />
+            <option value="$PROJECT_DIR$/features/category/presentation/api" />
+            <option value="$PROJECT_DIR$/features/category/presentation/impl" />
+            <option value="$PROJECT_DIR$/features/home" />
+            <option value="$PROJECT_DIR$/features/home/api" />
+            <option value="$PROJECT_DIR$/features/home/impl" />
+            <option value="$PROJECT_DIR$/features/settings" />
+            <option value="$PROJECT_DIR$/features/settings/data" />
+            <option value="$PROJECT_DIR$/features/settings/domain" />
+            <option value="$PROJECT_DIR$/features/settings/presentation" />
+            <option value="$PROJECT_DIR$/features/share" />
+            <option value="$PROJECT_DIR$/features/share/data" />
+            <option value="$PROJECT_DIR$/features/share/domain" />
+            <option value="$PROJECT_DIR$/features/shop" />
+            <option value="$PROJECT_DIR$/features/shop/data" />
+            <option value="$PROJECT_DIR$/features/shop/domain" />
+            <option value="$PROJECT_DIR$/features/shop/presentation" />
+            <option value="$PROJECT_DIR$/features/shop/presentation/api" />
+            <option value="$PROJECT_DIR$/features/shop/presentation/impl" />
           </set>
         </option>
-        <option name="resolveExternalAnnotations" value="false" />
       </GradleProjectSettings>
     </option>
   </component>

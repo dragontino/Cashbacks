@@ -1,51 +1,47 @@
 package com.cashbacks.app.di.modules
 
-import com.cashbacks.app.app.App
-import com.cashbacks.app.model.MessageHandlerImpl
-import com.cashbacks.app.ui.features.bankcard.BankCardFeature
-import com.cashbacks.app.ui.features.cashback.CashbackFeature
-import com.cashbacks.app.ui.features.category.CategoryFeature
-import com.cashbacks.app.ui.features.home.HomeFeature
-import com.cashbacks.app.ui.features.settings.SettingsFeature
-import com.cashbacks.app.ui.features.shop.ShopFeature
-import com.cashbacks.domain.model.MessageHandler
-import dagger.Module
-import dagger.Provides
+import com.arkivanov.mvikotlin.core.store.StoreFactory
+import com.arkivanov.mvikotlin.logging.store.LoggingStoreFactory
+import com.arkivanov.mvikotlin.main.store.DefaultStoreFactory
+import com.arkivanov.mvikotlin.timetravel.store.TimeTravelStoreFactory
+import com.cashbacks.app.BuildConfig
+import com.cashbacks.app.R
+import com.cashbacks.app.ui.MainViewModel
+import com.cashbacks.common.resources.AppInfo
+import com.cashbacks.common.resources.MessageHandler
+import com.cashbacks.common.utils.DateTimeFormats
+import com.cashbacks.common.utils.DateUtils.getDisplayableString
+import com.cashbacks.common.utils.parseToDate
+import org.koin.android.ext.koin.androidApplication
+import org.koin.core.module.dsl.viewModelOf
+import org.koin.dsl.module
 
-@Module
-class AppModule(private val application: App) {
-    @Provides
-    fun providesAppExceptionMessage(): MessageHandler {
-        return MessageHandlerImpl(application)
+internal val AppModule = module {
+    single<StoreFactory> {
+        when {
+            BuildConfig.DEBUG -> LoggingStoreFactory(TimeTravelStoreFactory())
+            else -> DefaultStoreFactory()
+        }
     }
 
-    @Provides
-    fun providesHomeFeature(): HomeFeature {
-        return HomeFeature(application)
+    single<AppInfo> {
+        val version = with(androidApplication()) {
+            val name = BuildConfig.VERSION_NAME
+            val displayableDateString = BuildConfig.VERSION_DATE
+                .parseToDate(formatBuilder = DateTimeFormats.defaultDateFormat())
+                .getDisplayableString()
+            getString(R.string.app_version_pattern, name, displayableDateString)
+        }
+
+        AppInfo(
+            name = androidApplication().getString(R.string.activity_name),
+            version = version
+        )
     }
 
-    @Provides
-    fun providesSettingsFeature(): SettingsFeature {
-        return SettingsFeature(application)
+    factory {
+        MessageHandler(androidApplication())
     }
 
-    @Provides
-    fun providesCategoryFeature(): CategoryFeature {
-        return CategoryFeature(application)
-    }
-
-    @Provides
-    fun providesShopFeature(): ShopFeature {
-        return ShopFeature(application)
-    }
-
-    @Provides
-    fun providesCashbackFeature(): CashbackFeature {
-        return CashbackFeature(application)
-    }
-
-    @Provides
-    fun providesBankCardFeature(): BankCardFeature {
-        return BankCardFeature(application)
-    }
+    viewModelOf(::MainViewModel)
 }
