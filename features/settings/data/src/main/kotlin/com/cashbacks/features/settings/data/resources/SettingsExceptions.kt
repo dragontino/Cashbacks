@@ -9,3 +9,9 @@ object SaveSettingsException : MessageException {
         return messageHandler.getMessage(R.string.save_settings_exception)
     }
 }
+
+object SettingsNotFoundException : MessageException {
+    override fun getMessage(messageHandler: MessageHandler): String {
+        return messageHandler.getMessage(R.string.settings_not_found_exception)
+    }
+}

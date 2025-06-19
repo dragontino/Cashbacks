@@ -6,20 +6,18 @@ import com.cashbacks.features.cashback.domain.usecase.AddCashbackToShopUseCase
 import com.cashbacks.features.cashback.domain.usecase.AddCashbackToShopUseCaseImpl
 import com.cashbacks.features.cashback.domain.usecase.DeleteCashbackUseCase
 import com.cashbacks.features.cashback.domain.usecase.DeleteCashbackUseCaseImpl
-import com.cashbacks.features.cashback.domain.usecase.DeleteExpiredCashbacksUseCase
-import com.cashbacks.features.cashback.domain.usecase.DeleteExpiredCashbacksUseCaseImpl
+import com.cashbacks.features.cashback.domain.usecase.DeleteCashbacksUseCase
+import com.cashbacks.features.cashback.domain.usecase.DeleteCashbacksUseCaseImpl
 import com.cashbacks.features.cashback.domain.usecase.FetchAllCashbacksUseCase
 import com.cashbacks.features.cashback.domain.usecase.FetchAllCashbacksUseCaseImpl
 import com.cashbacks.features.cashback.domain.usecase.FetchCashbacksFromCategoryUseCase
 import com.cashbacks.features.cashback.domain.usecase.FetchCashbacksFromCategoryUseCaseImpl
 import com.cashbacks.features.cashback.domain.usecase.FetchCashbacksFromShopUseCase
 import com.cashbacks.features.cashback.domain.usecase.FetchCashbacksFromShopUseCaseImpl
-import com.cashbacks.features.cashback.domain.usecase.FetchMaxCashbacksFromCategoryUseCase
-import com.cashbacks.features.cashback.domain.usecase.FetchMaxCashbacksFromCategoryUseCaseImpl
-import com.cashbacks.features.cashback.domain.usecase.FetchMaxCashbacksFromShopUseCase
-import com.cashbacks.features.cashback.domain.usecase.FetchMaxCashbacksFromShopUseCaseImpl
 import com.cashbacks.features.cashback.domain.usecase.GetCashbackUseCase
 import com.cashbacks.features.cashback.domain.usecase.GetCashbackUseCaseImpl
+import com.cashbacks.features.cashback.domain.usecase.GetExpiredCashbacksUseCase
+import com.cashbacks.features.cashback.domain.usecase.GetExpiredCashbacksUseCaseImpl
 import com.cashbacks.features.cashback.domain.usecase.GetMaxCashbacksFromCategoryUseCase
 import com.cashbacks.features.cashback.domain.usecase.GetMaxCashbacksFromCategoryUseCaseImpl
 import com.cashbacks.features.cashback.domain.usecase.GetMaxCashbacksFromShopUseCase
@@ -99,14 +97,6 @@ val CashbackDomainModule = module {
         )
     }
 
-    single<FetchMaxCashbacksFromCategoryUseCase> {
-        FetchMaxCashbacksFromCategoryUseCaseImpl(get())
-    }
-
-    single<FetchMaxCashbacksFromShopUseCase> {
-        FetchMaxCashbacksFromShopUseCaseImpl(get())
-    }
-
     single<GetMaxCashbacksFromCategoryUseCase> {
         GetMaxCashbacksFromCategoryUseCaseImpl(
             repository = get(),
@@ -128,8 +118,15 @@ val CashbackDomainModule = module {
         )
     }
 
-    single<DeleteExpiredCashbacksUseCase> {
-        DeleteExpiredCashbacksUseCaseImpl(
+    single<DeleteCashbacksUseCase> {
+        DeleteCashbacksUseCaseImpl(
+            repository = get(),
+            dispatcher = Dispatchers.IO
+        )
+    }
+
+    single<GetExpiredCashbacksUseCase> {
+        GetExpiredCashbacksUseCaseImpl(
             repository = get(),
             dispatcher = Dispatchers.IO
         )

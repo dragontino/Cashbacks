@@ -19,4 +19,7 @@ interface SettingsDao {
 
     @Query("SELECT * FROM Settings")
     fun fetchSettings(): Flow<SettingsEntity?>
+
+    @Query("SELECT * FROM Settings")
+    suspend fun getSettings(): SettingsEntity?
 }

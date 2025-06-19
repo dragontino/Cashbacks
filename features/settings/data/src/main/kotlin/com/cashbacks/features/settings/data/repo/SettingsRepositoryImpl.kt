@@ -6,6 +6,7 @@ import com.cashbacks.core.database.dao.SettingsDao
 import com.cashbacks.core.database.utils.mapToDomainSettings
 import com.cashbacks.core.database.utils.mapToEntity
 import com.cashbacks.features.settings.data.resources.SaveSettingsException
+import com.cashbacks.features.settings.data.resources.SettingsNotFoundException
 import com.cashbacks.features.settings.domain.model.Settings
 import com.cashbacks.features.settings.domain.repo.SettingsRepository
 import kotlinx.coroutines.flow.Flow
@@ -41,5 +42,12 @@ internal class SettingsRepositoryImpl(
                 if (entity == null) insertSettings(Settings())
                 entity?.mapToDomainSettings()
             }
+    }
+
+    override suspend fun getSettings(): Result<Settings> {
+        return when (val settings = dao.getSettings()?.mapToDomainSettings()) {
+            null -> Result.failure(SettingsNotFoundException.toException(context))
+            else -> Result.success(settings)
+        }
     }
 }

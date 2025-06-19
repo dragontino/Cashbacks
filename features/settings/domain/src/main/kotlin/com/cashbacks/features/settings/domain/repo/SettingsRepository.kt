@@ -7,4 +7,6 @@ interface SettingsRepository {
     suspend fun updateSettings(settings: Settings): Result<Unit>
 
     fun fetchSettings(): Flow<Settings>
+
+    suspend fun getSettings(): Result<Settings>
 }

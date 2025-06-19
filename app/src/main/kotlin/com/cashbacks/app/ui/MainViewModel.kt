@@ -4,8 +4,11 @@ import android.graphics.Color
 import androidx.activity.SystemBarStyle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.cashbacks.common.resources.MessageHandler
 import com.cashbacks.common.utils.today
-import com.cashbacks.features.cashback.domain.usecase.DeleteExpiredCashbacksUseCase
+import com.cashbacks.features.cashback.domain.usecase.DeleteCashbacksUseCase
+import com.cashbacks.features.cashback.domain.usecase.GetExpiredCashbacksUseCase
+import com.cashbacks.features.cashback.presentation.api.resources.ExpiredCashbacksDeletionException
 import com.cashbacks.features.settings.domain.model.Settings
 import com.cashbacks.features.settings.domain.usecase.FetchSettingsUseCase
 import kotlinx.coroutines.flow.SharingStarted
@@ -16,7 +19,9 @@ import kotlinx.datetime.Clock
 
 class MainViewModel(
     fetchSettings: FetchSettingsUseCase,
-    private val deleteExpiredCashbacks: DeleteExpiredCashbacksUseCase
+    private val getExpiredCashbacks: GetExpiredCashbacksUseCase,
+    private val deleteCashbacks: DeleteCashbacksUseCase,
+    private val messageHandler: MessageHandler
 ) : ViewModel() {
 
     val settingsStateFlow: StateFlow<Settings> = fetchSettings()
@@ -44,9 +49,18 @@ class MainViewModel(
     ) {
         viewModelScope.launch {
             val today = Clock.System.today()
-            deleteExpiredCashbacks(today)
+            val result = getExpiredCashbacks(today).mapCatching { expiredCashbacks ->
+                val deletionResult = deleteCashbacks(expiredCashbacks)
+                deletionResult.getOrNull() ?: throw deletionResult.exceptionOrNull()!!
+            }
+
+            result
                 .onSuccess { if (it > 0) success(it) }
-                .onFailure { it.message?.let(failure) }
+                .onFailure {
+                    ExpiredCashbacksDeletionException
+                        .getMessage(messageHandler)
+                        .let(failure)
+                }
         }
     }
 }
