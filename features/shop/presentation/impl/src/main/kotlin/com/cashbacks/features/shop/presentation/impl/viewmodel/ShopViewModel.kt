@@ -11,8 +11,8 @@ import com.arkivanov.mvikotlin.extensions.coroutines.stateFlow
 import com.cashbacks.common.resources.MessageHandler
 import com.cashbacks.common.utils.dispatchFromAnotherThread
 import com.cashbacks.common.utils.forwardFromAnotherThread
-import com.cashbacks.common.utils.management.ScreenState
-import com.cashbacks.common.utils.management.ViewModelState
+import com.cashbacks.common.composables.management.ScreenState
+import com.cashbacks.common.composables.management.ViewModelState
 import com.cashbacks.features.cashback.domain.usecase.DeleteCashbackUseCase
 import com.cashbacks.features.cashback.domain.usecase.FetchCashbacksFromShopUseCase
 import com.cashbacks.features.cashback.presentation.api.CashbackArgs

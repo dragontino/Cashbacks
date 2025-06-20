@@ -63,10 +63,10 @@ import com.cashbacks.common.composables.utils.keyboardAsState
 import com.cashbacks.common.composables.utils.mix
 import com.cashbacks.common.composables.utils.reversed
 import com.cashbacks.common.resources.R
-import com.cashbacks.common.utils.management.DialogType
-import com.cashbacks.common.utils.management.ListState
-import com.cashbacks.common.utils.management.ViewModelState
-import com.cashbacks.common.utils.management.toListState
+import com.cashbacks.common.composables.management.DialogType
+import com.cashbacks.common.composables.management.ListState
+import com.cashbacks.common.composables.management.ViewModelState
+import com.cashbacks.common.composables.management.toListState
 import com.cashbacks.features.cashback.domain.utils.asCashbackOwner
 import com.cashbacks.features.cashback.presentation.api.CashbackArgs
 import com.cashbacks.features.cashback.presentation.api.composables.MaxCashbackOwnerComposable
@@ -80,6 +80,7 @@ import com.cashbacks.features.home.impl.navigation.HomeDestination
 import com.cashbacks.features.home.impl.utils.copy
 import com.cashbacks.features.shop.domain.model.Shop
 import com.cashbacks.features.shop.presentation.api.ShopArgs
+import kotlinx.collections.immutable.toImmutableSet
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 
@@ -293,7 +294,7 @@ private fun ShopsList(
                 itemsIndexed(listState.data) { index, (shop, maxCashbacks) ->
                     MaxCashbackOwnerComposable(
                         cashbackOwner = shop.asCashbackOwner(),
-                        maxCashbacks = maxCashbacks,
+                        maxCashbacks = maxCashbacks.toImmutableSet(),
                         isEditing = state.viewModelState == ViewModelState.Editing,
                         isSwiped = state.selectedShopIndex == index,
                         onSwipe = { isSwiped ->

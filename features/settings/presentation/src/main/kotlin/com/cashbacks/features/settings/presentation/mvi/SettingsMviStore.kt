@@ -1,6 +1,7 @@
 package com.cashbacks.features.settings.presentation.mvi
 
-import com.cashbacks.common.utils.management.ScreenState
+import androidx.compose.runtime.Immutable
+import com.cashbacks.common.composables.management.ScreenState
 import com.cashbacks.features.settings.domain.model.Settings
 
 internal sealed interface SettingsAction {
@@ -35,6 +36,7 @@ internal sealed interface SettingsMessage {
 }
 
 
+@Immutable
 internal data class SettingsState(
     val screenState: ScreenState = ScreenState.Stable,
     val settings: Settings = Settings(),

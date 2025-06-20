@@ -2,9 +2,9 @@ package com.cashbacks.features.bankcard.presentation.impl.mvi
 
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.text.AnnotatedString
-import com.cashbacks.common.utils.management.BottomSheetType
-import com.cashbacks.common.utils.management.DialogType
-import com.cashbacks.common.utils.management.ScreenState
+import com.cashbacks.common.composables.management.BottomSheetType
+import com.cashbacks.common.composables.management.DialogType
+import com.cashbacks.common.composables.management.ScreenState
 import com.cashbacks.features.bankcard.domain.model.FullBankCard
 import com.cashbacks.features.bankcard.presentation.api.BankCardArgs
 import com.cashbacks.features.bankcard.presentation.impl.mvi.model.EditableBankCard

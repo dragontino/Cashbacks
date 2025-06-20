@@ -28,7 +28,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.cashbacks.common.composables.theme.CashbacksTheme
 import com.cashbacks.common.composables.utils.animate
 import com.cashbacks.common.composables.utils.composableLet
-import com.cashbacks.common.utils.management.ListState
+import com.cashbacks.common.composables.management.ListState
 import kotlinx.coroutines.flow.StateFlow
 
 

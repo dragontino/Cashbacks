@@ -61,6 +61,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -98,6 +99,10 @@ import com.cashbacks.common.composables.Loading
 import com.cashbacks.common.composables.LoadingInBox
 import com.cashbacks.common.composables.NewNameTextField
 import com.cashbacks.common.composables.OnLifecycleEvent
+import com.cashbacks.common.composables.management.DialogType
+import com.cashbacks.common.composables.management.ListState
+import com.cashbacks.common.composables.management.ScreenState
+import com.cashbacks.common.composables.management.toListState
 import com.cashbacks.common.composables.theme.CashbacksTheme
 import com.cashbacks.common.composables.theme.VerdanaFont
 import com.cashbacks.common.composables.utils.animate
@@ -110,10 +115,6 @@ import com.cashbacks.common.utils.DateUtils
 import com.cashbacks.common.utils.DateUtils.getDisplayableString
 import com.cashbacks.common.utils.LocalDate
 import com.cashbacks.common.utils.epochMillis
-import com.cashbacks.common.utils.management.DialogType
-import com.cashbacks.common.utils.management.ListState
-import com.cashbacks.common.utils.management.ScreenState
-import com.cashbacks.common.utils.management.toListState
 import com.cashbacks.common.utils.today
 import com.cashbacks.features.bankcard.presentation.api.BankCardArgs
 import com.cashbacks.features.bankcard.presentation.api.utils.BankCardPresentationUtils.getDisplayableString
@@ -769,11 +770,13 @@ private sealed interface DatePicker : DialogType {
 }
 
 
+@Immutable
 private data class StartDatePicker(
     override val date: LocalDate?
 ) : DatePicker
 
 
+@Immutable
 private data class EndDatePicker(
     override val date: LocalDate?
 ) : DatePicker

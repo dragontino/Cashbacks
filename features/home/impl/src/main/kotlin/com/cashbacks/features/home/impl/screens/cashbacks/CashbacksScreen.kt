@@ -63,10 +63,10 @@ import com.cashbacks.common.composables.utils.keyboardAsState
 import com.cashbacks.common.composables.utils.mix
 import com.cashbacks.common.composables.utils.reversed
 import com.cashbacks.common.resources.R
-import com.cashbacks.common.utils.management.DialogType
-import com.cashbacks.common.utils.management.ListState
-import com.cashbacks.common.utils.management.ScreenState
-import com.cashbacks.common.utils.management.toListState
+import com.cashbacks.common.composables.management.DialogType
+import com.cashbacks.common.composables.management.ListState
+import com.cashbacks.common.composables.management.ScreenState
+import com.cashbacks.common.composables.management.toListState
 import com.cashbacks.features.cashback.domain.model.Cashback
 import com.cashbacks.features.cashback.domain.model.CashbackOwner
 import com.cashbacks.features.cashback.presentation.api.CashbackArgs

@@ -1,4 +1,4 @@
-package com.cashbacks.common.utils.management
+package com.cashbacks.common.composables.management
 
 enum class ViewModelState {
     Editing,

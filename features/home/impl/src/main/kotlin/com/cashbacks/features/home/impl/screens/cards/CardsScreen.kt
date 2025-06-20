@@ -92,9 +92,9 @@ import com.cashbacks.common.composables.utils.expandedAnimationSpec
 import com.cashbacks.common.composables.utils.mix
 import com.cashbacks.common.composables.utils.reversed
 import com.cashbacks.common.resources.R
-import com.cashbacks.common.utils.management.DialogType
-import com.cashbacks.common.utils.management.ListState
-import com.cashbacks.common.utils.management.toListState
+import com.cashbacks.common.composables.management.DialogType
+import com.cashbacks.common.composables.management.ListState
+import com.cashbacks.common.composables.management.toListState
 import com.cashbacks.features.bankcard.domain.model.BankCard
 import com.cashbacks.features.bankcard.domain.model.BasicBankCard
 import com.cashbacks.features.bankcard.domain.model.PrimaryBankCard

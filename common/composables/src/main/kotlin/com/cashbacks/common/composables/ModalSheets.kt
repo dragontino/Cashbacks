@@ -48,7 +48,7 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.dp
 import com.cashbacks.common.composables.model.Header
 import com.cashbacks.common.composables.theme.DarkerGray
@@ -93,22 +93,22 @@ fun ModalBottomSheet(
     val scope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
     val configuration = LocalConfiguration.current
-    val density = LocalDensity.current
+    val windowInfo = LocalWindowInfo.current
 
-    val heightDp = remember { mutableIntStateOf(0) }
+    val heightPx = remember { mutableIntStateOf(0) }
     val topWindowInset = contentWindowInsets.asPaddingValues().calculateTopPadding()
     val topPadding = animateDpAsState(
         targetValue = when {
-            heightDp.intValue >= configuration.screenHeightDp -> topWindowInset
+            heightPx.intValue >= windowInfo.containerSize.height -> topWindowInset
             else -> 0.dp
         },
         label = "topInsetPadding",
         animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)
     )
 
-    val scrollModifier = remember(configuration.orientation, heightDp.intValue) {
+    val scrollModifier = remember(configuration.orientation, heightPx.intValue) {
         when {
-            heightDp.intValue >= configuration.screenHeightDp ->
+            heightPx.intValue >= windowInfo.containerSize.height ->
                 Modifier.verticalScroll(scrollState)
 
             else -> Modifier
@@ -136,9 +136,7 @@ fun ModalBottomSheet(
         contentWindowInsets = { WindowInsets(0) },
         tonalElevation = 40.dp,
         modifier = Modifier.onGloballyPositioned {
-            with(density) {
-                heightDp.intValue = it.size.height.toDp().value.toInt()
-            }
+            heightPx.intValue = it.size.height
         }
     ) {
         BottomSheetContent(

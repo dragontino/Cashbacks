@@ -1,8 +1,8 @@
 package com.cashbacks.features.cashback.presentation.impl.mvi
 
 import androidx.compose.runtime.Immutable
-import com.cashbacks.common.utils.management.DialogType
-import com.cashbacks.common.utils.management.ScreenState
+import com.cashbacks.common.composables.management.DialogType
+import com.cashbacks.common.composables.management.ScreenState
 import com.cashbacks.features.bankcard.domain.model.BasicBankCard
 import com.cashbacks.features.bankcard.presentation.api.BankCardArgs
 import com.cashbacks.features.cashback.domain.model.CashbackOwner

@@ -39,6 +39,8 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.Stable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -53,7 +55,6 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.cashbacks.common.composables.BasicFloatingActionButton
 import com.cashbacks.common.composables.BoundedSnackbar
 import com.cashbacks.common.composables.CollapsingToolbarScaffold
@@ -61,18 +62,20 @@ import com.cashbacks.common.composables.ConfirmDeletionDialog
 import com.cashbacks.common.composables.EmptyList
 import com.cashbacks.common.composables.LoadingInBox
 import com.cashbacks.common.composables.NewNameTextField
+import com.cashbacks.common.composables.management.DialogType
+import com.cashbacks.common.composables.management.ListState
+import com.cashbacks.common.composables.management.ViewModelState
+import com.cashbacks.common.composables.management.toListState
 import com.cashbacks.common.composables.theme.CashbacksTheme
 import com.cashbacks.common.composables.utils.animate
+import com.cashbacks.common.composables.utils.floatingActionButtonEnterAnimation
+import com.cashbacks.common.composables.utils.floatingActionButtonExitAnimation
 import com.cashbacks.common.composables.utils.keyboardAsState
 import com.cashbacks.common.composables.utils.loadingContentAnimationSpec
 import com.cashbacks.common.composables.utils.mix
 import com.cashbacks.common.composables.utils.reversed
 import com.cashbacks.common.composables.utils.smoothScrollToItem
 import com.cashbacks.common.resources.R
-import com.cashbacks.common.utils.management.DialogType
-import com.cashbacks.common.utils.management.ListState
-import com.cashbacks.common.utils.management.ViewModelState
-import com.cashbacks.common.utils.management.toListState
 import com.cashbacks.features.cashback.domain.utils.asCashbackOwner
 import com.cashbacks.features.cashback.presentation.api.CashbackArgs
 import com.cashbacks.features.cashback.presentation.api.composables.MaxCashbackOwnerComposable
@@ -86,10 +89,12 @@ import com.cashbacks.features.home.impl.mvi.CategoriesLabel
 import com.cashbacks.features.home.impl.mvi.CategoriesState
 import com.cashbacks.features.home.impl.navigation.HomeDestination
 import com.cashbacks.features.home.impl.utils.copy
+import kotlinx.collections.immutable.toImmutableSet
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 
+@Stable
 @Composable
 internal fun CategoriesRoot(
     openDrawer: () -> Unit,
@@ -100,7 +105,7 @@ internal fun CategoriesRoot(
     modifier: Modifier = Modifier,
     viewModel: CategoriesViewModel = koinViewModel()
 ) {
-    val state by viewModel.stateFlow.collectAsStateWithLifecycle()
+    val state by viewModel.stateFlow.collectAsState()
     val snackbarHostState = remember(::SnackbarHostState)
     val contentState = rememberLazyListState()
     val dialogType = rememberSaveable { mutableStateOf<DialogType?>(null) }
@@ -116,7 +121,7 @@ internal fun CategoriesRoot(
                     snackbarHostState.showSnackbar(label.message)
                 }
                 is CategoriesLabel.ChangeOpenedDialog -> dialogType.value = label.type
-                is CategoriesLabel.ScrollToEnd -> {
+                is CategoriesLabel.ScrollToEnd -> launch {
                     delay(700)
                     contentState.smoothScrollToItem(contentState.layoutInfo.totalItemsCount)
                 }
@@ -168,6 +173,7 @@ private fun CategoriesScreen(
 
     val topBarState = rememberTopAppBarState()
     val keyboardState = keyboardAsState()
+    val layoutDirection = LocalLayoutDirection.current
 
     LaunchedEffect(keyboardState) {
         if (keyboardState.value.not()) {
@@ -214,8 +220,8 @@ private fun CategoriesScreen(
                     visible = state.viewModelState == ViewModelState.Editing
                             && state.appBarState !is HomeTopAppBarState.Search
                             && !state.isCreatingCategory,
-                    enter = com.cashbacks.common.composables.utils.floatingActionButtonEnterAnimation(),
-                    exit = com.cashbacks.common.composables.utils.floatingActionButtonExitAnimation(),
+                    enter = floatingActionButtonEnterAnimation(),
+                    exit = floatingActionButtonExitAnimation(),
                 ) {
                     BasicFloatingActionButton(icon = Icons.Rounded.Add) {
                         sendIntent(CategoriesIntent.StartCreatingCategory)
@@ -242,7 +248,7 @@ private fun CategoriesScreen(
             CategoriesList(
                 state = state,
                 lazyListState = contentState,
-                contentPadding = contentPadding.copy(LocalLayoutDirection.current) {
+                contentPadding = contentPadding.copy(layoutDirection) {
                     copy(
                         bottom = with(LocalDensity.current) {
                             (bottom + fabHeightPx.floatValue.toDp())
@@ -284,12 +290,12 @@ private fun CategoriesList(
     modifier: Modifier = Modifier
 ) {
     Crossfade(
-        targetState = state.categories,
+        targetState = state.categories?.toList().toListState(),
         label = "Content loading animation",
         animationSpec = loadingContentAnimationSpec(),
         modifier = modifier
-    ) { categoriesList ->
-        when (val listState = categoriesList?.toList().toListState()) {
+    ) { categoriesListState ->
+        when (categoriesListState) {
             is ListState.Loading -> {
                 LoadingInBox(
                     modifier = Modifier.padding(contentPadding)
@@ -346,10 +352,10 @@ private fun CategoriesList(
                         }
                     }
 
-                    itemsIndexed(listState.data) { index, (category, cashbacks) ->
+                    itemsIndexed(categoriesListState.data) { index, (category, cashbacks) ->
                         MaxCashbackOwnerComposable(
                             cashbackOwner = category.asCashbackOwner(),
-                            maxCashbacks = cashbacks,
+                            maxCashbacks = cashbacks.toImmutableSet(),
                             isEditing = state.viewModelState == ViewModelState.Editing,
                             isSwiped = state.selectedCategoryIndex == index,
                             onSwipe = { isSwiped ->

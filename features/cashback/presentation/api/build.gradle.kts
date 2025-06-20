@@ -47,6 +47,7 @@ dependencies {
     implementation(libs.androidx.core)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.datetime)
+    implementation(libs.kotlinx.collections.immutable)
 
     // Compose
     implementation(platform(libs.compose.bom))

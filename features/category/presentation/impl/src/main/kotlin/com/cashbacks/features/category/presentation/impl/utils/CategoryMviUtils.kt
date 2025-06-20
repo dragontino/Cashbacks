@@ -5,7 +5,7 @@ import com.arkivanov.mvikotlin.extensions.coroutines.CoroutineExecutorScope
 import com.arkivanov.mvikotlin.extensions.coroutines.ExecutorBuilder
 import com.cashbacks.common.utils.dispatchFromAnotherThread
 import com.cashbacks.common.utils.forwardFromAnotherThread
-import com.cashbacks.common.utils.management.ScreenState
+import com.cashbacks.common.composables.management.ScreenState
 import com.cashbacks.features.category.presentation.impl.mvi.CategoryAction
 import com.cashbacks.features.category.presentation.impl.mvi.CategoryIntent
 import com.cashbacks.features.category.presentation.impl.mvi.CategoryLabel

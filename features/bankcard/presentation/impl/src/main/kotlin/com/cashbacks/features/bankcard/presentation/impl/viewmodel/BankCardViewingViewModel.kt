@@ -10,7 +10,7 @@ import com.arkivanov.mvikotlin.extensions.coroutines.labels
 import com.arkivanov.mvikotlin.extensions.coroutines.stateFlow
 import com.cashbacks.common.utils.AnimationDefaults
 import com.cashbacks.common.utils.dispatchFromAnotherThread
-import com.cashbacks.common.utils.management.ScreenState
+import com.cashbacks.common.composables.management.ScreenState
 import com.cashbacks.features.bankcard.domain.usecase.DeleteBankCardUseCase
 import com.cashbacks.features.bankcard.domain.usecase.FetchBankCardByIdUseCase
 import com.cashbacks.features.bankcard.presentation.api.BankCardArgs

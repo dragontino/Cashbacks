@@ -55,13 +55,15 @@ import com.cashbacks.features.cashback.domain.model.MeasureUnit
 import com.cashbacks.features.cashback.domain.utils.CashbackUtils.displayableAmount
 import com.cashbacks.features.cashback.presentation.api.utils.CashbackPresentationUtils.getDatesTitle
 import com.cashbacks.features.cashback.presentation.api.utils.CashbackPresentationUtils.getDisplayableDatesText
+import kotlinx.collections.immutable.ImmutableSet
+import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.datetime.Clock
 import java.util.Currency
 
 @Composable
 fun MaxCashbackOwnerComposable(
     cashbackOwner: CashbackOwner,
-    maxCashbacks: Set<Cashback>,
+    maxCashbacks: ImmutableSet<Cashback>,
     onClick: OnClick,
     modifier: Modifier = Modifier,
     isEditing: Boolean = false,
@@ -306,7 +308,7 @@ private fun MaxCashbackOwnerComposablePreview() {
                     }
                 },
             ),
-            maxCashbacks = setOf(
+            maxCashbacks = persistentSetOf(
                 BasicCashback(
                     id = 10,
                     amount = "25",

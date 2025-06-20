@@ -56,6 +56,7 @@ dependencies {
 
     implementation(libs.androidx.core)
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.kotlinx.collections.immutable)
 
     // DI
     implementation(libs.koin.compose)

@@ -7,17 +7,21 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.runtime.Stable
 
+@Stable
 fun <T> loadingContentAnimationSpec() = tween<T>(
     durationMillis = 150,
     easing = FastOutSlowInEasing
 )
 
+@Stable
 fun <T> expandedAnimationSpec(): TweenSpec<T> = tween<T>(
     durationMillis = 350,
     easing = FastOutSlowInEasing
 )
 
+@Stable
 fun floatingActionButtonEnterAnimation(durationMillis: Int = 500) = slideInVertically(
     animationSpec = tween(durationMillis, easing = FastOutSlowInEasing),
     initialOffsetY = { it }
@@ -25,6 +29,7 @@ fun floatingActionButtonEnterAnimation(durationMillis: Int = 500) = slideInVerti
     animationSpec = tween(durationMillis, easing = FastOutSlowInEasing)
 )
 
+@Stable
 fun floatingActionButtonExitAnimation(durationMillis: Int = 500) = slideOutVertically(
     animationSpec = tween(durationMillis, easing = FastOutSlowInEasing),
     targetOffsetY = { it }

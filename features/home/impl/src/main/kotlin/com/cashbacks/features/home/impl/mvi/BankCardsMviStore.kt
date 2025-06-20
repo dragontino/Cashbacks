@@ -1,12 +1,13 @@
 package com.cashbacks.features.home.impl.mvi
 
 import androidx.compose.runtime.Immutable
-import com.cashbacks.common.utils.management.DialogType
-import com.cashbacks.common.utils.management.ScreenState
+import com.cashbacks.common.composables.management.DialogType
+import com.cashbacks.common.composables.management.ScreenState
 import com.cashbacks.features.bankcard.domain.model.BankCard
 import com.cashbacks.features.bankcard.domain.model.BasicBankCard
 import com.cashbacks.features.bankcard.presentation.api.BankCardArgs
 import com.cashbacks.features.home.impl.composables.HomeTopAppBarState
+import kotlinx.collections.immutable.ImmutableList
 import kotlinx.serialization.Serializable
 
 internal sealed interface BankCardsAction {

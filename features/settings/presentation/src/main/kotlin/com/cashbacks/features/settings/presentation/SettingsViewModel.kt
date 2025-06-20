@@ -10,7 +10,7 @@ import com.arkivanov.mvikotlin.extensions.coroutines.labels
 import com.arkivanov.mvikotlin.extensions.coroutines.stateFlow
 import com.cashbacks.common.utils.dispatchFromAnotherThread
 import com.cashbacks.common.utils.forwardFromAnotherThread
-import com.cashbacks.common.utils.management.ScreenState
+import com.cashbacks.common.composables.management.ScreenState
 import com.cashbacks.features.settings.domain.usecase.FetchSettingsUseCase
 import com.cashbacks.features.settings.domain.usecase.UpdateSettingsUseCase
 import com.cashbacks.features.settings.presentation.mvi.SettingsAction

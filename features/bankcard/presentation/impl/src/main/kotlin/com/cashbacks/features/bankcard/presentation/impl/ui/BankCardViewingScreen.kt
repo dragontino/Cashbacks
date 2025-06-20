@@ -7,15 +7,16 @@ import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.Edit
@@ -65,16 +66,16 @@ import com.cashbacks.common.composables.theme.CashbacksTheme
 import com.cashbacks.common.composables.utils.animate
 import com.cashbacks.common.composables.utils.mix
 import com.cashbacks.common.resources.R
-import com.cashbacks.common.utils.management.DialogType
-import com.cashbacks.common.utils.management.ScreenState
+import com.cashbacks.common.composables.management.DialogType
+import com.cashbacks.common.composables.management.ScreenState
 import com.cashbacks.features.bankcard.domain.model.BasicBankCard
 import com.cashbacks.features.bankcard.domain.model.FullBankCard
 import com.cashbacks.features.bankcard.presentation.api.BankCardArgs
+import com.cashbacks.features.bankcard.presentation.api.composables.BankCard
 import com.cashbacks.features.bankcard.presentation.api.utils.BankCardPresentationUtils.getDisplayableString
 import com.cashbacks.features.bankcard.presentation.impl.mvi.ViewingIntent
 import com.cashbacks.features.bankcard.presentation.impl.mvi.ViewingLabel
 import com.cashbacks.features.bankcard.presentation.impl.mvi.ViewingState
-import com.cashbacks.features.bankcard.presentation.api.composables.BankCard
 import com.cashbacks.features.bankcard.presentation.impl.viewmodel.BankCardViewingViewModel
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
@@ -139,7 +140,7 @@ internal fun BankCardViewingScreen(
     sendIntent: (ViewingIntent) -> Unit
 ) {
     val topBarState = rememberTopAppBarState()
-    val contentState = rememberScrollState()
+    val contentState = rememberLazyListState()
 
 
     CollapsingToolbarScaffold(
@@ -237,7 +238,7 @@ internal fun BankCardViewingScreen(
                 ScreenState.Stable -> ScreenContent(
                     state = state,
                     sendIntent = sendIntent,
-                    scrollState = contentState,
+                    lazyListState = contentState,
                     modifier = Modifier.fillMaxSize()
                 )
             }
@@ -252,56 +253,101 @@ private fun ScreenContent(
     state: ViewingState,
     sendIntent: (ViewingIntent) -> Unit,
     modifier: Modifier = Modifier,
-    scrollState: ScrollState = rememberScrollState()
+    lazyListState: LazyListState = rememberLazyListState()
 ) {
     val context = LocalContext.current
     val windowInfo = LocalWindowInfo.current
 
-    Column(
+    LazyColumn(
+        state = lazyListState,
         verticalArrangement = Arrangement.spacedBy(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier
-            .then(modifier)
-            .fillMaxSize()
-            .verticalScroll(scrollState)
-            .padding(vertical = 16.dp)
+        contentPadding = PaddingValues(vertical = 16.dp),
+        modifier = modifier.fillMaxSize()
     ) {
-        BankCard(
-            bankCard = state.card,
-            onCopy = { part, text ->
-                sendIntent(ViewingIntent.CopyText(AnnotatedString(text)))
-                val snackbarText = context.getString(
-                    R.string.card_part_text_is_copied,
-                    part.getDescription(context)
-                )
-                sendIntent(ViewingIntent.DisplayMessage(snackbarText))
-            },
-            modifier = Modifier
-                .padding(bottom = 16.dp)
-                .padding(horizontal = 16.dp)
-                .width(
-                    width = with(LocalDensity.current) {
-                        minOf(
-                            windowInfo.containerSize.width,
-                            windowInfo.containerSize.height
-                        ).toDp()
-                    }
-                )
-        )
+        item {
+            BankCard(
+                bankCard = state.card,
+                onCopy = { part, text ->
+                    sendIntent(ViewingIntent.CopyText(AnnotatedString(text)))
+                    val snackbarText = context.getString(
+                        R.string.card_part_text_is_copied,
+                        part.getDescription(context)
+                    )
+                    sendIntent(ViewingIntent.DisplayMessage(snackbarText))
+                },
+                modifier = Modifier
+                    .padding(bottom = 16.dp)
+                    .padding(horizontal = 16.dp)
+                    .width(
+                        width = with(LocalDensity.current) {
+                            minOf(
+                                windowInfo.containerSize.width,
+                                windowInfo.containerSize.height
+                            ).toDp()
+                        }
+                    )
+            )
+        }
 
         if (state.card.name.isNotBlank()) {
+            item {
+                DataTextField(
+                    text = state.card.name,
+                    heading = stringResource(R.string.card_name),
+                    trailingActions = {
+                        IconButton(
+                            onClick = {
+                                sendIntent(ViewingIntent.CopyText(AnnotatedString(state.card.name)))
+                                sendIntent(
+                                    ViewingIntent.DisplayMessage(
+                                        context.getString(
+                                            R.string.card_part_text_is_copied,
+                                            context.getString(R.string.card_name_for_copy)
+                                        )
+                                    )
+                                )
+                            }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.ContentCopy,
+                                contentDescription = "copy card name"
+                            )
+                        }
+                    },
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                )
+
+                HorizontalDivider()
+            }
+        }
+
+        item {
+            var isPinVisible by rememberSaveable { mutableStateOf(false) }
             DataTextField(
-                text = state.card.name,
-                heading = stringResource(R.string.card_name),
+                text = state.card.pin,
+                heading = stringResource(R.string.pin),
+                visualTransformation = EditableTextFieldDefaults
+                    .passwordVisualTransformation(isPinVisible),
                 trailingActions = {
+                    IconButton(onClick = { isPinVisible = !isPinVisible }) {
+                        Icon(
+                            imageVector = when {
+                                isPinVisible -> Icons.Outlined.VisibilityOff
+                                else -> Icons.Outlined.Visibility
+                            },
+                            contentDescription = null
+                        )
+                    }
+
                     IconButton(
                         onClick = {
-                            sendIntent(ViewingIntent.CopyText(AnnotatedString(state.card.name)))
+                            sendIntent(ViewingIntent.CopyText(AnnotatedString(state.card.pin)))
                             sendIntent(
                                 ViewingIntent.DisplayMessage(
                                     context.getString(
                                         R.string.card_part_text_is_copied,
-                                        context.getString(R.string.card_name_for_copy)
+                                        context.getString(R.string.pin_for_copy)
                                     )
                                 )
                             )
@@ -309,116 +355,84 @@ private fun ScreenContent(
                     ) {
                         Icon(
                             imageVector = Icons.Outlined.ContentCopy,
-                            contentDescription = "copy card name"
+                            contentDescription = "copy card pin code"
                         )
                     }
                 },
                 modifier = Modifier.padding(horizontal = 16.dp)
             )
-
-            HorizontalDivider()
         }
 
-        var isPinVisible by rememberSaveable { mutableStateOf(false) }
-        DataTextField(
-            text = state.card.pin,
-            heading = stringResource(R.string.pin),
-            visualTransformation = EditableTextFieldDefaults
-                .passwordVisualTransformation(isPinVisible),
-            trailingActions = {
-                IconButton(onClick = { isPinVisible = !isPinVisible }) {
-                    Icon(
-                        imageVector = when {
-                            isPinVisible -> Icons.Outlined.VisibilityOff
-                            else -> Icons.Outlined.Visibility
-                        },
-                        contentDescription = null
-                    )
-                }
-
-                IconButton(
-                    onClick = {
-                        sendIntent(ViewingIntent.CopyText(AnnotatedString(state.card.pin)))
-                        sendIntent(
-                            ViewingIntent.DisplayMessage(
-                                context.getString(
-                                    R.string.card_part_text_is_copied,
-                                    context.getString(R.string.pin_for_copy)
-                                )
-                            )
-                        )
-                    }
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.ContentCopy,
-                        contentDescription = "copy card pin code"
-                    )
-                }
-            },
-            modifier = Modifier.padding(horizontal = 16.dp)
-        )
-
         state.card.maxCashbacksNumber?.toString()?.let { maxCashbacksNumber ->
-            HorizontalDivider()
+            item {
+                HorizontalDivider()
+            }
 
-            DataTextField(
-                text = maxCashbacksNumber,
-                heading = stringResource(R.string.cashbacks_month_limit),
-                trailingActions = {
-                    IconButton(
-                        onClick = {
-                            sendIntent(ViewingIntent.CopyText(AnnotatedString(maxCashbacksNumber)))
-                            sendIntent(
-                                ViewingIntent.DisplayMessage(
-                                    context.getString(
-                                        R.string.card_part_text_is_copied,
-                                        context.getString(R.string.number_for_copy)
+            item {
+                DataTextField(
+                    text = maxCashbacksNumber,
+                    heading = stringResource(R.string.cashbacks_month_limit),
+                    trailingActions = {
+                        IconButton(
+                            onClick = {
+                                sendIntent(ViewingIntent.CopyText(AnnotatedString(maxCashbacksNumber)))
+                                sendIntent(
+                                    ViewingIntent.DisplayMessage(
+                                        context.getString(
+                                            R.string.card_part_text_is_copied,
+                                            context.getString(R.string.number_for_copy)
+                                        )
                                     )
                                 )
+                            }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.ContentCopy,
+                                contentDescription = "copy number"
                             )
                         }
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.ContentCopy,
-                            contentDescription = "copy number"
-                        )
-                    }
-                },
-                modifier = Modifier.padding(horizontal = 16.dp),
-            )
+                    },
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                )
+            }
         }
 
         if (state.card.comment.isNotBlank()) {
-            HorizontalDivider()
+            item {
+                HorizontalDivider()
+            }
 
-            DataTextField(
-                text = state.card.comment,
-                heading = stringResource(R.string.comment),
-                trailingActions = {
-                    IconButton(
-                        onClick = {
-                            sendIntent(ViewingIntent.CopyText(AnnotatedString(state.card.comment)))
-                            sendIntent(
-                                ViewingIntent.DisplayMessage(
-                                    context.getString(
-                                        R.string.card_part_text_is_copied,
-                                        context.getString(R.string.comment_for_copy)
+            item {
+                DataTextField(
+                    text = state.card.comment,
+                    heading = stringResource(R.string.comment),
+                    trailingActions = {
+                        IconButton(
+                            onClick = {
+                                sendIntent(ViewingIntent.CopyText(AnnotatedString(state.card.comment)))
+                                sendIntent(
+                                    ViewingIntent.DisplayMessage(
+                                        context.getString(
+                                            R.string.card_part_text_is_copied,
+                                            context.getString(R.string.comment_for_copy)
+                                        )
                                     )
                                 )
+                            }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.ContentCopy,
+                                contentDescription = "copy card comment"
                             )
                         }
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.ContentCopy,
-                            contentDescription = "copy card comment"
-                        )
-                    }
-                },
-                modifier = Modifier.padding(horizontal = 16.dp)
-            )
+                    },
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                )
+            }
         }
     }
 }
+
 
 
 @Preview

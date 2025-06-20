@@ -75,14 +75,14 @@ import com.cashbacks.common.composables.ModalSheetDefaults
 import com.cashbacks.common.composables.NewNameTextField
 import com.cashbacks.common.composables.OnLifecycleEvent
 import com.cashbacks.common.composables.SecondaryTabsLayout
+import com.cashbacks.common.composables.management.DialogType
+import com.cashbacks.common.composables.management.ListState
+import com.cashbacks.common.composables.management.ScreenState
 import com.cashbacks.common.composables.utils.animate
 import com.cashbacks.common.composables.utils.floatingActionButtonEnterAnimation
 import com.cashbacks.common.composables.utils.floatingActionButtonExitAnimation
 import com.cashbacks.common.composables.utils.keyboardAsState
 import com.cashbacks.common.resources.R
-import com.cashbacks.common.utils.management.DialogType
-import com.cashbacks.common.utils.management.ListState
-import com.cashbacks.common.utils.management.ScreenState
 import com.cashbacks.features.cashback.domain.model.BasicCashback
 import com.cashbacks.features.cashback.domain.model.Cashback
 import com.cashbacks.features.cashback.domain.utils.asCashbackOwner
@@ -103,6 +103,7 @@ import com.cashbacks.features.category.presentation.impl.viewmodel.CategoryEditi
 import com.cashbacks.features.shop.domain.model.BasicShop
 import com.cashbacks.features.shop.domain.model.Shop
 import com.cashbacks.features.shop.presentation.api.ShopArgs
+import kotlinx.collections.immutable.toImmutableSet
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 
@@ -445,7 +446,7 @@ private fun CategoryEditingScreenContent(
                             when (item) {
                                 is Shop -> MaxCashbackOwnerComposable(
                                     cashbackOwner = item.asCashbackOwner(),
-                                    maxCashbacks = state.shops[item]!!,
+                                    maxCashbacks = state.shops[item]!!.toImmutableSet(),
                                     isEditing = true,
                                     isSwiped = state.selectedShopIndex == index,
                                     onSwipe = { isSwiped ->

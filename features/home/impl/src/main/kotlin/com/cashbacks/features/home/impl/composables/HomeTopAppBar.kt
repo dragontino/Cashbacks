@@ -3,7 +3,7 @@ package com.cashbacks.features.home.impl.composables
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.CubicBezierEasing
-import androidx.compose.animation.core.FiniteAnimationSpec
+import androidx.compose.animation.core.TweenSpec
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.togetherWith
@@ -36,6 +36,7 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.State
@@ -85,14 +86,15 @@ internal sealed class HomeTopAppBarState {
 }
 
 
+@Immutable
 internal object HomeAppBarDefaults {
-    val EnterFloatSpec: FiniteAnimationSpec<Float> = tween(
+    val EnterFloatSpec: TweenSpec<Float> = tween(
         durationMillis = 600,
         delayMillis = 100,
         easing = CubicBezierEasing(0.05f, 0.7f, 0.1f, 1.0f)
     )
 
-    val ExitFloatSpec: FiniteAnimationSpec<Float> = tween(
+    val ExitFloatSpec: TweenSpec<Float> = tween(
         durationMillis = 500,
         delayMillis = 100,
         easing = CubicBezierEasing(0.0f, 1.0f, 0.0f, 1.0f)
@@ -100,6 +102,7 @@ internal object HomeAppBarDefaults {
 
     val SearchBarCornerRadius = 20.dp
 
+    @Stable
     @Composable
     fun colors(
         topBarContainerColor: Color = MaterialTheme.colorScheme.primary,
@@ -113,6 +116,7 @@ internal object HomeAppBarDefaults {
 }
 
 
+@Immutable
 internal class HomeTopAppBarColors internal constructor(
     val topBarContainerColor: Color,
     val searchActiveContainerColor: Color,

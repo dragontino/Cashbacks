@@ -8,13 +8,14 @@ import com.arkivanov.mvikotlin.extensions.coroutines.coroutineBootstrapper
 import com.arkivanov.mvikotlin.extensions.coroutines.coroutineExecutorFactory
 import com.arkivanov.mvikotlin.extensions.coroutines.labels
 import com.arkivanov.mvikotlin.extensions.coroutines.stateFlow
+import com.cashbacks.common.composables.management.ScreenState
 import com.cashbacks.common.utils.dispatchFromAnotherThread
 import com.cashbacks.common.utils.forwardFromAnotherThread
-import com.cashbacks.common.utils.management.ScreenState
 import com.cashbacks.features.bankcard.domain.usecase.DeleteBankCardUseCase
 import com.cashbacks.features.bankcard.domain.usecase.FetchBankCardsUseCase
 import com.cashbacks.features.bankcard.domain.usecase.SearchBankCardsUseCase
 import com.cashbacks.features.bankcard.presentation.api.BankCardArgs
+import com.cashbacks.features.bankcard.presentation.api.emptyBankCardArgs
 import com.cashbacks.features.home.impl.composables.HomeTopAppBarState
 import com.cashbacks.features.home.impl.mvi.BankCardsAction
 import com.cashbacks.features.home.impl.mvi.BankCardsIntent
@@ -93,7 +94,7 @@ class CardsViewModel(
                     publish(BankCardsLabel.OpenNavigationDrawer)
                 }
                 onIntent<BankCardsIntent.CreateBankCard> {
-                    publish(BankCardsLabel.NavigateToBankCard(BankCardArgs()))
+                    publish(BankCardsLabel.NavigateToBankCard(emptyBankCardArgs()))
                 }
                 onIntent<BankCardsIntent.OpenBankCardDetails> {
                     val args = BankCardArgs.Viewing(it.cardId)

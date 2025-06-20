@@ -8,6 +8,7 @@ import androidx.compose.material.icons.rounded.Category
 import androidx.compose.material.icons.rounded.Payments
 import androidx.compose.material.icons.rounded.Store
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Stable
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
@@ -16,14 +17,15 @@ import com.cashbacks.common.resources.R
 import kotlinx.serialization.Serializable
 
 @Serializable
-internal sealed interface HomeDestination : AppBarItem {
+@Stable
+internal sealed class HomeDestination : AppBarItem {
 
     @get:Composable
-    val screenTitle: String
+    abstract val screenTitle: String
 
 
     @Serializable
-    data object Categories : HomeDestination {
+    data object Categories : HomeDestination() {
         override val screenTitle: String
             @Composable get() = stringResource(R.string.categories_title)
 
@@ -38,7 +40,7 @@ internal sealed interface HomeDestination : AppBarItem {
     }
 
     @Serializable
-    data object Shops : HomeDestination {
+    data object Shops : HomeDestination() {
         override val screenTitle: String
             @Composable get() = stringResource(R.string.shops_title)
 
@@ -53,7 +55,7 @@ internal sealed interface HomeDestination : AppBarItem {
     }
 
     @Serializable
-    data object Cashbacks : HomeDestination {
+    data object Cashbacks : HomeDestination() {
         override val screenTitle: String
             @Composable get() = stringResource(R.string.cashbacks_title)
 
@@ -68,7 +70,7 @@ internal sealed interface HomeDestination : AppBarItem {
     }
 
     @Serializable
-    data object Cards : HomeDestination {
+    data object Cards : HomeDestination() {
         override val screenTitle: String
             @Composable get() = stringResource(R.string.bank_cards_title)
 

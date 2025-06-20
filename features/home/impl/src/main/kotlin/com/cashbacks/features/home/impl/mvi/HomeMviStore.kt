@@ -2,7 +2,7 @@ package com.cashbacks.features.home.impl.mvi
 
 import androidx.compose.runtime.Immutable
 import com.cashbacks.common.resources.AppInfo
-import com.cashbacks.common.utils.management.ScreenState
+import com.cashbacks.common.composables.management.ScreenState
 import com.cashbacks.features.bankcard.presentation.api.BankCardArgs
 import com.cashbacks.features.cashback.presentation.api.CashbackArgs
 import com.cashbacks.features.category.presentation.api.CategoryArgs

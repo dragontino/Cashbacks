@@ -1,18 +1,19 @@
 package com.cashbacks.features.home.impl.mvi
 
 import androidx.compose.runtime.Immutable
-import com.cashbacks.common.utils.management.DialogType
-import com.cashbacks.common.utils.management.ScreenState
-import com.cashbacks.common.utils.management.ViewModelState
+import com.cashbacks.common.composables.management.DialogType
+import com.cashbacks.common.composables.management.ScreenState
+import com.cashbacks.common.composables.management.ViewModelState
 import com.cashbacks.features.cashback.domain.model.Cashback
 import com.cashbacks.features.cashback.presentation.api.CashbackArgs
 import com.cashbacks.features.category.domain.model.Category
 import com.cashbacks.features.category.presentation.api.CategoryArgs
 import com.cashbacks.features.home.impl.composables.HomeTopAppBarState
+import kotlinx.collections.immutable.ImmutableMap
 import kotlinx.serialization.Serializable
 
 internal sealed interface CategoriesAction {
-    data class LoadCategories(val categories: Map<Category, Set<Cashback>>?) : CategoriesAction
+    data class LoadCategories(val categories: ImmutableMap<Category, Set<Cashback>>?) : CategoriesAction
 }
 
 
@@ -27,28 +28,29 @@ internal sealed interface CategoriesLabel {
 }
 
 
-internal sealed interface CategoriesIntent {
-    data object StartEdit : CategoriesIntent
-    data object FinishEdit : CategoriesIntent
-    data object SwitchEdit : CategoriesIntent
+@Immutable
+internal sealed class CategoriesIntent {
+    data object StartEdit : CategoriesIntent()
+    data object FinishEdit : CategoriesIntent()
+    data object SwitchEdit : CategoriesIntent()
 
-    data object ClickButtonBack : CategoriesIntent
-    data object ClickNavigationButton : CategoriesIntent
+    data object ClickButtonBack : CategoriesIntent()
+    data object ClickNavigationButton : CategoriesIntent()
 
-    data class NavigateToCategory(val args: CategoryArgs) : CategoriesIntent
-    data class NavigateToCashback(val args: CashbackArgs) : CategoriesIntent
+    data class NavigateToCategory(val args: CategoryArgs) : CategoriesIntent()
+    data class NavigateToCashback(val args: CashbackArgs) : CategoriesIntent()
     
-    data object StartCreatingCategory : CategoriesIntent
-    data object FinishCreatingCategory : CategoriesIntent
-    data class AddCategory(val name: String) : CategoriesIntent
-    data class DeleteCategory(val category: Category) : CategoriesIntent
+    data object StartCreatingCategory : CategoriesIntent()
+    data object FinishCreatingCategory : CategoriesIntent()
+    data class AddCategory(val name: String) : CategoriesIntent()
+    data class DeleteCategory(val category: Category) : CategoriesIntent()
 
-    data class OpenDialog(val type: DialogType) : CategoriesIntent
-    data object CloseDialog : CategoriesIntent
-    data class ChangeAppBarState(val state: HomeTopAppBarState) : CategoriesIntent
-    data object ScrollToEnd : CategoriesIntent
+    data class OpenDialog(val type: DialogType) : CategoriesIntent()
+    data object CloseDialog : CategoriesIntent()
+    data class ChangeAppBarState(val state: HomeTopAppBarState) : CategoriesIntent()
+    data object ScrollToEnd : CategoriesIntent()
 
-    data class SwipeCategory(val position: Int? = null) : CategoriesIntent {
+    data class SwipeCategory(val position: Int? = null) : CategoriesIntent() {
         constructor(position: Int, isSwiped: Boolean) : this(position.takeIf { isSwiped })
     }
 }

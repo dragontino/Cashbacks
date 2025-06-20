@@ -1,4 +1,4 @@
-package com.cashbacks.common.utils.management
+package com.cashbacks.common.composables.management
 
 sealed class ListState<out T> {
     data object Loading : ListState<Nothing>()

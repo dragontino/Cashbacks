@@ -1,5 +1,6 @@
 package com.cashbacks.features.home.impl.screens.categories
 
+import androidx.compose.runtime.Stable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.arkivanov.mvikotlin.core.store.Store
@@ -8,9 +9,9 @@ import com.arkivanov.mvikotlin.extensions.coroutines.coroutineBootstrapper
 import com.arkivanov.mvikotlin.extensions.coroutines.coroutineExecutorFactory
 import com.arkivanov.mvikotlin.extensions.coroutines.labels
 import com.arkivanov.mvikotlin.extensions.coroutines.stateFlow
+import com.cashbacks.common.composables.management.ScreenState
+import com.cashbacks.common.composables.management.ViewModelState
 import com.cashbacks.common.utils.dispatchFromAnotherThread
-import com.cashbacks.common.utils.management.ScreenState
-import com.cashbacks.common.utils.management.ViewModelState
 import com.cashbacks.features.cashback.domain.usecase.GetMaxCashbacksFromCategoryUseCase
 import com.cashbacks.features.category.domain.model.Category
 import com.cashbacks.features.category.domain.usecase.AddCategoryUseCase
@@ -26,6 +27,7 @@ import com.cashbacks.features.home.impl.mvi.CategoriesMessage
 import com.cashbacks.features.home.impl.mvi.CategoriesState
 import com.cashbacks.features.home.impl.mvi.HomeAction
 import com.cashbacks.features.home.impl.utils.launchWithLoading
+import kotlinx.collections.immutable.toImmutableMap
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.channels.Channel
@@ -42,6 +44,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
 
+@Stable
 @OptIn(FlowPreview::class)
 class CategoriesViewModel(
     addCategory: AddCategoryUseCase,
@@ -96,7 +99,11 @@ class CategoriesViewModel(
                             dispatchFromAnotherThread(HomeAction.DisplayMessage(it))
                         }
                     }
-                    .onEach { dispatchFromAnotherThread(CategoriesAction.LoadCategories(it)) }
+                    .onEach {
+                        dispatchFromAnotherThread(
+                            CategoriesAction.LoadCategories(it?.toImmutableMap())
+                        )
+                    }
                     .launchIn(this)
             },
             executorFactory = coroutineExecutorFactory(Dispatchers.Default) {
@@ -201,7 +208,6 @@ class CategoriesViewModel(
     private val intentChannel = Channel<CategoriesIntent>()
 
 
-    @OptIn(FlowPreview::class)
     internal val stateFlow: StateFlow<CategoriesState> = store.stateFlow(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
@@ -228,8 +234,11 @@ class CategoriesViewModel(
     }
 
 
-    internal fun sendIntent(intent: CategoriesIntent) {
-        intentChannel.trySend(intent)
+    internal fun sendIntent(intent: CategoriesIntent, withDebounce: Boolean = true) {
+        when {
+            withDebounce -> intentChannel.trySend(intent)
+            else -> store.accept(intent)
+        }
     }
 
 

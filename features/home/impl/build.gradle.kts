@@ -77,6 +77,7 @@ dependencies {
     implementation(libs.compose.icons.core)
     implementation(libs.compose.icons.extended)
     implementation(libs.compose.material3)
+    implementation(libs.kotlinx.collections.immutable)
 
     // MVI
     implementation(libs.mvikotlin.main)

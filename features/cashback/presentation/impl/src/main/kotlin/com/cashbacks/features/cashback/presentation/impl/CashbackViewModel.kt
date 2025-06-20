@@ -13,10 +13,10 @@ import com.cashbacks.common.resources.MessageHandler
 import com.cashbacks.common.utils.AnimationDefaults
 import com.cashbacks.common.utils.dispatchFromAnotherThread
 import com.cashbacks.common.utils.forwardFromAnotherThread
-import com.cashbacks.common.utils.management.ScreenState
+import com.cashbacks.common.composables.management.ScreenState
 import com.cashbacks.features.bankcard.domain.model.BasicBankCard
 import com.cashbacks.features.bankcard.domain.usecase.FetchBankCardsUseCase
-import com.cashbacks.features.bankcard.presentation.api.BankCardArgs
+import com.cashbacks.features.bankcard.presentation.api.emptyBankCardArgs
 import com.cashbacks.features.bankcard.presentation.api.resources.BankCardNotSelectedException
 import com.cashbacks.features.cashback.domain.model.Cashback
 import com.cashbacks.features.cashback.domain.model.CashbackOwner
@@ -222,7 +222,7 @@ class CashbackViewModel(
                     publish(CashbackLabel.NavigateToShop(ShopArgs()))
                 }
                 onIntent<CashbackIntent.CreateBankCard> {
-                    publish(CashbackLabel.NavigateToBankCard(BankCardArgs()))
+                    publish(CashbackLabel.NavigateToBankCard(emptyBankCardArgs()))
                 }
                 onIntent<CashbackIntent.SaveData> { intent ->
                     val state = state()

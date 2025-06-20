@@ -65,11 +65,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.cashbacks.common.composables.LoadingInBox
 import com.cashbacks.common.composables.ModalBottomSheet
 import com.cashbacks.common.composables.ModalSheetItems.IconTextItem
+import com.cashbacks.common.composables.management.ScreenState
 import com.cashbacks.common.composables.model.Header
 import com.cashbacks.common.composables.theme.CashbacksTheme
 import com.cashbacks.common.composables.utils.animate
 import com.cashbacks.common.resources.R
-import com.cashbacks.common.utils.management.ScreenState
 import com.cashbacks.features.settings.domain.model.ColorDesign
 import com.cashbacks.features.settings.domain.model.Settings
 import com.cashbacks.features.settings.presentation.SettingsViewModel
@@ -95,6 +95,7 @@ fun SettingsRoot(
                 is SettingsLabel.DisplayMessage -> launch {
                     snackbarHostState.showSnackbar(label.message)
                 }
+
                 is SettingsLabel.NavigateBack -> navigateBack()
             }
         }
