@@ -108,6 +108,7 @@ dependencies {
     implementation(libs.androidx.core)
     implementation(libs.androidx.lifecycle.runtime)
     implementation(libs.kotlinx.datetime)
+    implementation(libs.androidx.work.runtime)
 
     // Compose
     implementation(platform(libs.compose.bom))

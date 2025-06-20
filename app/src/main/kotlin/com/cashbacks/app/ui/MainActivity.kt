@@ -25,7 +25,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
 import com.cashbacks.app.app.App
-import com.cashbacks.app.ui.theme.CashbacksTheme
+import com.cashbacks.common.composables.theme.CashbacksTheme
 import com.cashbacks.common.composables.utils.animate
 import com.cashbacks.common.composables.utils.reversed
 import com.cashbacks.common.navigation.utils.register
@@ -47,44 +47,44 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         setContent {
-            val mainViewModel: MainViewModel = koinViewModel()
-            val settings by mainViewModel.settingsStateFlow.collectAsStateWithLifecycle()
-
-            val snackbarHostState = remember(::SnackbarHostState)
-            val scope = rememberCoroutineScope()
-
-            val showSnackbar = remember {
-                fun(message: String) {
-                    scope.launch { snackbarHostState.showSnackbar(message) }
-                }
-            }
-
-
-            // TODO: переделать на service
-            LaunchedEffect(Unit) {
-                if (
-                    (application as App).checkExpiredCashbacks &&
-                    settings.autoDeleteExpiredCashbacks
-                ) {
-                    mainViewModel.deleteExpiredCashbacks(
-                        success = { count ->
-                            val message = application.resources.getQuantityString(
-                                R.plurals.expired_cashbacks_deletion_success,
-                                count,
-                                count
-                            )
-                            showSnackbar(message)
-                        },
-                        failure = showSnackbar
-                    )
-                    (application as App).checkExpiredCashbacks = false
-                }
-            }
-
             KoinAndroidContext {
-                CashbacksTheme(settings = settings) {
-                    val isDarkTheme = settings.colorDesign.isDark
+                val mainViewModel: MainViewModel = koinViewModel()
+                val settings by mainViewModel.settingsStateFlow.collectAsStateWithLifecycle()
 
+                val snackbarHostState = remember(::SnackbarHostState)
+                val scope = rememberCoroutineScope()
+
+                val showSnackbar = remember {
+                    fun(message: String) {
+                        scope.launch { snackbarHostState.showSnackbar(message) }
+                    }
+                }
+
+
+                // TODO: переделать на service
+                LaunchedEffect(Unit) {
+                    if (
+                        (application as App).checkExpiredCashbacks &&
+                        settings.autoDeleteExpiredCashbacks
+                    ) {
+                        mainViewModel.deleteExpiredCashbacks(
+                            success = { count ->
+                                val message = application.resources.getQuantityString(
+                                    R.plurals.expired_cashbacks_deletion_success,
+                                    count,
+                                    count
+                                )
+                                showSnackbar(message)
+                            },
+                            failure = showSnackbar
+                        )
+                        (application as App).checkExpiredCashbacks = false
+                    }
+                }
+
+                val isDarkTheme = settings.colorDesign.isDark
+
+                CashbacksTheme(isDarkTheme, settings.dynamicColor) {
                     enableEdgeToEdge(
                         statusBarStyle = mainViewModel.statusBarStyle(isDarkTheme),
                         navigationBarStyle = mainViewModel.navigationBarStyle(isDarkTheme),
@@ -117,6 +117,15 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private val features = arrayOf(
+        HomeFeature,
+        SettingsFeature,
+        CategoryFeature,
+        ShopFeature,
+        CashbackFeature,
+        BankCardFeature,
+    )
+
 
     @Composable
     private fun NavHost(modifier: Modifier = Modifier) {
@@ -127,14 +136,7 @@ class MainActivity : ComponentActivity() {
             startDestination = Home,
             modifier = Modifier.background(MaterialTheme.colorScheme.background.animate())
         ) {
-            arrayOf(
-                HomeFeature,
-                SettingsFeature,
-                CategoryFeature,
-                ShopFeature,
-                CashbackFeature,
-                BankCardFeature
-            ).forEach { feature ->
+            features.forEach { feature ->
                 register(
                     feature = feature,
                     navController = navController,

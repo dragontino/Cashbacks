@@ -43,6 +43,7 @@ class MainViewModel(
     }
 
 
+    @Deprecated("")
     fun deleteExpiredCashbacks(
         success: (Int) -> Unit,
         failure: (message: String) -> Unit

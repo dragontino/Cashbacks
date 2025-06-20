@@ -7,7 +7,6 @@ import com.cashbacks.features.bankcard.domain.model.BankCard
 import com.cashbacks.features.bankcard.domain.model.BasicBankCard
 import com.cashbacks.features.bankcard.presentation.api.BankCardArgs
 import com.cashbacks.features.home.impl.composables.HomeTopAppBarState
-import kotlinx.collections.immutable.ImmutableList
 import kotlinx.serialization.Serializable
 
 internal sealed interface BankCardsAction {

@@ -3,6 +3,7 @@ package com.cashbacks.features.cashback.domain.usecase
 import com.cashbacks.features.cashback.domain.model.MeasureUnit
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withContext
 import java.util.Currency
 import java.util.Locale
 
@@ -14,8 +15,8 @@ interface GetMeasureUnitsUseCase {
 internal class GetMeasureUnitsUseCaseImpl(
     private val dispatcher: CoroutineDispatcher
 ) : GetMeasureUnitsUseCase {
-    override suspend fun invoke(locale: Locale): List<MeasureUnit> {
-        return buildList {
+    override suspend fun invoke(locale: Locale): List<MeasureUnit> = withContext(dispatcher) {
+        buildList {
             add(MeasureUnit.Percent)
             getLocalCurrencies(locale).forEach {
                 add(MeasureUnit.Currency(it))
