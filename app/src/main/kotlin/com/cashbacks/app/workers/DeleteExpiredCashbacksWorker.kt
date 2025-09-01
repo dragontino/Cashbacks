@@ -26,8 +26,14 @@ class DeleteExpiredCashbacksWorker(
     private val deleteCashbacks by inject<DeleteCashbacksUseCase>()
     private val getSettings by inject<GetSettingsUseCase>()
 
+
+    private fun createNotification(message: String) {
+        Log.i(TAG, message)
+    }
+
+
     override suspend fun doWork(): Result {
-        Log.e("DeleteExpiredCashbacks", "Work started")
+        Log.i(TAG, "Work started")
         return try {
             val settings = getSettings().getOrNull() ?: Settings()
             if (settings.autoDeleteExpiredCashbacks.not()) {
@@ -40,12 +46,16 @@ class DeleteExpiredCashbacksWorker(
                 return Result.success()
             } else {
                 val deletionResult = deleteCashbacks(expiredCashbacks).onSuccess { count ->
-                    val msg = applicationContext.resources.getQuantityString(
-                        R.plurals.expired_cashbacks_deletion_success,
-                        count,
-                        count
-                    )
-                    Log.e("DeleteExpiredCashbacks", msg)
+                    if (count > 0) {
+                        val msg = applicationContext.resources.getQuantityString(
+                            R.plurals.expired_cashbacks_deletion_success,
+                            count,
+                            count
+                        )
+                        createNotification(msg)
+                    } else {
+                        Log.i(TAG, "There are 0 cashbacks to delete.")
+                    }
                 }
                 return when {
                     deletionResult.isSuccess -> Result.success()
@@ -57,7 +67,7 @@ class DeleteExpiredCashbacksWorker(
             Log.e(TAG, e.message, e)
             Result.retry()
         } finally {
-            Log.e("DeleteExpiredCashbacks", "Work finished")
+            Log.i(TAG, "Work finished")
         }
     }
 }
