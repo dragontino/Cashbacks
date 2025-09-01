@@ -32,7 +32,7 @@ internal sealed interface ShopIntent {
     data object ClickButtonBack : ShopIntent
     data object ClickEditButton : ShopIntent
     data class Save(val onSuccess: () -> Unit = {}) : ShopIntent
-    data class Delete(val onSuccess: suspend () -> Unit = {}) : ShopIntent
+    data class Delete(val onSuccess: () -> Unit = {}) : ShopIntent
     data class DeleteCashback(val cashback: Cashback) : ShopIntent
     data object StartCreatingCategory : ShopIntent
     data object CancelCreatingCategory : ShopIntent

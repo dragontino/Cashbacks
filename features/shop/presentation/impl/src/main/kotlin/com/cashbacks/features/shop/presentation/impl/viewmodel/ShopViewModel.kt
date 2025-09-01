@@ -8,11 +8,11 @@ import com.arkivanov.mvikotlin.extensions.coroutines.coroutineBootstrapper
 import com.arkivanov.mvikotlin.extensions.coroutines.coroutineExecutorFactory
 import com.arkivanov.mvikotlin.extensions.coroutines.labels
 import com.arkivanov.mvikotlin.extensions.coroutines.stateFlow
+import com.cashbacks.common.composables.management.ScreenState
+import com.cashbacks.common.composables.management.ViewModelState
 import com.cashbacks.common.resources.MessageHandler
 import com.cashbacks.common.utils.dispatchFromAnotherThread
 import com.cashbacks.common.utils.forwardFromAnotherThread
-import com.cashbacks.common.composables.management.ScreenState
-import com.cashbacks.common.composables.management.ViewModelState
 import com.cashbacks.features.cashback.domain.usecase.DeleteCashbackUseCase
 import com.cashbacks.features.cashback.domain.usecase.FetchCashbacksFromShopUseCase
 import com.cashbacks.features.cashback.presentation.api.CashbackArgs
@@ -34,18 +34,24 @@ import com.cashbacks.features.shop.presentation.impl.mvi.ShopState
 import com.cashbacks.features.shop.presentation.impl.mvi.model.EditableShop
 import com.cashbacks.features.shop.presentation.impl.utils.launchWithLoading
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.sample
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
+@OptIn(FlowPreview::class)
 class ShopViewModel(
     private val fetchCashbacksFromShop: FetchCashbacksFromShopUseCase,
     private val fetchAllCategories: FetchAllCategoriesUseCase,
@@ -118,6 +124,14 @@ class ShopViewModel(
                 onIntent<ShopIntent.ClickEditButton> {
                     dispatch(ShopMessage.UpdateViewModelState(ViewModelState.Editing))
                 }
+                onIntent<ShopIntent.UpdateShopParent> {
+                    val newShop = state().shop.copy(parentCategory = it.parent)
+                    dispatch(ShopMessage.UpdateShop(newShop))
+                }
+                onIntent<ShopIntent.UpdateShopName> {
+                    val newShop = state().shop.copy(name = it.name)
+                    dispatch(ShopMessage.UpdateShop(newShop))
+                }
                 onIntent<ShopIntent.Save> { intent ->
                     val state = state()
 
@@ -152,8 +166,8 @@ class ShopViewModel(
                                     val newShop = state.shop.copy(id = newId)
                                     dispatchFromAnotherThread(ShopMessage.SetInitialShop(newShop))
                                     dispatchFromAnotherThread(ShopMessage.UpdateShop(newShop))
-                                    dispatch(ShopMessage.UpdateViewModelState(ViewModelState.Viewing))
-                                    intent.onSuccess()
+                                    dispatchFromAnotherThread(ShopMessage.UpdateViewModelState(ViewModelState.Viewing))
+                                    withContext(Dispatchers.Main) { intent.onSuccess() }
                                 }
                                 .onFailure { throwable ->
                                     throwable.message?.takeIf { it.isNotBlank() }?.let {
@@ -164,18 +178,20 @@ class ShopViewModel(
                     }
                 }
                 onIntent<ShopIntent.Delete> { intent ->
-                    launchWithLoading {
-                        val state = state()
-                        delay(200)
+                    val state = state()
+                    if (state.shop.id == null) {
+                        intent.onSuccess()
+                        return@onIntent
+                    }
 
-                        if (state.shop.id == null) {
-                            intent.onSuccess()
-                            return@launchWithLoading
-                        }
+                    launchWithLoading {
+                        delay(20)
 
                         val shop = state.shop.mapToShop()
                         deleteShop(shop)
-                            .onSuccess { intent.onSuccess() }
+                            .onSuccess {
+                                withContext(Dispatchers.Main) { intent.onSuccess() }
+                            }
                             .onFailure { throwable ->
                                 throwable.message?.takeIf { it.isNotBlank() }?.let {
                                     forwardFromAnotherThread(ShopAction.DisplayMessage(it))
@@ -195,10 +211,10 @@ class ShopViewModel(
                     }
                 }
 
-                onIntent<ShopIntent.DeleteCashback> {
+                onIntent<ShopIntent.DeleteCashback> { intent ->
                     launchWithLoading {
                         delay(100)
-                        deleteCashback(it.cashback).onFailure { throwable ->
+                        deleteCashback(intent.cashback).onFailure { throwable ->
                             throwable.message?.takeIf { it.isNotBlank() }?.let {
                                 forwardFromAnotherThread(ShopAction.DisplayMessage(it))
                             }
@@ -216,12 +232,12 @@ class ShopViewModel(
                 onIntent<ShopIntent.CancelCreatingCategory> {
                     dispatch(ShopMessage.SetIsCreatingCategory(false))
                 }
-                onIntent<ShopIntent.AddCategory> {
+                onIntent<ShopIntent.AddCategory> { intent ->
                     dispatch(ShopMessage.SetIsCreatingCategory(false))
                     launchWithLoading {
                         delay(100)
-                        val newCategory = Category(name = it.name)
-                        addCategory(Category(name = it.name))
+                        val newCategory = Category(name = intent.name)
+                        addCategory(newCategory)
                             .onSuccess {
                                 val shop = state().shop.copy(parentCategory = newCategory)
                                 dispatchFromAnotherThread(ShopMessage.UpdateShop(shop))
@@ -329,8 +345,24 @@ class ShopViewModel(
     internal val labelsFlow: Flow<ShopLabel> by lazy { shopStore.labels }
 
 
-    internal fun sendIntent(intent: ShopIntent) {
-        shopStore.accept(intent)
+    private val intentSharedFlow = MutableSharedFlow<ShopIntent>(
+        extraBufferCapacity = 1,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST
+    )
+
+    init {
+        intentSharedFlow
+            .sample(DELAY_MILLIS)
+            .onEach { shopStore.accept(it) }
+            .launchIn(viewModelScope)
+    }
+
+
+    internal fun sendIntent(intent: ShopIntent, withDelay: Boolean = false) {
+        when {
+            withDelay -> intentSharedFlow.tryEmit(intent)
+            else -> shopStore.accept(intent)
+        }
     }
 
 
@@ -355,5 +387,10 @@ class ShopViewModel(
             null -> addShop(shop.mapToCategoryShop()!!)
             else -> updateShop(shop.mapToCategoryShop()!!).map { shop.id }
         }
+    }
+
+
+    private companion object {
+        const val DELAY_MILLIS = 50L
     }
 }
