@@ -1,11 +1,13 @@
 package com.cashbacks.features.cashback.presentation.impl.di
 
+import com.cashbacks.features.cashback.presentation.api.CashbackArgs
 import com.cashbacks.features.cashback.presentation.impl.CashbackViewModel
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
 val CashbackPresentationModule = module {
     viewModel<CashbackViewModel> { params ->
+        val args = params.get<CashbackArgs>()
         CashbackViewModel(
             getCashback = get(),
             addCashbackToCategory = get(),
@@ -23,9 +25,9 @@ val CashbackPresentationModule = module {
             messageHandler = get(),
             stateHandle = get(),
             storeFactory = get(),
-            ownerType = params.get(),
-            initialOwnerId = params.getOrNull(),
-            initialCashbackId = params.getOrNull(),
+            ownerType = args.ownerType,
+            initialOwnerId = args.ownerId,
+            initialCashbackId = args.cashbackId,
         )
     }
 }

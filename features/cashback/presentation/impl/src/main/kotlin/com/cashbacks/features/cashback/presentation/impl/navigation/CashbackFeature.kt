@@ -12,7 +12,7 @@ import com.cashbacks.common.navigation.exitScreenTransition
 import com.cashbacks.features.cashback.presentation.api.CashbackArgs
 import com.cashbacks.features.cashback.presentation.impl.CashbackRoot
 import org.koin.androidx.compose.koinViewModel
-import org.koin.core.parameter.parameterArrayOf
+import org.koin.core.parameter.parametersOf
 
 object CashbackFeature : FeatureApi {
     override fun registerGraph(
@@ -29,11 +29,7 @@ object CashbackFeature : FeatureApi {
             val args = it.toRoute<CashbackArgs>()
             CashbackRoot(
                 viewModel = koinViewModel {
-                    parameterArrayOf(
-                        args.ownerType,
-                        args.ownerId,
-                        args.cashbackId
-                    )
+                    parametersOf(args)
                 },
                 navigateToShop = {
                     navController.navigate(it) {
