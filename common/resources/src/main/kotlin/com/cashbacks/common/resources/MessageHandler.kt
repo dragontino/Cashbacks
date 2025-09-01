@@ -9,6 +9,6 @@ class MessageHandler(private val context: Context) {
     }
 
     fun getMessage(@StringRes resourceId: Int, vararg arguments: Any): String {
-        return context.applicationContext.getString(resourceId, arguments)
+        return context.applicationContext.getString(resourceId, *arguments)
     }
 }
