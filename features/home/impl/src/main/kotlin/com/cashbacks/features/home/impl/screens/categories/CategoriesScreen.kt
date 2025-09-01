@@ -4,6 +4,8 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
@@ -14,11 +16,14 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.tappableElement
@@ -36,6 +41,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -70,13 +76,14 @@ import com.cashbacks.common.composables.theme.CashbacksTheme
 import com.cashbacks.common.composables.utils.animate
 import com.cashbacks.common.composables.utils.floatingActionButtonEnterAnimation
 import com.cashbacks.common.composables.utils.floatingActionButtonExitAnimation
-import com.cashbacks.common.composables.utils.keyboardAsState
 import com.cashbacks.common.composables.utils.loadingContentAnimationSpec
 import com.cashbacks.common.composables.utils.mix
 import com.cashbacks.common.composables.utils.reversed
 import com.cashbacks.common.composables.utils.smoothScrollToItem
 import com.cashbacks.common.resources.R
-import com.cashbacks.features.cashback.domain.utils.asCashbackOwner
+import com.cashbacks.common.utils.IntentSender
+import com.cashbacks.common.utils.OnClick
+import com.cashbacks.features.cashback.domain.model.Cashback
 import com.cashbacks.features.cashback.presentation.api.CashbackArgs
 import com.cashbacks.features.cashback.presentation.api.composables.MaxCashbackOwnerComposable
 import com.cashbacks.features.category.domain.model.Category
@@ -87,9 +94,11 @@ import com.cashbacks.features.home.impl.composables.HomeTopAppBarState
 import com.cashbacks.features.home.impl.mvi.CategoriesIntent
 import com.cashbacks.features.home.impl.mvi.CategoriesLabel
 import com.cashbacks.features.home.impl.mvi.CategoriesState
+import com.cashbacks.features.home.impl.mvi.CategoryWithCashback
 import com.cashbacks.features.home.impl.navigation.HomeDestination
-import com.cashbacks.features.home.impl.utils.copy
-import kotlinx.collections.immutable.toImmutableSet
+import com.cashbacks.features.home.impl.utils.LocalBottomBarHeight
+import kotlinx.collections.immutable.toImmutableList
+import kotlinx.collections.immutable.toPersistentList
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
@@ -101,7 +110,6 @@ internal fun CategoriesRoot(
     navigateToCategory: (args: CategoryArgs) -> Unit,
     navigateToCashback: (args: CashbackArgs) -> Unit,
     navigateBack: () -> Unit,
-    contentPadding: PaddingValues,
     modifier: Modifier = Modifier,
     viewModel: CategoriesViewModel = koinViewModel()
 ) {
@@ -145,8 +153,7 @@ internal fun CategoriesRoot(
         state = state,
         snackbarHostState = snackbarHostState,
         contentState = contentState,
-        contentPadding = contentPadding,
-        sendIntent = viewModel::sendIntent,
+        intentSender = IntentSender(viewModel::sendIntent),
         modifier = modifier
     )
 }
@@ -158,8 +165,7 @@ private fun CategoriesScreen(
     state: CategoriesState,
     snackbarHostState: SnackbarHostState,
     contentState: LazyListState,
-    contentPadding: PaddingValues,
-    sendIntent: (CategoriesIntent) -> Unit,
+    intentSender: IntentSender<CategoriesIntent>,
     modifier: Modifier = Modifier
 ) {
     BackHandler {
@@ -167,17 +173,16 @@ private fun CategoriesScreen(
             ViewModelState.Editing -> CategoriesIntent.FinishEdit
             ViewModelState.Viewing -> CategoriesIntent.ClickButtonBack
         }
-        sendIntent(intent)
+        intentSender.sendIntent(intent)
     }
 
 
     val topBarState = rememberTopAppBarState()
-    val keyboardState = keyboardAsState()
-    val layoutDirection = LocalLayoutDirection.current
+    val isImeVisible = WindowInsets.isImeVisible
 
-    LaunchedEffect(keyboardState) {
-        if (keyboardState.value.not()) {
-            sendIntent(CategoriesIntent.FinishCreatingCategory)
+    LaunchedEffect(isImeVisible) {
+        if (isImeVisible.not()) {
+            intentSender.sendIntent(CategoriesIntent.FinishCreatingCategory)
         }
     }
 
@@ -191,10 +196,12 @@ private fun CategoriesScreen(
                     title = HomeDestination.Categories.screenTitle,
                     state = state.appBarState,
                     onStateChange = {
-                         sendIntent(CategoriesIntent.ChangeAppBarState(it))
+                         intentSender.sendIntent(CategoriesIntent.ChangeAppBarState(it))
                     },
                     searchPlaceholder = stringResource(R.string.search_categories_placeholder),
-                    onNavigationIconClick = { sendIntent(CategoriesIntent.ClickNavigationButton) },
+                    onNavigationIconClick = {
+                        intentSender.sendIntentWithDelay(CategoriesIntent.ClickNavigationButton)
+                    },
                     colors = HomeAppBarDefaults.colors(
                         topBarContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = .6f)
                             .mix(MaterialTheme.colorScheme.primary)
@@ -224,38 +231,37 @@ private fun CategoriesScreen(
                     exit = floatingActionButtonExitAnimation(),
                 ) {
                     BasicFloatingActionButton(icon = Icons.Rounded.Add) {
-                        sendIntent(CategoriesIntent.StartCreatingCategory)
-                        sendIntent(CategoriesIntent.ScrollToEnd)
+                        intentSender.sendIntent(CategoriesIntent.ScrollToEnd)
+                        intentSender.sendIntent(CategoriesIntent.StartCreatingCategory)
                     }
                 }
-                AnimatedVisibility(visible = !state.isCreatingCategory && !keyboardState.value) {
+                AnimatedVisibility(visible = !state.isCreatingCategory && !isImeVisible) {
                     BasicFloatingActionButton(
                         icon = when (state.viewModelState) {
                             ViewModelState.Editing -> Icons.Rounded.EditOff
                             ViewModelState.Viewing -> Icons.Rounded.Edit
                         },
-                        onClick = { sendIntent(CategoriesIntent.SwitchEdit) },
+                        onClick = { intentSender.sendIntentWithDelay(CategoriesIntent.SwitchEdit) },
                     )
                 }
             },
-            contentWindowInsets = WindowInsets.ime.only(WindowInsetsSides.Bottom),
+            contentWindowInsets = WindowInsets(0),
             fabModifier = Modifier
                 .onGloballyPositioned { fabHeightPx.floatValue = it.size.height.toFloat() }
                 .windowInsetsPadding(WindowInsets.tappableElement.only(WindowInsetsSides.End))
-                .padding(bottom = contentPadding.calculateBottomPadding()),
+                .padding(bottom = LocalBottomBarHeight.current),
             modifier = modifier.fillMaxSize(),
         ) {
             CategoriesList(
                 state = state,
                 lazyListState = contentState,
-                contentPadding = contentPadding.copy(layoutDirection) {
-                    copy(
-                        bottom = with(LocalDensity.current) {
-                            (bottom + fabHeightPx.floatValue.toDp())
-                        }
-                    )
-                },
-                sendIntent = sendIntent
+                contentPadding = PaddingValues(
+                    bottom = with(LocalDensity.current) {
+                        (LocalBottomBarHeight.current + fabHeightPx.floatValue.toDp()).animate()
+                    }
+                ),
+                intentSender = intentSender,
+                modifier = Modifier.imePadding()
             )
         }
 
@@ -272,8 +278,16 @@ private fun CategoriesScreen(
             ),
             modifier = Modifier.align(Alignment.BottomCenter)
         ) {
-            NewNameTextField(placeholder = stringResource(R.string.category_placeholder)) { name ->
-                 sendIntent(CategoriesIntent.AddCategory(name))
+            val bottomBarHeight = LocalBottomBarHeight.current
+            val imePadding = WindowInsets.ime.asPaddingValues()
+
+            NewNameTextField(
+                placeholder = stringResource(R.string.category_placeholder),
+                modifier = Modifier.padding(
+                    bottom = imePadding.calculateBottomPadding().coerceAtLeast(bottomBarHeight)
+                )
+            ) { name ->
+                intentSender.sendIntent(CategoriesIntent.AddCategory(name))
             }
         }
     }
@@ -286,11 +300,11 @@ private fun CategoriesList(
     state: CategoriesState,
     lazyListState: LazyListState,
     contentPadding: PaddingValues,
-    sendIntent: (CategoriesIntent) -> Unit,
+    intentSender: IntentSender<CategoriesIntent>,
     modifier: Modifier = Modifier
 ) {
     Crossfade(
-        targetState = state.categories?.toList().toListState(),
+        targetState = state.categories.toListState(),
         label = "Content loading animation",
         animationSpec = loadingContentAnimationSpec(),
         modifier = modifier
@@ -313,7 +327,10 @@ private fun CategoriesList(
                             is HomeTopAppBarState.Search -> {
                                 when {
                                     appBarState.query.isBlank() -> stringResource(R.string.empty_search_query)
-                                    else -> stringResource(R.string.empty_search_results)
+                                    else -> stringResource(
+                                        R.string.empty_search_results,
+                                        appBarState.query
+                                    )
                                 }
                             }
 
@@ -336,78 +353,99 @@ private fun CategoriesList(
             is ListState.Stable -> {
                 LazyColumn(
                     state = lazyListState,
-                    contentPadding = PaddingValues(
-                        start = 16.dp,
-                        end = 16.dp,
-                        top = 16.dp,
-                        bottom = 8.dp
-                    ),
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    contentPadding = PaddingValues(vertical = 8.dp, horizontal = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(2.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.fillMaxSize()
                 ) {
                     contentPadding.calculateTopPadding().takeIf { it.value > 0 }?.let {
-                        item {
+                        item(key = "TopPadding", contentType = "Spacer") {
                             Spacer(Modifier.height(it))
                         }
                     }
 
-                    itemsIndexed(categoriesListState.data) { index, (category, cashbacks) ->
-                        MaxCashbackOwnerComposable(
-                            cashbackOwner = category.asCashbackOwner(),
-                            maxCashbacks = cashbacks.toImmutableSet(),
-                            isEditing = state.viewModelState == ViewModelState.Editing,
-                            isSwiped = state.selectedCategoryIndex == index,
-                            onSwipe = { isSwiped ->
-                                sendIntent(
+                    itemsIndexed(
+                        key = { _, categoryWithCashback -> categoryWithCashback.id },
+                        items = categoriesListState.data.toImmutableList()
+                    ) { index, categoryWithCashback ->
+                        Category(
+                            category = categoryWithCashback.category,
+                            maxCashback = categoryWithCashback.maxCashback,
+                            isEnabledToSwipe = with(state) {
+                                swipedCategoryId in setOf(categoryWithCashback.id, null)
+                            },
+                            onSwipeStatusChanged = { isOnSwipe ->
+                                intentSender.sendIntentWithDelay(
                                     CategoriesIntent.SwipeCategory(
-                                        position = index,
-                                        isSwiped = isSwiped
+                                        id = categoryWithCashback.id,
+                                        isSwiped = isOnSwipe
+                                    )
+                                )
+                            },
+                            isExpanded = state.selectedCategoryId == categoryWithCashback.id,
+                            onExpandedChanged = { isExpanded ->
+                                intentSender.sendIntentWithDelay(
+                                    CategoriesIntent.SelectCategory(
+                                        categoryWithCashback.id,
+                                        isExpanded
                                     )
                                 )
                             },
                             onClick = {
-                                sendIntent(CategoriesIntent.SwipeCategory(null))
-                                sendIntent(
-                                    CategoriesIntent.NavigateToCategory(CategoryArgs.Viewing(id = category.id))
+                                intentSender.sendIntentWithDelay(
+                                    CategoriesIntent.NavigateToCategory(
+                                        CategoryArgs.Viewing(id = categoryWithCashback.category.id)
+                                    )
                                 )
                             },
-                            onClickToCashback = { cashback ->
-                                sendIntent(
+                            onClickToCashback = {
+                                intentSender.sendIntentWithDelay(
                                     CategoriesIntent.NavigateToCashback(
                                         CashbackArgs.fromCategory(
-                                            cashbackId = cashback.id,
-                                            categoryId = category.id
+                                            cashbackId = categoryWithCashback.maxCashback!!.id,
+                                            categoryId = categoryWithCashback.category.id
                                         )
                                     )
                                 )
                             },
                             onEdit = {
-                                sendIntent(
-                                    CategoriesIntent.SwipeCategory(null)
-                                )
-                                sendIntent(
+                                intentSender.sendIntentWithDelay(
                                     CategoriesIntent.NavigateToCategory(
-                                        args = CategoryArgs.Editing(id = category.id),
+                                        args = CategoryArgs.Editing(id = categoryWithCashback.category.id),
                                     )
                                 )
                             },
                             onDelete = {
-                                sendIntent(CategoriesIntent.SwipeCategory(null))
-
-                                sendIntent(
-                                    CategoriesIntent.OpenDialog(DialogType.ConfirmDeletion(category))
+                                intentSender.sendIntentWithDelay(
+                                    CategoriesIntent.OpenDialog(
+                                        DialogType.ConfirmDeletion(categoryWithCashback.category)
+                                    )
                                 )
                             },
-                            modifier = Modifier.padding(
-                                start = contentPadding.calculateStartPadding(LocalLayoutDirection.current),
-                                end = contentPadding.calculateEndPadding(LocalLayoutDirection.current)
-                            )
+                            modifier = Modifier
+                                .padding(
+                                    vertical = when (state.selectedCategoryId) {
+                                        categoryWithCashback.id -> 8.dp
+                                        else -> 0.dp
+                                    }.animate()
+                                )
+                                .padding(
+                                    start = contentPadding
+                                        .calculateStartPadding(LocalLayoutDirection.current),
+                                    end = contentPadding
+                                        .calculateEndPadding(LocalLayoutDirection.current)
+                                )
+                                .animateItem(
+                                    fadeInSpec = spring(stiffness = Spring.StiffnessVeryLow),
+                                    fadeOutSpec = spring(stiffness = Spring.StiffnessVeryLow),
+                                    placementSpec = spring(stiffness = Spring.StiffnessVeryLow)
+                                )
                         )
                     }
 
+
                     contentPadding.calculateBottomPadding().takeIf { it.value > 0 }?.let {
-                        item {
+                        item(key = "BottomPadding", contentType = "Spacer") {
                             Spacer(modifier = Modifier.height(it))
                         }
                     }
@@ -418,23 +456,58 @@ private fun CategoriesList(
 }
 
 
+@Composable
+private fun Category(
+    category: Category,
+    maxCashback: Cashback?,
+    isEnabledToSwipe: Boolean,
+    isExpanded: Boolean,
+    onSwipeStatusChanged: (Boolean) -> Unit,
+    onClick: OnClick,
+    onClickToCashback: () -> Unit,
+    onExpandedChanged: (isExpanded: Boolean) -> Unit,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    MaxCashbackOwnerComposable(
+        maxCashback = maxCashback,
+        mainContent = {
+            Text(
+                text = category.name,
+                style = MaterialTheme.typography.bodyMedium
+            )
+        },
+        isEnabledToSwipe = isEnabledToSwipe,
+        onSwipeStatusChanged = onSwipeStatusChanged,
+        onClick = onClick,
+        onClickToCashback = { onClickToCashback() },
+        isExpanded = isExpanded,
+        onExpandedStatusChanged = onExpandedChanged,
+        onEdit = onEdit,
+        onDelete = onDelete,
+        modifier = modifier
+    )
+}
+
+
+
 @Preview
 @Composable
 private fun CategoriesScreenPreview() {
     CashbacksTheme(isDarkTheme = false) {
         CategoriesScreen(
             state = CategoriesState(
-                categories = buildMap {
+                categories = buildList {
                     for (i in 1..5) {
                         val category = Category(id = i.toLong(), name = "Test Name")
-                        this[category] = emptySet()
+                        add(CategoryWithCashback(category, null))
                     }
-                }
+                }.toPersistentList()
             ),
             snackbarHostState = remember(::SnackbarHostState),
             contentState = rememberLazyListState(),
-            contentPadding = PaddingValues(0.dp),
-            sendIntent = {}
+            intentSender = IntentSender()
         )
     }
 }

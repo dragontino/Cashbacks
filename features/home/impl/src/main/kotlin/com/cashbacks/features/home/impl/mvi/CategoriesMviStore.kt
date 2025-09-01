@@ -9,11 +9,12 @@ import com.cashbacks.features.cashback.presentation.api.CashbackArgs
 import com.cashbacks.features.category.domain.model.Category
 import com.cashbacks.features.category.presentation.api.CategoryArgs
 import com.cashbacks.features.home.impl.composables.HomeTopAppBarState
-import kotlinx.collections.immutable.ImmutableMap
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
 import kotlinx.serialization.Serializable
 
 internal sealed interface CategoriesAction {
-    data class LoadCategories(val categories: ImmutableMap<Category, Set<Cashback>>?) : CategoriesAction
+    data class LoadCategories(val categories: List<CategoryWithCashback>?) : CategoriesAction
 }
 
 
@@ -50,8 +51,12 @@ internal sealed class CategoriesIntent {
     data class ChangeAppBarState(val state: HomeTopAppBarState) : CategoriesIntent()
     data object ScrollToEnd : CategoriesIntent()
 
-    data class SwipeCategory(val position: Int? = null) : CategoriesIntent() {
-        constructor(position: Int, isSwiped: Boolean) : this(position.takeIf { isSwiped })
+    data class SwipeCategory(val id: String? = null) : CategoriesIntent() {
+        constructor(id: String, isSwiped: Boolean) : this(id.takeIf { isSwiped })
+    }
+
+    data class SelectCategory(val id: String? = null) : CategoriesIntent() {
+        constructor(id: String, isSelected: Boolean) : this(id.takeIf { isSelected })
     }
 }
 
@@ -60,9 +65,10 @@ internal sealed interface CategoriesMessage {
     data class UpdateScreenState(val state: ScreenState) : CategoriesMessage
     data class UpdateViewModelState(val state: ViewModelState) : CategoriesMessage
     data class UpdateAppBarState(val state: HomeTopAppBarState) : CategoriesMessage
-    data class UpdateCategories(val categories: Map<Category, Set<Cashback>>?) : CategoriesMessage
+    data class UpdateCategories(val categories: ImmutableList<CategoryWithCashback>?) : CategoriesMessage
     data class UpdateIsCreatingCategory(val isCreatingCategory: Boolean) : CategoriesMessage
-    data class UpdateSelectedCategoryIndex(val index: Int?) : CategoriesMessage
+    data class UpdateSwipedCategoryId(val id: String?) : CategoriesMessage
+    data class UpdateSelectedCategoryId(val id: String?) : CategoriesMessage
 }
 
 
@@ -72,7 +78,21 @@ internal data class CategoriesState(
     val screenState: ScreenState = ScreenState.Stable,
     val viewModelState: ViewModelState = ViewModelState.Viewing,
     val appBarState: HomeTopAppBarState = HomeTopAppBarState.TopBar,
-    val categories: Map<Category, Set<Cashback>>? = emptyMap(),
+    val categories: ImmutableList<CategoryWithCashback>? = persistentListOf(),
     val isCreatingCategory: Boolean = false,
-    val selectedCategoryIndex: Int? = null
+    val swipedCategoryId: String? = null,
+    val selectedCategoryId: String? = null
 )
+
+
+@Serializable
+@Immutable
+internal data class CategoryWithCashback(
+    val category: Category,
+    val maxCashback: Cashback?
+) {
+    val id: String get() = when(maxCashback) {
+        null -> category.id.toString()
+        else -> "${category.id}-${maxCashback.id}"
+    }
+}

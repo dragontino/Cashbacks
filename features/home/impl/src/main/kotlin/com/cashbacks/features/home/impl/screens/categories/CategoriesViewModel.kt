@@ -12,6 +12,7 @@ import com.arkivanov.mvikotlin.extensions.coroutines.stateFlow
 import com.cashbacks.common.composables.management.ScreenState
 import com.cashbacks.common.composables.management.ViewModelState
 import com.cashbacks.common.utils.dispatchFromAnotherThread
+import com.cashbacks.common.utils.forwardFromAnotherThread
 import com.cashbacks.features.cashback.domain.usecase.GetMaxCashbacksFromCategoryUseCase
 import com.cashbacks.features.category.domain.model.Category
 import com.cashbacks.features.category.domain.usecase.AddCategoryUseCase
@@ -25,14 +26,16 @@ import com.cashbacks.features.home.impl.mvi.CategoriesIntent
 import com.cashbacks.features.home.impl.mvi.CategoriesLabel
 import com.cashbacks.features.home.impl.mvi.CategoriesMessage
 import com.cashbacks.features.home.impl.mvi.CategoriesState
+import com.cashbacks.features.home.impl.mvi.CategoryWithCashback
 import com.cashbacks.features.home.impl.mvi.HomeAction
 import com.cashbacks.features.home.impl.utils.launchWithLoading
-import kotlinx.collections.immutable.toImmutableMap
+import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
@@ -42,10 +45,10 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.sample
 
-@Stable
 @OptIn(FlowPreview::class)
+@Stable
 class CategoriesViewModel(
     addCategory: AddCategoryUseCase,
     fetchAllCategories: FetchAllCategoriesUseCase,
@@ -56,6 +59,7 @@ class CategoriesViewModel(
     storeFactory: StoreFactory,
 ) : ViewModel() {
 
+    @OptIn(FlowPreview::class)
     private val store: Store<CategoriesIntent, CategoriesState, CategoriesLabel> by lazy {
         storeFactory.create(
             name = "CategoriesStore",
@@ -65,11 +69,10 @@ class CategoriesViewModel(
                 val categoriesFlow = combineTransform(
                     flow = fetchAllCategories(),
                     flow2 = fetchCategoriesWithCashback(),
-                    flow3 = stateFlow.map { it.appBarState }.distinctUntilChanged(),
+                    flow3 = stateFlow.map { it.appBarState }.debounce(50L).distinctUntilChanged(),
                     flow4 = stateFlow.map { it.viewModelState }.distinctUntilChanged()
                 ) { allCategories, categoriesWithCashback, appBarState, viewModelState ->
                     dispatchFromAnotherThread(HomeAction.StartLoading)
-                    emit(null)
                     delay(200)
 
                     val resultCategories = when {
@@ -83,13 +86,19 @@ class CategoriesViewModel(
                         else -> categoriesWithCashback
                     }
 
-                    val categoryCashbacksMap = resultCategories?.associateWith { category ->
-                        getMaxCashbacksFromCategory(category.id)
-                            .onFailure { throw it }
-                            .getOrNull()
-                            ?: emptySet()
-                    }
-                    emit(categoryCashbacksMap)
+                    resultCategories
+                        ?.flatMap { category ->
+                            val cashbacks = getMaxCashbacksFromCategory(category.id)
+                                .onFailure { throw it }
+                                .getOrNull()
+
+                            if (cashbacks.isNullOrEmpty()) {
+                                listOf(CategoryWithCashback(category, maxCashback = null))
+                            } else {
+                                cashbacks.map { CategoryWithCashback(category, it) }
+                            }
+                        }
+                        .let { emit(it) }
                     dispatchFromAnotherThread(HomeAction.FinishLoading)
                 }
 
@@ -100,9 +109,7 @@ class CategoriesViewModel(
                         }
                     }
                     .onEach {
-                        dispatchFromAnotherThread(
-                            CategoriesAction.LoadCategories(it?.toImmutableMap())
-                        )
+                        dispatchFromAnotherThread(CategoriesAction.LoadCategories(it))
                     }
                     .launchIn(this)
             },
@@ -114,7 +121,10 @@ class CategoriesViewModel(
                     dispatch(CategoriesMessage.UpdateScreenState(ScreenState.Stable))
                 }
                 onAction<CategoriesAction.LoadCategories> {
-                    dispatch(CategoriesMessage.UpdateCategories(it.categories))
+                    val categoriesWithCashback = it.categories?.map { (category, cashback) ->
+                        CategoryWithCashback(category, cashback)
+                    }
+                    dispatch(CategoriesMessage.UpdateCategories(categoriesWithCashback?.toImmutableList()))
                 }
                 onAction<HomeAction.DisplayMessage> {
                     publish(CategoriesLabel.DisplayMessage(it.message))
@@ -131,6 +141,7 @@ class CategoriesViewModel(
                 }
                 onIntent<CategoriesIntent.FinishEdit> {
                     dispatch(CategoriesMessage.UpdateViewModelState(ViewModelState.Viewing))
+                    dispatch(CategoriesMessage.UpdateIsCreatingCategory(false))
                 }
                 onIntent<CategoriesIntent.SwitchEdit> {
                     val newState = when (state().viewModelState) {
@@ -142,13 +153,13 @@ class CategoriesViewModel(
                 onIntent<CategoriesIntent.StartCreatingCategory> {
                     dispatch(CategoriesMessage.UpdateIsCreatingCategory(true))
                 }
-                onIntent<CategoriesIntent.AddCategory> {
+                onIntent<CategoriesIntent.AddCategory> { intent ->
                     dispatch(CategoriesMessage.UpdateIsCreatingCategory(false))
                     launchWithLoading {
                         delay(100)
-                        addCategory(Category(name = it.name)).onFailure { throwable ->
+                        addCategory(Category(name = intent.name)).onFailure { throwable ->
                             throwable.message?.takeIf { it.isNotBlank() }?.let {
-                                forward(HomeAction.DisplayMessage(it))
+                                forwardFromAnotherThread(HomeAction.DisplayMessage(it))
                             }
                         }
                         delay(100)
@@ -164,10 +175,10 @@ class CategoriesViewModel(
                     publish(CategoriesLabel.NavigateToCashback(it.args))
                 }
 
-                onIntent<CategoriesIntent.DeleteCategory> {
+                onIntent<CategoriesIntent.DeleteCategory> { intent ->
                     launchWithLoading {
                         delay(100)
-                        deleteCategory(it.category).onFailure { throwable ->
+                        deleteCategory(intent.category).onFailure { throwable ->
                             throwable.message?.takeIf { it.isNotBlank() }?.let {
                                 forward(HomeAction.DisplayMessage(it))
                             }
@@ -185,7 +196,10 @@ class CategoriesViewModel(
                     publish(CategoriesLabel.ScrollToEnd)
                 }
                 onIntent<CategoriesIntent.SwipeCategory> {
-                    dispatch(CategoriesMessage.UpdateSelectedCategoryIndex(it.position))
+                    dispatch(CategoriesMessage.UpdateSwipedCategoryId(it.id))
+                }
+                onIntent<CategoriesIntent.SelectCategory> {
+                    dispatch(CategoriesMessage.UpdateSelectedCategoryId(it.id))
                 }
                 onIntent<CategoriesIntent.ChangeAppBarState> {
                     dispatch(CategoriesMessage.UpdateAppBarState(it.state))
@@ -198,15 +212,12 @@ class CategoriesViewModel(
                     is CategoriesMessage.UpdateAppBarState -> copy(appBarState = msg.state)
                     is CategoriesMessage.UpdateCategories -> copy(categories = msg.categories)
                     is CategoriesMessage.UpdateIsCreatingCategory -> copy(isCreatingCategory = msg.isCreatingCategory)
-                    is CategoriesMessage.UpdateSelectedCategoryIndex -> copy(selectedCategoryIndex = msg.index)
+                    is CategoriesMessage.UpdateSwipedCategoryId -> copy(swipedCategoryId = msg.id)
+                    is CategoriesMessage.UpdateSelectedCategoryId -> copy(selectedCategoryId = msg.id)
                 }
             }
         )
     }
-
-
-    private val intentChannel = Channel<CategoriesIntent>()
-
 
     internal val stateFlow: StateFlow<CategoriesState> = store.stateFlow(
         scope = viewModelScope,
@@ -217,32 +228,36 @@ class CategoriesViewModel(
     internal val labelFlow: Flow<CategoriesLabel> = store.labels
 
 
+    private val intentSharedFlow = MutableSharedFlow<CategoriesIntent>(
+        extraBufferCapacity = 1,
+        onBufferOverflow = BufferOverflow.DROP_LATEST
+    )
+
+
     init {
         store.init()
-
-        intentChannel.receiveAsFlow()
-            .debounce(DEBOUNCE_MILLIS)
-            .onEach(store::accept)
+        intentSharedFlow
+            .sample(DELAY_MILLIS)
+            .onEach { store.accept(it) }
             .launchIn(viewModelScope)
     }
 
 
     override fun onCleared() {
-        intentChannel.close()
         store.dispose()
         super.onCleared()
     }
 
 
-    internal fun sendIntent(intent: CategoriesIntent, withDebounce: Boolean = true) {
+    internal fun sendIntent(intent: CategoriesIntent, withDelay: Boolean = false) {
         when {
-            withDebounce -> intentChannel.trySend(intent)
+            withDelay -> intentSharedFlow.tryEmit(intent)
             else -> store.accept(intent)
         }
     }
 
 
     private companion object {
-        const val DEBOUNCE_MILLIS = 50L
+        const val DELAY_MILLIS = 50L
     }
 }
