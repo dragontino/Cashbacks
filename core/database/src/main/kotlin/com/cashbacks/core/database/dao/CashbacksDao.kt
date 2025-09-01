@@ -83,7 +83,7 @@ interface CashbacksDao {
             FROM Cashbacks AS cash 
             INNER JOIN Cards AS card ON card.id = cash.bankCardId
             WHERE cash.categoryId = :categoryId
-            ORDER BY cash.amount ASC
+            ORDER BY cash.amount DESC
         """
     )
     fun fetchCashbacksFromCategory(categoryId: Long): Flow<List<BasicCashbackEntity>>
