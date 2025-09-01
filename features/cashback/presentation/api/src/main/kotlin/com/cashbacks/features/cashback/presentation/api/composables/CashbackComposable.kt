@@ -49,6 +49,7 @@ import com.cashbacks.features.cashback.domain.utils.CashbackUtils.displayableAmo
 import com.cashbacks.features.cashback.presentation.api.utils.CashbackPresentationUtils.getDatesTitle
 import com.cashbacks.features.cashback.presentation.api.utils.CashbackPresentationUtils.getDisplayableDatesText
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.Month
 
 @Composable
 fun CashbackComposable(
@@ -446,7 +447,7 @@ private fun CashbackComposablePreview() {
                 ),
                 amount = "12",
                 measureUnit = MeasureUnit.Percent,
-                expirationDate = LocalDate(dayOfMonth = 26, monthNumber = 10, year = 2024),
+                expirationDate = LocalDate(day = 26, month = Month.OCTOBER, year = 2024),
                 comment = "Hello world! Goodbye, Angels! 11 1",
                 owner = CashbackOwner.Category(
                     id = 1,

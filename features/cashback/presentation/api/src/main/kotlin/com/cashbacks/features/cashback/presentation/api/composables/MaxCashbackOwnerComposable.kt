@@ -44,7 +44,7 @@ import com.cashbacks.common.composables.utils.animate
 import com.cashbacks.common.composables.utils.expandedAnimationSpec
 import com.cashbacks.common.resources.R
 import com.cashbacks.common.utils.OnClick
-import com.cashbacks.common.utils.today
+import com.cashbacks.common.utils.now
 import com.cashbacks.features.bankcard.domain.model.PreviewBankCard
 import com.cashbacks.features.bankcard.domain.utils.BankCardUtils.getHiddenNumber
 import com.cashbacks.features.bankcard.domain.utils.BankCardUtils.withSpaces
@@ -55,9 +55,7 @@ import com.cashbacks.features.cashback.domain.model.MeasureUnit
 import com.cashbacks.features.cashback.domain.utils.CashbackUtils.displayableAmount
 import com.cashbacks.features.cashback.presentation.api.utils.CashbackPresentationUtils.getDatesTitle
 import com.cashbacks.features.cashback.presentation.api.utils.CashbackPresentationUtils.getDisplayableDatesText
-import kotlinx.collections.immutable.ImmutableSet
-import kotlinx.collections.immutable.persistentSetOf
-import kotlinx.datetime.Clock
+import kotlinx.datetime.LocalDate
 import java.util.Currency
 
 @Composable

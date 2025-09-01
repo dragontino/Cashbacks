@@ -115,7 +115,7 @@ import com.cashbacks.common.utils.DateUtils
 import com.cashbacks.common.utils.DateUtils.getDisplayableString
 import com.cashbacks.common.utils.LocalDate
 import com.cashbacks.common.utils.epochMillis
-import com.cashbacks.common.utils.today
+import com.cashbacks.common.utils.now
 import com.cashbacks.features.bankcard.presentation.api.BankCardArgs
 import com.cashbacks.features.bankcard.presentation.api.utils.BankCardPresentationUtils.getDisplayableString
 import com.cashbacks.features.bankcard.presentation.api.utils.PaymentSystemUtils
@@ -127,8 +127,8 @@ import com.cashbacks.features.cashback.presentation.impl.mvi.CashbackLabel
 import com.cashbacks.features.cashback.presentation.impl.mvi.CashbackState
 import com.cashbacks.features.shop.presentation.api.ShopArgs
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.Month
 import kotlinx.serialization.Serializable
 import org.koin.androidx.compose.koinViewModel
 import java.util.Locale
@@ -210,7 +210,7 @@ fun CashbackRoot(
                 },
                 onClose = { viewModel.sendIntent(CashbackIntent.HideDialog) },
                 isDateSelectable = { date ->
-                    val startDate = state.cashback.startDate ?: Clock.System.today()
+                    val startDate = state.cashback.startDate ?: LocalDate.now()
                     type is StartDatePicker || date >= startDate
                 }
             )
@@ -1074,8 +1074,8 @@ private fun DatePickerDialogPreview() {
         DatePickerDialog(
             date = LocalDate(
                 year = 2002,
-                monthNumber = 10,
-                dayOfMonth = 19
+                month = Month.OCTOBER,
+                day = 19
             ),
             onConfirm = {},
             onClose = {}

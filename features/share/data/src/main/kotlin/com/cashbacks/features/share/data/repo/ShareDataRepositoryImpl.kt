@@ -5,13 +5,12 @@ import android.os.Environment
 import android.util.Log
 import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.cashbacks.common.utils.now
 import com.cashbacks.features.share.domain.repo.ShareDataRepository
 import com.opencsv.CSVWriter
 import kotlinx.coroutines.suspendCancellableCoroutine
-import kotlinx.datetime.Clock
-import kotlinx.datetime.TimeZone
+import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.format.char
-import kotlinx.datetime.toLocalDateTime
 import java.io.File
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
@@ -139,11 +138,11 @@ class ShareDataRepositoryImpl(
 
 
     private fun createFileNameFromCurrentTime(): String {
-        val nowDateTime = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
-        val format = kotlinx.datetime.LocalDateTime.Format {
+        val nowDateTime = LocalDateTime.now()
+        val format = LocalDateTime.Format {
             year()
             monthNumber()
-            dayOfMonth()
+            day()
             char('_')
             hour()
             minute()

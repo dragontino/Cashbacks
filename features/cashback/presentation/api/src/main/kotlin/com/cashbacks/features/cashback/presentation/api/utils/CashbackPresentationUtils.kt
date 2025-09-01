@@ -11,12 +11,10 @@ import androidx.compose.ui.text.withStyle
 import com.cashbacks.common.resources.R
 import com.cashbacks.common.utils.DateUtils.calculateDaysBetweenToday
 import com.cashbacks.common.utils.DateUtils.getDisplayableString
-import com.cashbacks.common.utils.today
+import com.cashbacks.common.utils.now
 import com.cashbacks.features.cashback.domain.model.Cashback
-import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
-import kotlinx.datetime.todayIn
 import java.util.Locale
 
 
@@ -35,7 +33,7 @@ object CashbackPresentationUtils {
             1 -> stringResource(R.string.tomorrow)
             2 -> stringResource(R.string.after_tomorrow)
             else -> {
-                val today = Clock.System.todayIn(timeZone)
+                val today = LocalDate.now(timeZone)
                 val shortDate = shorted && today.year == targetDate.year
                 targetDate.getDisplayableString(shortDate, locale)
             }
@@ -66,7 +64,7 @@ object CashbackPresentationUtils {
         timeZone: TimeZone = TimeZone.currentSystemDefault(),
         locale: Locale = Locale.getDefault()
     ): AnnotatedString = buildAnnotatedString {
-        val today = Clock.System.today()
+        val today = LocalDate.now()
         val startDate = remember(startDate) {
             startDate?.takeIf {
                 it.calculateDaysBetweenToday() > 0 || expirationDate == null

@@ -1,8 +1,7 @@
 package com.cashbacks.features.cashback.domain.model
 
-import com.cashbacks.common.utils.today
+import com.cashbacks.common.utils.now
 import com.cashbacks.features.bankcard.domain.model.BasicBankCard
-import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDate
 import kotlinx.serialization.Serializable
 
@@ -24,7 +23,7 @@ data class BasicCashback(
     override val bankCard: BasicBankCard,
     override val amount: String,
     override val measureUnit: MeasureUnit = MeasureUnit.Percent,
-    override val startDate: LocalDate? = Clock.System.today(),
+    override val startDate: LocalDate? = LocalDate.now(),
     override val expirationDate: LocalDate? = null,
     override val comment: String = ""
 ) : Cashback()
@@ -37,7 +36,7 @@ data class FullCashback(
     override val bankCard: BasicBankCard,
     override val amount: String,
     override val measureUnit: MeasureUnit = MeasureUnit.Percent,
-    override val startDate: LocalDate? = Clock.System.today(),
+    override val startDate: LocalDate? = LocalDate.now(),
     override val expirationDate: LocalDate? = null,
     override val comment: String = ""
 ) : Cashback() {

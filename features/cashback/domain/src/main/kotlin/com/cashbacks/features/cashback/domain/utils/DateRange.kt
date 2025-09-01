@@ -1,13 +1,13 @@
 package com.cashbacks.features.cashback.domain.utils
 
 import com.cashbacks.common.utils.DateUtils
-import com.cashbacks.common.utils.today
+import com.cashbacks.common.utils.now
 import com.cashbacks.features.cashback.domain.model.Cashback
-import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateRange
 
-fun Cashback.getDateRange(): ClosedRange<LocalDate> {
-    val startDate = startDate ?: Clock.System.today()
+fun Cashback.getDateRange(): LocalDateRange {
+    val startDate = startDate ?: LocalDate.now()
     val endDate = expirationDate ?: DateUtils.MaxDate
     return startDate..endDate
 }

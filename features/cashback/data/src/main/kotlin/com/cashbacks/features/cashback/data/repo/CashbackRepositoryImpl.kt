@@ -25,6 +25,7 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.number
 import kotlinx.datetime.plus
 
 internal class CashbackRepositoryImpl(
@@ -69,7 +70,7 @@ internal class CashbackRepositoryImpl(
 
     private suspend fun getOverflowingMonthOfCashback(cashback: Cashback): LocalDate? {
         val maxCashbacksNumber = cashback.bankCard.maxCashbacksNumber ?: return null
-        val affectedDates = cashback.getDateRange().let { it.start..it.endInclusive }
+        val affectedDates = cashback.getDateRange()
         val cardCashbacksDates = dao
             .getAllCashbacksWithBankCard(cashback.bankCard.id)
             .map { it.getDateRange() }
@@ -97,7 +98,7 @@ internal class CashbackRepositoryImpl(
     }
 
     private fun LocalDate.convertToMonthNumberSince2000(): Int {
-        return monthNumber + (year - 2000).coerceAtLeast(0) * 12
+        return month.number + (year - 2000).coerceAtLeast(0) * 12
     }
 
 

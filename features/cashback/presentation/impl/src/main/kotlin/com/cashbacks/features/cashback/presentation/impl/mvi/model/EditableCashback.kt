@@ -1,14 +1,13 @@
 package com.cashbacks.features.cashback.presentation.impl.mvi.model
 
 import androidx.compose.runtime.Immutable
-import com.cashbacks.common.utils.today
+import com.cashbacks.common.utils.now
 import com.cashbacks.features.bankcard.domain.model.BasicBankCard
 import com.cashbacks.features.cashback.domain.model.CashbackOwner
 import com.cashbacks.features.cashback.domain.model.FullCashback
 import com.cashbacks.features.cashback.domain.model.MeasureUnit
 import com.cashbacks.features.cashback.domain.utils.CashbackUtils.roundedAmount
 import com.cashbacks.features.cashback.presentation.api.CashbackOwnerType
-import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDate
 import kotlinx.serialization.Serializable
 
@@ -32,7 +31,7 @@ internal data class EditableCashback(
         bankCard = null,
         amount = "",
         measureUnit = MeasureUnit.Percent,
-        startDate = Clock.System.today(),
+        startDate = LocalDate.now(),
         expirationDate = null,
         comment = ""
     )
@@ -60,7 +59,7 @@ internal data class EditableCashback(
 
 
     fun updateStartDate(newDate: LocalDate?): EditableCashback {
-        val newDate = newDate ?: Clock.System.today()
+        val newDate = newDate ?: LocalDate.now()
         return copy(
             startDate = newDate,
             expirationDate = when {

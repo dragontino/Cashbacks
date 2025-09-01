@@ -1,8 +1,8 @@
 package com.cashbacks.features.cashback.domain.utils
 
-import com.cashbacks.common.utils.today
+import com.cashbacks.common.utils.now
 import com.cashbacks.features.cashback.domain.model.Cashback
-import kotlinx.datetime.Clock
+import kotlinx.datetime.LocalDate
 
 object CashbackUtils {
     val Cashback.roundedAmount: String get() = amount
@@ -16,7 +16,7 @@ object CashbackUtils {
 
 
     internal fun List<Cashback>.filterMaxCashbacks(): Set<Cashback> {
-        val today = Clock.System.today()
+        val today = LocalDate.now()
         return filter { today in it.getDateRange() }
             .groupBy { it.measureUnit }.values
             .mapNotNull { it.maxByOrNull(Cashback::amount) }

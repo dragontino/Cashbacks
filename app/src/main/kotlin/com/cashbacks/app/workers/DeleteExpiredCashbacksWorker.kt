@@ -5,12 +5,12 @@ import android.util.Log
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.cashbacks.common.resources.R
-import com.cashbacks.common.utils.today
+import com.cashbacks.common.utils.now
 import com.cashbacks.features.cashback.domain.usecase.DeleteCashbacksUseCase
 import com.cashbacks.features.cashback.domain.usecase.GetExpiredCashbacksUseCase
 import com.cashbacks.features.settings.domain.model.Settings
 import com.cashbacks.features.settings.domain.usecase.GetSettingsUseCase
-import kotlinx.datetime.Clock
+import kotlinx.datetime.LocalDate
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
@@ -34,7 +34,7 @@ class DeleteExpiredCashbacksWorker(
                 return Result.success()
             }
 
-            val today = Clock.System.today()
+            val today = LocalDate.now()
             val expiredCashbacks = getExpiredCashbacks(today).getOrNull() ?: emptyList()
             if (expiredCashbacks.isEmpty()) {
                 return Result.success()

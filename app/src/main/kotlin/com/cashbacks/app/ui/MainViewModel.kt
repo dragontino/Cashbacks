@@ -5,7 +5,7 @@ import androidx.activity.SystemBarStyle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.cashbacks.common.resources.MessageHandler
-import com.cashbacks.common.utils.today
+import com.cashbacks.common.utils.now
 import com.cashbacks.features.cashback.domain.usecase.DeleteCashbacksUseCase
 import com.cashbacks.features.cashback.domain.usecase.GetExpiredCashbacksUseCase
 import com.cashbacks.features.cashback.presentation.api.resources.ExpiredCashbacksDeletionException
@@ -15,7 +15,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
+import kotlinx.datetime.LocalDate
 
 class MainViewModel(
     fetchSettings: FetchSettingsUseCase,
@@ -49,7 +49,7 @@ class MainViewModel(
         failure: (message: String) -> Unit
     ) {
         viewModelScope.launch {
-            val today = Clock.System.today()
+            val today = LocalDate.now()
             val result = getExpiredCashbacks(today).mapCatching { expiredCashbacks ->
                 val deletionResult = deleteCashbacks(expiredCashbacks)
                 deletionResult.getOrNull() ?: throw deletionResult.exceptionOrNull()!!
