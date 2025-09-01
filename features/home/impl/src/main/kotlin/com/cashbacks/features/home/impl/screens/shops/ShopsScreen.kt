@@ -77,10 +77,9 @@ import com.cashbacks.features.home.impl.mvi.ShopsIntent
 import com.cashbacks.features.home.impl.mvi.ShopsLabel
 import com.cashbacks.features.home.impl.mvi.ShopsState
 import com.cashbacks.features.home.impl.navigation.HomeDestination
-import com.cashbacks.features.home.impl.utils.copy
+import com.cashbacks.features.home.impl.utils.LocalBottomBarHeight
 import com.cashbacks.features.shop.domain.model.Shop
 import com.cashbacks.features.shop.presentation.api.ShopArgs
-import kotlinx.collections.immutable.toImmutableSet
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 
@@ -90,7 +89,6 @@ internal fun ShopsRoot(
     navigateToShop: (args: ShopArgs) -> Unit,
     navigateToCashback: (args: CashbackArgs) -> Unit,
     navigateBack: () -> Unit,
-    contentPadding: PaddingValues,
     modifier: Modifier = Modifier,
     viewModel: ShopsViewModel = koinViewModel()
 ) {
@@ -126,8 +124,9 @@ internal fun ShopsRoot(
     ShopsScreen(
         state = state,
         snackbarHostState = snackbarHostState,
-        contentPadding = contentPadding,
-        sendIntent = viewModel::sendIntent,
+        intentSender = IntentSender { intent, withDelay ->
+            viewModel.sendIntent(intent, withDelay)
+        },
         modifier = modifier
     )
 }
@@ -137,14 +136,13 @@ internal fun ShopsRoot(
 private fun ShopsScreen(
     state: ShopsState,
     snackbarHostState: SnackbarHostState,
-    contentPadding: PaddingValues,
-    sendIntent: (ShopsIntent) -> Unit,
+    intentSender: IntentSender<ShopsIntent>,
     modifier: Modifier = Modifier
 ) {
     BackHandler {
         when (state.viewModelState) {
-            ViewModelState.Editing -> sendIntent(ShopsIntent.FinishEdit)
-            ViewModelState.Viewing -> sendIntent(ShopsIntent.ClickButtonBack)
+            ViewModelState.Editing -> intentSender.sendIntent(ShopsIntent.FinishEdit)
+            ViewModelState.Viewing -> intentSender.sendIntent(ShopsIntent.ClickButtonBack)
         }
     }
 
@@ -161,10 +159,12 @@ private fun ShopsScreen(
                 title = HomeDestination.Shops.screenTitle,
                 state = state.appBarState,
                 onStateChange = {
-                    sendIntent(ShopsIntent.ChangeAppBarState(it))
+                    intentSender.sendIntent(ShopsIntent.ChangeAppBarState(it))
                 },
                 searchPlaceholder = stringResource(R.string.search_shops_placeholder),
-                onNavigationIconClick = { sendIntent(ShopsIntent.ClickNavigationButton) },
+                onNavigationIconClick = {
+                    intentSender.sendIntentWithDelay(ShopsIntent.ClickNavigationButton)
+                },
                 colors = HomeAppBarDefaults.colors(
                     topBarContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = .6f)
                         .mix(MaterialTheme.colorScheme.primary)
@@ -192,7 +192,7 @@ private fun ShopsScreen(
                 exit = floatingActionButtonExitAnimation()
             ) {
                 BasicFloatingActionButton(icon = Icons.Rounded.Add) {
-                    sendIntent(ShopsIntent.NavigateToShop(ShopArgs()))
+                    intentSender.sendIntentWithDelay(ShopsIntent.NavigateToShop(ShopArgs()))
                 }
             }
 
@@ -202,13 +202,15 @@ private fun ShopsScreen(
                         ViewModelState.Editing -> Icons.Rounded.EditOff
                         ViewModelState.Viewing -> Icons.Rounded.Edit
                     },
-                    onClick = { sendIntent(ShopsIntent.SwitchEdit) }
+                    onClick = {
+                        intentSender.sendIntentWithDelay(ShopsIntent.SwitchEdit)
+                    }
                 )
             }
         },
         fabModifier = Modifier
             .windowInsetsPadding(WindowInsets.tappableElement.only(WindowInsetsSides.End))
-            .padding(bottom = contentPadding.calculateBottomPadding())
+            .padding(bottom = LocalBottomBarHeight.current)
             .onGloballyPositioned { fabHeightPx.floatValue = it.size.height.toFloat() },
         contentWindowInsets = WindowInsets.ime.only(WindowInsetsSides.Bottom),
         modifier = Modifier
@@ -218,14 +220,12 @@ private fun ShopsScreen(
         ShopsList(
             state = state,
             contentState = lazyListState,
-            contentPadding = contentPadding.copy(LocalLayoutDirection.current) {
-                copy(
-                    bottom = with(LocalDensity.current) {
-                        (bottom + fabHeightPx.floatValue.toDp()).animate()
-                    }
-                )
-            },
-            sendIntent = sendIntent
+            contentPadding = PaddingValues(
+                bottom = with(LocalDensity.current) {
+                    (LocalBottomBarHeight.current + fabHeightPx.floatValue.toDp()).animate()
+                }
+            ),
+            intentSender = intentSender
         )
     }
 }
@@ -237,7 +237,7 @@ private fun ShopsList(
     state: ShopsState,
     contentState: LazyListState,
     contentPadding: PaddingValues,
-    sendIntent: (ShopsIntent) -> Unit
+    intentSender: IntentSender<ShopsIntent>
 ) {
     Crossfade(
         targetState = state.shops?.toList().toListState(),

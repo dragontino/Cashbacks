@@ -10,11 +10,9 @@ import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Download
@@ -35,21 +33,23 @@ import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.core.content.ContextCompat
@@ -64,8 +64,10 @@ import com.cashbacks.common.composables.BoundedSnackbar
 import com.cashbacks.common.composables.ModalSheetDefaults
 import com.cashbacks.common.composables.ModalSheetItems.IconTextItem
 import com.cashbacks.common.composables.theme.VerdanaFont
+import com.cashbacks.common.composables.utils.Saver
 import com.cashbacks.common.composables.utils.animate
 import com.cashbacks.common.composables.utils.getActivity
+import com.cashbacks.common.composables.utils.mutableStateSaver
 import com.cashbacks.common.navigation.enterScreenTransition
 import com.cashbacks.common.navigation.exitScreenTransition
 import com.cashbacks.common.resources.R
@@ -81,6 +83,7 @@ import com.cashbacks.features.home.impl.screens.cards.BankCardsRoot
 import com.cashbacks.features.home.impl.screens.cashbacks.CashbacksRoot
 import com.cashbacks.features.home.impl.screens.categories.CategoriesRoot
 import com.cashbacks.features.home.impl.screens.shops.ShopsRoot
+import com.cashbacks.features.home.impl.utils.LocalBottomBarHeight
 import com.cashbacks.features.home.impl.utils.SnackbarAction
 import com.cashbacks.features.home.impl.viewmodel.HomeViewModel
 import com.cashbacks.features.shop.presentation.api.ShopArgs
@@ -200,17 +203,6 @@ private fun HomeScreen(
         }
     }
 
-    val bottomBarHeightPx = rememberSaveable { mutableFloatStateOf(0f) }
-    val contentPadding by remember(density, bottomBarHeightPx) {
-        derivedStateOf {
-            with(density) {
-                PaddingValues(
-                    bottom = bottomBarHeightPx.floatValue.toDp()
-                )
-            }
-        }
-    }
-
 
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -266,133 +258,136 @@ private fun HomeScreen(
             .then(modifier)
             .fillMaxSize()
     ) {
-        Box(
-            modifier = Modifier
-                .then(modifier)
-                .fillMaxSize()
-        ) {
-            NavHost(
-                navController = navController,
-                startDestination = HomeDestination.Categories,
+        val bottomBarHeight = rememberSaveable(saver = mutableStateSaver(Dp.Saver)) {
+            mutableStateOf(0.dp)
+        }
+
+        CompositionLocalProvider(LocalBottomBarHeight provides bottomBarHeight.value) {
+            Box(
                 modifier = Modifier
-                    .zIndex(1.1f)
-                    .imePadding()
-                    .fillMaxSize(),
+                    .then(modifier)
+                    .fillMaxSize()
             ) {
-                composable<HomeDestination.Categories>(
-                    enterTransition = { enterScreenTransition(expandFrom = Alignment.Start) },
-                    exitTransition = { exitScreenTransition(shrinkTowards = Alignment.Start) }
+                NavHost(
+                    navController = navController,
+                    startDestination = HomeDestination.Categories,
+                    modifier = Modifier
+                        .zIndex(1.1f)
+                        .fillMaxSize(),
                 ) {
-                    CategoriesRoot(
-                        contentPadding = contentPadding,
-                        openDrawer = { sendIntent(HomeIntent.ClickButtonOpenDrawer) },
-                        navigateToCategory = { sendIntent(HomeIntent.NavigateToCategory(it)) },
-                        navigateToCashback = { sendIntent(HomeIntent.NavigateToCashback(it)) },
-                        navigateBack = { context.getActivity()?.finish() }
-                    )
-                }
-
-                composable<HomeDestination.Shops>(
-                    enterTransition = {
-                        val expandFrom = when {
-                            initialState.destination.hasRoute<HomeDestination.Categories>() -> Alignment.End
-                            else -> Alignment.Start
-                        }
-                        enterScreenTransition(expandFrom)
-                    },
-                    exitTransition = {
-                        val shrinkTowards = when {
-                            targetState.destination.hasRoute<HomeDestination.Categories>() -> Alignment.End
-                            else -> Alignment.Start
-                        }
-                        exitScreenTransition(shrinkTowards)
-                    },
-                ) {
-                    ShopsRoot(
-                        contentPadding = contentPadding,
-                        openDrawer = { sendIntent(HomeIntent.ClickButtonOpenDrawer) },
-                        navigateToShop = { sendIntent(HomeIntent.NavigateToShop(it)) },
-                        navigateToCashback = { sendIntent(HomeIntent.NavigateToCashback(it)) },
-                        navigateBack = navController::popBackStack,
-
-                    )
-                }
-
-                composable<HomeDestination.Cashbacks>(
-                    enterTransition = {
-                        val expandFrom = when {
-                            initialState.destination.hasRoute<HomeDestination.Cards>() -> Alignment.Start
-                            else -> Alignment.End
-                        }
-                        enterScreenTransition(expandFrom)
-                    },
-                    exitTransition = {
-                        val shrinkTowards = when {
-                            targetState.destination.hasRoute<HomeDestination.Cards>() -> Alignment.Start
-                            else -> Alignment.End
-                        }
-                        exitScreenTransition(shrinkTowards)
+                    composable<HomeDestination.Categories>(
+                        enterTransition = { enterScreenTransition(expandFrom = Alignment.Start) },
+                        exitTransition = { exitScreenTransition(shrinkTowards = Alignment.Start) }
+                    ) {
+                        CategoriesRoot(
+                            openDrawer = { sendIntent(HomeIntent.ClickButtonOpenDrawer) },
+                            navigateToCategory = { sendIntent(HomeIntent.NavigateToCategory(it)) },
+                            navigateToCashback = { sendIntent(HomeIntent.NavigateToCashback(it)) },
+                            navigateBack = { context.getActivity()?.finish() }
+                        )
                     }
-                ) {
-                    CashbacksRoot(
-                        openDrawer = { sendIntent(HomeIntent.ClickButtonOpenDrawer) },
-                        navigateToCashback = { sendIntent(HomeIntent.NavigateToCashback(it)) },
-                        navigateBack = navController::popBackStack,
-                        contentPadding = contentPadding
-                    )
+
+                    composable<HomeDestination.Shops>(
+                        enterTransition = {
+                            val expandFrom = when {
+                                initialState.destination.hasRoute<HomeDestination.Categories>() -> Alignment.End
+                                else -> Alignment.Start
+                            }
+                            enterScreenTransition(expandFrom)
+                        },
+                        exitTransition = {
+                            val shrinkTowards = when {
+                                targetState.destination.hasRoute<HomeDestination.Categories>() -> Alignment.End
+                                else -> Alignment.Start
+                            }
+                            exitScreenTransition(shrinkTowards)
+                        },
+                    ) {
+                        ShopsRoot(
+                            openDrawer = { sendIntent(HomeIntent.ClickButtonOpenDrawer) },
+                            navigateToShop = { sendIntent(HomeIntent.NavigateToShop(it)) },
+                            navigateToCashback = { sendIntent(HomeIntent.NavigateToCashback(it)) },
+                            navigateBack = navController::popBackStack,
+                            )
+                    }
+
+                    composable<HomeDestination.Cashbacks>(
+                        enterTransition = {
+                            val expandFrom = when {
+                                initialState.destination.hasRoute<HomeDestination.Cards>() -> Alignment.Start
+                                else -> Alignment.End
+                            }
+                            enterScreenTransition(expandFrom)
+                        },
+                        exitTransition = {
+                            val shrinkTowards = when {
+                                targetState.destination.hasRoute<HomeDestination.Cards>() -> Alignment.Start
+                                else -> Alignment.End
+                            }
+                            exitScreenTransition(shrinkTowards)
+                        }
+                    ) {
+                        CashbacksRoot(
+                            openDrawer = { sendIntent(HomeIntent.ClickButtonOpenDrawer) },
+                            navigateToCashback = { sendIntent(HomeIntent.NavigateToCashback(it)) },
+                            navigateBack = navController::popBackStack,
+                        )
+                    }
+
+                    composable<HomeDestination.Cards>(
+                        enterTransition = { enterScreenTransition(expandFrom = Alignment.End) },
+                        exitTransition = { exitScreenTransition(shrinkTowards = Alignment.End) }
+                    ) {
+                        BankCardsRoot(
+                            openDrawer = { sendIntent(HomeIntent.ClickButtonOpenDrawer) },
+                            navigateToCard = { sendIntent(HomeIntent.NavigateToBankCard(it)) },
+                        )
+                    }
                 }
 
-                composable<HomeDestination.Cards>(
-                    enterTransition = { enterScreenTransition(expandFrom = Alignment.End) },
-                    exitTransition = { exitScreenTransition(shrinkTowards = Alignment.End) }
+
+                SnackbarHost(
+                    hostState = snackbarHostState,
+                    modifier = Modifier
+                        .zIndex(1.4f)
+                        .padding(horizontal = 8.dp)
+                        .padding(
+                            bottom = with(LocalDensity.current) { bottomBarHeight.value }
+                        )
+                        .align(Alignment.BottomCenter)
                 ) {
-                    BankCardsRoot(
-                        openDrawer = { sendIntent(HomeIntent.ClickButtonOpenDrawer) },
-                        navigateToCard = { sendIntent(HomeIntent.NavigateToBankCard(it)) },
-                        contentPadding = contentPadding
-                    )
+                    BoundedSnackbar(it)
                 }
+
+
+                BottomBar(
+                    selectedDestination = currentDestination.value,
+                    onClickToDestination = {
+                        if (navController.currentDestination?.hasRoute(it::class) != true) {
+                            navController.navigate(it) {
+                                popUpTo<HomeDestination.Categories>()
+                                launchSingleTop = true
+                            }
+                        }
+                    },
+                    modifier = Modifier
+                        .onSizeChanged {
+                            with(density) {
+                                bottomBarHeight.value = it.height.toDp()
+                            }
+                        }
+                        .zIndex(1.2f)
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth()
+                )
             }
-
-
-            SnackbarHost(
-                hostState = snackbarHostState,
-                modifier = Modifier
-                    .zIndex(1.4f)
-                    .padding(horizontal = 8.dp)
-                    .padding(
-                        bottom = with(LocalDensity.current) { bottomBarHeightPx.floatValue.toDp() }
-                    )
-                    .align(Alignment.BottomCenter)
-            ) {
-                BoundedSnackbar(it)
-            }
-
-
-            BottomBar(
-                selectedDestination = currentDestination.value,
-                onClickToDestination = {
-                    if (it != navController.currentDestination?.arguments) {
-                        navController.navigate(it) {
-                            popUpTo<HomeDestination.Categories>()
-                            launchSingleTop = true
-                        }
-                    }
-                },
-                modifier = Modifier
-                    .onGloballyPositioned {
-                        bottomBarHeightPx.floatValue = it.size.height.toFloat()
-                    }
-                    .zIndex(1.2f)
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth()
-            )
         }
     }
 }
 
 
 
+@Suppress("SameParameterValue")
 private inline fun usePermissions(
     vararg permissions: String,
     context: Context,

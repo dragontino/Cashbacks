@@ -92,9 +92,6 @@ import com.cashbacks.common.composables.utils.expandedAnimationSpec
 import com.cashbacks.common.composables.utils.mix
 import com.cashbacks.common.composables.utils.reversed
 import com.cashbacks.common.resources.R
-import com.cashbacks.common.composables.management.DialogType
-import com.cashbacks.common.composables.management.ListState
-import com.cashbacks.common.composables.management.toListState
 import com.cashbacks.features.bankcard.domain.model.BankCard
 import com.cashbacks.features.bankcard.domain.model.BasicBankCard
 import com.cashbacks.features.bankcard.domain.model.PrimaryBankCard
@@ -110,7 +107,7 @@ import com.cashbacks.features.home.impl.mvi.BankCardsIntent
 import com.cashbacks.features.home.impl.mvi.BankCardsLabel
 import com.cashbacks.features.home.impl.mvi.BankCardsState
 import com.cashbacks.features.home.impl.navigation.HomeDestination
-import com.cashbacks.features.home.impl.utils.copy
+import com.cashbacks.features.home.impl.utils.LocalBottomBarHeight
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 
@@ -118,7 +115,6 @@ import org.koin.androidx.compose.koinViewModel
 fun BankCardsRoot(
     openDrawer: () -> Unit,
     navigateToCard: (args: BankCardArgs) -> Unit,
-    contentPadding: PaddingValues,
     modifier: Modifier = Modifier,
     viewModel: CardsViewModel = koinViewModel(),
 ) {
@@ -157,7 +153,6 @@ fun BankCardsRoot(
     CardsScreen(
         state = state,
         snackbarHostState = snackbarHostState,
-        contentPadding = contentPadding,
         sendIntent = viewModel::sendIntent,
         modifier = modifier
     )
@@ -168,7 +163,6 @@ fun BankCardsRoot(
 private fun CardsScreen(
     state: BankCardsState,
     snackbarHostState: SnackbarHostState,
-    contentPadding: PaddingValues,
     sendIntent: (BankCardsIntent) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -204,7 +198,7 @@ private fun CardsScreen(
             }
         },
         fabModifier = Modifier
-            .padding(bottom = contentPadding.calculateBottomPadding())
+            .padding(bottom = LocalBottomBarHeight.current)
             .windowInsetsPadding(WindowInsets.tappableElement.only(WindowInsetsSides.End))
             .onGloballyPositioned { fabHeightPx.floatValue = it.size.height.toFloat() },
         snackbarHost = {
@@ -224,13 +218,11 @@ private fun CardsScreen(
         BankCardList(
             state = state,
             contentState = lazyListState,
-            contentPadding = contentPadding.copy(LocalLayoutDirection.current) {
-                copy(
-                    bottom = with(LocalDensity.current) {
-                        bottom + fabHeightPx.floatValue.toDp()
-                    }
-                )
-            },
+            contentPadding = PaddingValues(
+                bottom = with(LocalDensity.current) {
+                    LocalBottomBarHeight.current + fabHeightPx.floatValue.toDp()
+                }
+            ),
             sendIntent = sendIntent,
         )
     }

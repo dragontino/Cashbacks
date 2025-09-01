@@ -87,7 +87,6 @@ internal fun CashbacksRoot(
     openDrawer: () -> Unit,
     navigateToCashback: (args: CashbackArgs) -> Unit,
     navigateBack: () -> Unit,
-    contentPadding: PaddingValues,
     modifier: Modifier = Modifier,
     viewModel: CashbacksViewModel = koinViewModel()
 ) {
