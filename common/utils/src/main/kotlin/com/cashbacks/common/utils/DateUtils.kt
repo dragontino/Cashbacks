@@ -1,8 +1,7 @@
 package com.cashbacks.common.utils
 
-import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.daysUntil
@@ -11,9 +10,11 @@ import kotlinx.datetime.format.DateTimeFormatBuilder
 import kotlinx.datetime.format.char
 import kotlinx.datetime.toJavaLocalDate
 import kotlinx.datetime.toLocalDateTime
-import kotlinx.datetime.todayIn
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
 
 typealias DateFormatBuilder = DateTimeFormatBuilder.WithDate.() -> Unit
@@ -38,7 +39,7 @@ object DateTimeFormats {
     * Represents date pattern "dd/MM/yyyy"
     */
     fun defaultDateFormat(): DateFormatBuilder = {
-        dayOfMonth()
+        day()
         char('/')
         monthNumber()
         char('/')
@@ -69,8 +70,7 @@ object DateUtils {
     fun LocalDate.calculateDaysBetweenToday(
         timeZone: TimeZone = TimeZone.currentSystemDefault()
     ): Int {
-        val today = Clock.System.todayIn(timeZone)
-        return today.daysUntil(this)
+        return LocalDate.now(timeZone).daysUntil(this)
     }
 }
 
@@ -91,16 +91,23 @@ fun LocalDate.format(
 }
 
 
+@OptIn(ExperimentalTime::class)
 fun LocalDate.epochMillis(timeZone: TimeZone = TimeZone.UTC): Long {
     return atStartOfDayIn(timeZone).toEpochMilliseconds()
 }
 
 
+@OptIn(ExperimentalTime::class)
 fun LocalDate(epochMillis: Long, timeZone: TimeZone = TimeZone.UTC): LocalDate {
     return Instant.fromEpochMilliseconds(epochMillis).toLocalDateTime(timeZone).date
 }
 
 
-fun Clock.System.today(timeZone: TimeZone = TimeZone.currentSystemDefault()): LocalDate {
-    return Clock.System.todayIn(timeZone)
+fun LocalDate.Companion.now(timeZone: TimeZone = TimeZone.currentSystemDefault()): LocalDate {
+    return LocalDateTime.now(timeZone).date
+}
+
+@OptIn(ExperimentalTime::class)
+fun LocalDateTime.Companion.now(timeZone: TimeZone = TimeZone.currentSystemDefault()): LocalDateTime {
+    return Clock.System.now().toLocalDateTime(timeZone)
 }
