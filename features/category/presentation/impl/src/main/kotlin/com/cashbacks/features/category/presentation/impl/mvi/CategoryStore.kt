@@ -150,12 +150,7 @@ internal data class CategoryEditingState(
 
 
 @Immutable
-internal data class ShopWithCashback(val shop: Shop, val maxCashback: Cashback?) {
-    val id: String get() = when (maxCashback) {
-        null -> shop.id.toString()
-        else -> "${shop.id}-${maxCashback.id}"
-    }
-}
+internal data class ShopWithCashback(val shop: Shop, val maxCashback: Cashback?)
 
 
 internal enum class CategoryError {

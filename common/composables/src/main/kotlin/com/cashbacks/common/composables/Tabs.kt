@@ -2,7 +2,6 @@ package com.cashbacks.common.composables
 
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.collectIsDraggedAsState
@@ -38,7 +37,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -166,7 +164,7 @@ private fun <T : AppBarItem> TabsLayout(
                     },
                     enabled = scrollEnabled || selectedTabIndex.value == index,
                     selectedContentColor = selectedTabColor.animate(),
-                    unselectedContentColor = unselectedTabColor.animate()
+                    unselectedContentColor = unselectedTabColor.animate(),
                 )
             }
         }
@@ -182,18 +180,11 @@ private fun <T : AppBarItem> TabsLayout(
 }
 
 
+@Suppress("unused")
 private fun Modifier.smoothTabIndicatorOffset(
     currentTabPosition: TabPosition,
     pagerState: PagerState
 ): Modifier = composed {
-    val currentTabWidth by animateDpAsState(
-        targetValue = currentTabPosition.width,
-        animationSpec = tween(durationMillis = 250, easing = FastOutSlowInEasing)
-    )
-    val indicatorOffset by animateDpAsState(
-        targetValue = getPageIndicatorOffset(currentTabPosition, pagerState),
-        animationSpec = tween(durationMillis = 250, easing = FastOutSlowInEasing)
-    )
     fillMaxWidth()
         .wrapContentSize(Alignment.BottomStart)
         .offset(x = getPageIndicatorOffset(currentTabPosition, pagerState))
