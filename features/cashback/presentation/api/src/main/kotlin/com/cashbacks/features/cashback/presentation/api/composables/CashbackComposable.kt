@@ -8,14 +8,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.DeleteForever
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.Measurable
 import androidx.compose.ui.layout.MeasurePolicy
@@ -31,11 +30,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.cashbacks.common.composables.swipeablelistitem.SwipeableListItem
-import com.cashbacks.common.composables.swipeablelistitem.rememberSwipeableListItemState
+import com.cashbacks.common.composables.swipeable.SwipeDirection
+import com.cashbacks.common.composables.swipeable.SwipeableListItem
+import com.cashbacks.common.composables.swipeable.SwipeableListItemDefaults
+import com.cashbacks.common.composables.swipeable.rememberSwipeableItemState
 import com.cashbacks.common.composables.theme.CashbacksTheme
-import com.cashbacks.common.composables.utils.animate
 import com.cashbacks.common.resources.R
+import com.cashbacks.common.utils.OnClick
 import com.cashbacks.common.utils.maxOfOrNull
 import com.cashbacks.features.bankcard.domain.model.PaymentSystem
 import com.cashbacks.features.bankcard.domain.model.PreviewBankCard
@@ -54,25 +55,29 @@ import kotlinx.datetime.Month
 @Composable
 fun CashbackComposable(
     cashback: Cashback,
-    onClick: () -> Unit,
+    onClick: OnClick,
     modifier: Modifier = Modifier,
-    isSwiped: Boolean = false,
-    onSwipe: suspend (isSwiped: Boolean) -> Unit = {},
+    isEnabledToSwipe: Boolean = false,
+    onSwipeStatusChanged: (isOnSwipe: Boolean) -> Unit = {},
     onDelete: () -> Unit = {}
 ) {
-    val state = rememberSwipeableListItemState(isSwiped)
+    val state = rememberSwipeableItemState(
+        rightAction = {
+            onDelete()
+            swipeToLeft()
+        },
+        swipeEnabled = { it == SwipeDirection.Rtl }
+    )
     val verticalPadding = 12.dp
     val horizontalPadding = 12.dp
 
-    LaunchedEffect(isSwiped) {
-        if (isSwiped != state.isSwiped.value) {
-            state.swipe()
-        }
+    LaunchedEffect(state.isOnSwipe.value) {
+        onSwipeStatusChanged(state.isOnSwipe.value)
     }
 
-    LaunchedEffect(state.isSwiped.value) {
-        if (state.isSwiped.value != isSwiped) {
-            onSwipe(state.isSwiped.value)
+    LaunchedEffect(isEnabledToSwipe) {
+        if (!isEnabledToSwipe && state.contentOffset.floatValue != 0f) {
+            state.swipeToZero()
         }
     }
 
@@ -80,21 +85,25 @@ fun CashbackComposable(
         state = state,
         onClick = onClick,
         shape = MaterialTheme.shapes.medium,
-        hiddenContent = {
-            IconButton(
-                onClick = onDelete,
-                colors = IconButtonDefaults.iconButtonColors(
-                    contentColor = MaterialTheme.colorScheme.primary.animate()
-                )
-            ) {
-                Icon(
-                    imageVector = Icons.Rounded.DeleteForever,
-                    contentDescription = "delete",
-                    modifier = Modifier.scale(1.2f)
-                )
-            }
+        rightActionIcon = {
+            Icon(
+                imageVector = Icons.Rounded.DeleteForever,
+                contentDescription = "delete",
+                modifier = Modifier.scale(1.2f)
+            )
         },
-        containerColor = MaterialTheme.colorScheme.background,
+        isEnabledToSwipe = isEnabledToSwipe,
+        colors = SwipeableListItemDefaults.colors(
+            containerColor = MaterialTheme.colorScheme.surface,
+            contentColor = MaterialTheme.colorScheme.onSurface,
+            rightActionColors = SwipeableListItemDefaults.actionColors(
+                containerColor = Color.Red.copy(alpha = .5f),
+                clickedContainerColor = Color.Red,
+                contentColor = Color.White
+            )
+        ),
+        tonalElevation = 4.dp,
+        shadowElevation = 4.dp,
         modifier = modifier
     ) {
         Layout(
@@ -350,22 +359,20 @@ private class CashbackMeasurePolicy(val verticalSpacing: Dp, val horizontalPaddi
         horizontalPaddingPx: Int
     ): Int {
         var currentY = 0
-        LayoutIds.MainItems.forEach {
+        LayoutIds.MainItems.forEach { item ->
             val lineHeight = maxOfOrNull(
-                placeables[it.titleId]?.height,
-                placeables[it.contentId]?.height
+                placeables[item.titleId]?.height,
+                placeables[item.contentId]?.height
             )
 
-            placeables[it.titleId]?.placeRelative(x = horizontalPaddingPx, y = currentY)
-            placeables[it.contentId]?.apply {
+            placeables[item.titleId]?.placeRelative(x = horizontalPaddingPx, y = currentY)
+            placeables[item.contentId]?.apply {
                 placeRelative(
                     x = titleWidth + horizontalPaddingPx,
                     y = currentY + (lineHeight!! - height) / 2
                 )
             }
-            lineHeight?.let {
-                currentY += it + verticalSpacingPx
-            }
+            lineHeight?.let { currentY += it + verticalSpacingPx }
         }
         return currentY
     }
