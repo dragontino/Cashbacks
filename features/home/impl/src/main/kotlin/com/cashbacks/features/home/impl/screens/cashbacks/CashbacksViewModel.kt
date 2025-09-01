@@ -8,8 +8,8 @@ import com.arkivanov.mvikotlin.extensions.coroutines.coroutineBootstrapper
 import com.arkivanov.mvikotlin.extensions.coroutines.coroutineExecutorFactory
 import com.arkivanov.mvikotlin.extensions.coroutines.labels
 import com.arkivanov.mvikotlin.extensions.coroutines.stateFlow
-import com.cashbacks.common.utils.dispatchFromAnotherThread
 import com.cashbacks.common.composables.management.ScreenState
+import com.cashbacks.common.utils.dispatchFromAnotherThread
 import com.cashbacks.features.cashback.domain.usecase.DeleteCashbackUseCase
 import com.cashbacks.features.cashback.domain.usecase.FetchAllCashbacksUseCase
 import com.cashbacks.features.cashback.domain.usecase.SearchCashbacksUseCase
@@ -21,7 +21,13 @@ import com.cashbacks.features.home.impl.mvi.CashbacksMessage
 import com.cashbacks.features.home.impl.mvi.CashbacksState
 import com.cashbacks.features.home.impl.mvi.HomeAction
 import com.cashbacks.features.home.impl.utils.launchWithLoading
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ObsoleteCoroutinesApi
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.actor
+import kotlinx.coroutines.channels.onClosed
+import kotlinx.coroutines.channels.onSuccess
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
@@ -98,12 +104,12 @@ class CashbacksViewModel(
                     publish(CashbacksLabel.NavigateToCashback(it.args))
                 }
                 onIntent<CashbacksIntent.SwipeCashback> {
-                    dispatch(CashbacksMessage.UpdateSelectedCashbackIndex(it.position))
+                    dispatch(CashbacksMessage.UpdateSwipedCashbackId(it.id))
                 }
-                onIntent<CashbacksIntent.DeleteCashback> {
+                onIntent<CashbacksIntent.DeleteCashback> { intent ->
                     launchWithLoading {
                         delay(100)
-                        deleteCashback(it.cashback).onFailure { throwable ->
+                        deleteCashback(intent.cashback).onFailure { throwable ->
                             throwable.message?.takeIf { it.isNotBlank() }?.let {
                                 forward(HomeAction.DisplayMessage(it))
                             }
@@ -131,7 +137,7 @@ class CashbacksViewModel(
                     is CashbacksMessage.UpdateAppBarState -> copy(appBarState = msg.state)
                     is CashbacksMessage.UpdateCashbacks -> copy(cashbacks = msg.cashbacks)
                     is CashbacksMessage.UpdateScreenState -> copy(screenState = msg.state)
-                    is CashbacksMessage.UpdateSelectedCashbackIndex -> copy(selectedCashbackIndex = msg.index)
+                    is CashbacksMessage.UpdateSwipedCashbackId -> copy(swipedCashbackId = msg.id)
                     is CashbacksMessage.UpdateShowingBottomSheet -> copy(showBottomSheet = msg.showBottomSheet)
                 }
             }
@@ -145,16 +151,38 @@ class CashbacksViewModel(
 
     internal val labelFlow: Flow<CashbacksLabel> by lazy { store.labels }
 
-    internal fun sendIntent(intent: CashbacksIntent) {
-        store.accept(intent)
+    @OptIn(ObsoleteCoroutinesApi::class)
+    private val intentChannel = viewModelScope.actor(
+        capacity = Channel.RENDEZVOUS,
+        start = CoroutineStart.UNDISPATCHED
+    ) {
+        while (true) {
+            receiveCatching()
+                .onSuccess { store.accept(it) }
+                .onClosed { return@actor }
+            delay(DELAY_MILLIS)
+        }
     }
 
     init {
         store.init()
     }
 
+    internal fun sendIntent(intent: CashbacksIntent, withDelay: Boolean = false) {
+        when {
+            withDelay -> intentChannel.trySend(intent)
+            else -> store.accept(intent)
+        }
+    }
+
     override fun onCleared() {
+        intentChannel.close()
         store.dispose()
         super.onCleared()
+    }
+
+
+    private companion object {
+        const val DELAY_MILLIS = 50L
     }
 }
