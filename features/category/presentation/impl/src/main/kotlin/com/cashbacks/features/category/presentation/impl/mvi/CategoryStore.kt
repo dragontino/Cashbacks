@@ -10,6 +10,8 @@ import com.cashbacks.features.category.presentation.api.CategoryArgs
 import com.cashbacks.features.category.presentation.api.CategoryTabItemType
 import com.cashbacks.features.shop.domain.model.Shop
 import com.cashbacks.features.shop.presentation.api.ShopArgs
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
 
 // Actions
 internal sealed interface EditingAction {
@@ -20,7 +22,7 @@ internal sealed interface CategoryAction : EditingAction {
     data object StartLoading : CategoryAction
     data object FinishLoading : CategoryAction
     data class LoadCategory(val category: Category) : CategoryAction
-    data class LoadShops(val shops: Map<Shop, Set<Cashback>>) : CategoryAction
+    data class LoadShops(val shops: List<ShopWithCashback>) : CategoryAction
     data class LoadCashbacks(val cashbacks: List<Cashback>) : CategoryAction
     data class DisplayMessage(val message: String) : CategoryAction
 }
@@ -65,6 +67,7 @@ internal sealed interface EditingIntent {
     data object FinishCreatingShop : EditingIntent
     data class SaveShop(val name: String) : EditingIntent
     data class ClickToShop(val shopId: Long) : EditingIntent
+    data class ClickToEditShop(val shopId: Long) : EditingIntent
     data object CreateCashback : EditingIntent
     data class ClickToCashback(val cashbackId: Long) : EditingIntent
     data class UpdateErrorMessage(val error: CategoryError) : EditingIntent
@@ -102,8 +105,8 @@ internal sealed interface EditingMessage {
 internal sealed interface CategoryMessage : ViewingMessage, EditingMessage {
     data class UpdateScreenState(val state: ScreenState) : CategoryMessage
     data class UpdateCategory(val category: Category) : CategoryMessage
-    data class UpdateShops(val shops: Map<Shop, Set<Cashback>>) : CategoryMessage
-    data class UpdateCashbacks(val cashbacks: List<Cashback>) : CategoryMessage
+    data class UpdateShops(val shops: ImmutableList<ShopWithCashback>) : CategoryMessage
+    data class UpdateCashbacks(val cashbacks: ImmutableList<Cashback>) : CategoryMessage
     data class ChangeSelectedShopIndex(val index: Int?) : CategoryMessage
     data class ChangeSelectedCashbackIndex(val index: Int?) : CategoryMessage
 }
@@ -113,8 +116,8 @@ internal sealed interface CategoryMessage : ViewingMessage, EditingMessage {
 internal interface CategoryState {
     val screenState: ScreenState
     val category: Category
-    val shops: Map<Shop, Set<Cashback>>
-    val cashbacks: List<Cashback>
+    val shops: ImmutableList<ShopWithCashback>
+    val cashbacks: ImmutableList<Cashback>
     val selectedShopIndex: Int?
     val selectedCashbackIndex: Int?
 }
@@ -123,8 +126,8 @@ internal interface CategoryState {
 internal data class CategoryViewingState(
     override val screenState: ScreenState = ScreenState.Stable,
     override val category: Category = Category(),
-    override val shops: Map<Shop, Set<Cashback>> = emptyMap(),
-    override val cashbacks: List<Cashback> = emptyList(),
+    override val shops: ImmutableList<ShopWithCashback> = persistentListOf(),
+    override val cashbacks: ImmutableList<Cashback> = persistentListOf(),
     override val selectedShopIndex: Int? = null,
     override val selectedCashbackIndex: Int? = null
 ) : CategoryState
@@ -134,8 +137,8 @@ internal data class CategoryEditingState(
     override val screenState: ScreenState = ScreenState.Stable,
     val initialCategory: Category = Category(),
     override val category: Category = initialCategory,
-    override val shops: Map<Shop, Set<Cashback>> = emptyMap(),
-    override val cashbacks: List<Cashback> = emptyList(),
+    override val shops: ImmutableList<ShopWithCashback> = persistentListOf(),
+    override val cashbacks: ImmutableList<Cashback> = persistentListOf(),
     val isCreatingShop: Boolean = false,
     override val selectedShopIndex: Int? = null,
     override val selectedCashbackIndex: Int? = null,
@@ -143,6 +146,15 @@ internal data class CategoryEditingState(
     val showErrors: Boolean = false
 ) : CategoryState {
     fun isCategoryChanged() = initialCategory != category
+}
+
+
+@Immutable
+internal data class ShopWithCashback(val shop: Shop, val maxCashback: Cashback?) {
+    val id: String get() = when (maxCashback) {
+        null -> shop.id.toString()
+        else -> "${shop.id}-${maxCashback.id}"
+    }
 }
 
 

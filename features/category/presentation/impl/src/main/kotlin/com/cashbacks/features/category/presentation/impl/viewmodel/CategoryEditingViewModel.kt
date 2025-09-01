@@ -33,6 +33,7 @@ import com.cashbacks.features.category.presentation.impl.mvi.EditingAction
 import com.cashbacks.features.category.presentation.impl.mvi.EditingIntent
 import com.cashbacks.features.category.presentation.impl.mvi.EditingLabel
 import com.cashbacks.features.category.presentation.impl.mvi.EditingMessage
+import com.cashbacks.features.category.presentation.impl.mvi.ShopWithCashback
 import com.cashbacks.features.category.presentation.impl.utils.applyCategoryActions
 import com.cashbacks.features.category.presentation.impl.utils.applyCommonCategoryIntents
 import com.cashbacks.features.category.presentation.impl.utils.launchWithLoading
@@ -42,13 +43,21 @@ import com.cashbacks.features.shop.domain.usecase.DeleteShopUseCase
 import com.cashbacks.features.shop.domain.usecase.FetchShopsFromCategoryUseCase
 import com.cashbacks.features.shop.presentation.api.ShopArgs
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.sample
+import kotlinx.coroutines.withContext
 
+@OptIn(FlowPreview::class)
 class CategoryEditingViewModel(
     private val getCategory: GetCategoryUseCase,
     private val addShop: AddShopUseCase,
@@ -68,29 +77,34 @@ class CategoryEditingViewModel(
 
     private companion object {
         const val CATEGORY_NAME_SAVED_KEY = "CategoryName"
+
+        const val DELAY_MILLIS = 50L
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     private val editingStore: Store<EditingIntent, CategoryEditingState, EditingLabel> by lazy {
         storeFactory.create(
             name = "CategoryEditingStore",
             initialState = CategoryEditingState(),
             bootstrapper = coroutineBootstrapper<EditingAction>(Dispatchers.Default) {
                 fetchShopsFromCategory(categoryId)
+                    .map { shops ->
+                        shops.flatMap { shop ->
+                            val cashbacks = getMaxCashbacksFromShop(shop.id)
+                                .onFailure { throw it }.getOrNull()
+                            if (cashbacks.isNullOrEmpty()) {
+                                listOf(ShopWithCashback(shop, maxCashback = null))
+                            } else {
+                                cashbacks.map { ShopWithCashback(shop, it) }
+                            }
+                        }
+                    }
                     .catch { throwable ->
                         throwable.message?.takeIf { it.isNotBlank() }?.let {
                             dispatchFromAnotherThread(CategoryAction.DisplayMessage(it))
                         }
                     }
-                    .onEach { shops ->
-                        val shopMaxCashbacksMap = shops.associateWith {
-                            getMaxCashbacksFromShop(it.id).onFailure { throwable ->
-                                throwable.message?.takeIf { it.isNotBlank() }?.let {
-                                    dispatchFromAnotherThread(CategoryAction.DisplayMessage(it))
-                                }
-                            }.getOrNull() ?: emptySet()
-                        }
-                        dispatchFromAnotherThread(CategoryAction.LoadShops(shopMaxCashbacksMap))
-                    }
+                    .onEach { dispatchFromAnotherThread(CategoryAction.LoadShops(it)) }
                     .launchIn(this)
 
                 fetchCashbacksFromCategory(categoryId)
@@ -139,10 +153,10 @@ class CategoryEditingViewModel(
                     val args = CategoryArgs.Viewing(categoryId, it.startTab)
                     publish(EditingLabel.NavigateToCategoryViewingScreen(args))
                 }
-                onIntent<EditingIntent.DeleteCashback> {
+                onIntent<EditingIntent.DeleteCashback> { intent ->
                     launchWithLoading {
                         delay(100)
-                        deleteCashback(it.cashback).onFailure { throwable ->
+                        deleteCashback(intent.cashback).onFailure { throwable ->
                             throwable.message?.takeIf { it.isNotBlank() }?.let {
                                 forwardFromAnotherThread(CategoryAction.DisplayMessage(it))
                             }
@@ -151,6 +165,10 @@ class CategoryEditingViewModel(
                     }
                 }
                 onIntent<EditingIntent.ClickToShop> {
+                    val args = ShopArgs(id = it.shopId, isEditing = false)
+                    publish(CategoryLabel.NavigateToShopScreen(args))
+                }
+                onIntent<EditingIntent.ClickToEditShop> {
                     val args = ShopArgs(id = it.shopId, isEditing = true)
                     publish(CategoryLabel.NavigateToShopScreen(args))
                 }
@@ -162,10 +180,10 @@ class CategoryEditingViewModel(
                     val args = CashbackArgs.fromCategory(categoryId = categoryId)
                     publish(CategoryLabel.NavigateToCashbackScreen(args))
                 }
-                onIntent<EditingIntent.DeleteShop> {
+                onIntent<EditingIntent.DeleteShop> { intent ->
                     launchWithLoading {
                         delay(100)
-                        deleteShop(it.shop).onFailure { throwable ->
+                        deleteShop(intent.shop).onFailure { throwable ->
                             throwable.message?.takeIf { it.isNotBlank() }?.let {
                                 forwardFromAnotherThread(CategoryAction.DisplayMessage(it))
                             }
@@ -198,7 +216,9 @@ class CategoryEditingViewModel(
                         else -> launchWithLoading {
                             delay(300)
                             updateCategory(state.category)
-                                .onSuccess { intent.onSuccess() }
+                                .onSuccess {
+                                    withContext(Dispatchers.Main) { intent.onSuccess() }
+                                }
                                 .onFailure { throwable ->
                                     throwable.message?.takeIf { it.isNotBlank() }?.let {
                                         forwardFromAnotherThread(
@@ -304,7 +324,31 @@ class CategoryEditingViewModel(
         editingStore.labels
     }
 
-    internal fun sendIntent(intent: EditingIntent) {
-        editingStore.accept(intent)
+    private val intentSharedFlow = MutableSharedFlow<EditingIntent>(
+        extraBufferCapacity = 1,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST
+    )
+
+
+    init {
+        editingStore.init()
+        intentSharedFlow
+            .sample(DELAY_MILLIS)
+            .onEach { editingStore.accept(it) }
+            .launchIn(viewModelScope)
+    }
+
+
+    override fun onCleared() {
+        editingStore.dispose()
+        super.onCleared()
+    }
+
+
+    internal fun sendIntent(intent: EditingIntent, withDelay: Boolean = false) {
+        when {
+            withDelay -> intentSharedFlow.tryEmit(intent)
+            else -> editingStore.accept(intent)
+        }
     }
 }

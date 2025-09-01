@@ -73,19 +73,18 @@ import com.cashbacks.common.composables.ListContentTabPage
 import com.cashbacks.common.composables.LoadingInBox
 import com.cashbacks.common.composables.ModalSheetDefaults
 import com.cashbacks.common.composables.NewNameTextField
-import com.cashbacks.common.composables.OnLifecycleEvent
 import com.cashbacks.common.composables.SecondaryTabsLayout
 import com.cashbacks.common.composables.management.DialogType
-import com.cashbacks.common.composables.management.ListState
 import com.cashbacks.common.composables.management.ScreenState
+import com.cashbacks.common.composables.management.toListState
 import com.cashbacks.common.composables.utils.animate
 import com.cashbacks.common.composables.utils.floatingActionButtonEnterAnimation
 import com.cashbacks.common.composables.utils.floatingActionButtonExitAnimation
 import com.cashbacks.common.composables.utils.keyboardAsState
 import com.cashbacks.common.resources.R
+import com.cashbacks.common.utils.IntentSender
 import com.cashbacks.features.cashback.domain.model.BasicCashback
 import com.cashbacks.features.cashback.domain.model.Cashback
-import com.cashbacks.features.cashback.domain.utils.asCashbackOwner
 import com.cashbacks.features.cashback.presentation.api.CashbackArgs
 import com.cashbacks.features.cashback.presentation.api.composables.CashbackComposable
 import com.cashbacks.features.cashback.presentation.api.composables.MaxCashbackOwnerComposable
@@ -98,12 +97,12 @@ import com.cashbacks.features.category.presentation.impl.mvi.CategoryIntent
 import com.cashbacks.features.category.presentation.impl.mvi.CategoryLabel
 import com.cashbacks.features.category.presentation.impl.mvi.EditingIntent
 import com.cashbacks.features.category.presentation.impl.mvi.EditingLabel
+import com.cashbacks.features.category.presentation.impl.mvi.ShopWithCashback
 import com.cashbacks.features.category.presentation.impl.tabItems
 import com.cashbacks.features.category.presentation.impl.viewmodel.CategoryEditingViewModel
 import com.cashbacks.features.shop.domain.model.BasicShop
 import com.cashbacks.features.shop.domain.model.Shop
 import com.cashbacks.features.shop.presentation.api.ShopArgs
-import kotlinx.collections.immutable.toImmutableSet
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 
@@ -182,7 +181,7 @@ internal fun CategoryEditingRoot(
         state = state,
         snackbarHostState = snackbarHostState,
         pagerState = pagerState,
-        sendIntent = viewModel::sendIntent
+        intentSender = IntentSender(viewModel::sendIntent)
     )
 }
 
@@ -193,25 +192,21 @@ private fun CategoryEditingScreen(
     state: CategoryEditingState,
     pagerState: PagerState,
     snackbarHostState: SnackbarHostState,
-    sendIntent: (EditingIntent) -> Unit
+    intentSender: IntentSender<EditingIntent>
 ) {
     BackHandler {
         when {
-            state.isCategoryChanged() -> sendIntent(CategoryIntent.OpenDialog(DialogType.Save))
-            else -> sendIntent(CategoryIntent.ClickButtonBack)
+            state.isCategoryChanged() -> intentSender.sendIntent(CategoryIntent.OpenDialog(DialogType.Save))
+            else -> intentSender.sendIntent(CategoryIntent.ClickButtonBack)
         }
     }
-
-    OnLifecycleEvent(
-        onDestroy = { sendIntent(EditingIntent.SaveCategory()) }
-    )
 
     val keyboardIsOpen = keyboardAsState()
 
     LaunchedEffect(Unit) {
         snapshotFlow { keyboardIsOpen.value }.collect { isKeyboardOpen ->
             if (!isKeyboardOpen) {
-                sendIntent(EditingIntent.FinishCreatingShop)
+                intentSender.sendIntent(EditingIntent.FinishCreatingShop)
             }
         }
     }
@@ -226,7 +221,7 @@ private fun CategoryEditingScreen(
             state = state,
             pagerState = pagerState,
             snackbarHostState = snackbarHostState,
-            sendIntent = sendIntent
+            intentSender = intentSender
         )
 
         AnimatedVisibility(
@@ -240,7 +235,7 @@ private fun CategoryEditingScreen(
             modifier = Modifier.align(Alignment.BottomCenter)
         ) {
             NewNameTextField(placeholder = stringResource(R.string.shop_placeholder)) { name ->
-                sendIntent(EditingIntent.SaveShop(name))
+                intentSender.sendIntent(EditingIntent.SaveShop(name))
             }
         }
     }
@@ -253,7 +248,7 @@ private fun CategoryEditingScreenContent(
     state: CategoryEditingState,
     pagerState: PagerState,
     snackbarHostState: SnackbarHostState,
-    sendIntent: (EditingIntent) -> Unit
+    intentSender: IntentSender<EditingIntent>
 ) {
     val fabPaddingDp = rememberSaveable { mutableFloatStateOf(0f) }
     val keyboardIsVisibleState = keyboardAsState()
@@ -304,11 +299,13 @@ private fun CategoryEditingScreenContent(
                                 IconButton(
                                     onClick = {
                                         when {
-                                            isChanged -> sendIntent(
+                                            isChanged -> intentSender.sendIntentWithDelay(
                                                 CategoryIntent.OpenDialog(DialogType.Save)
                                             )
 
-                                            else -> sendIntent(CategoryIntent.ClickButtonBack)
+                                            else -> intentSender.sendIntentWithDelay(
+                                                CategoryIntent.ClickButtonBack
+                                            )
                                         }
                                     }
                                 ) {
@@ -327,7 +324,9 @@ private fun CategoryEditingScreenContent(
                             IconButton(
                                 onClick = {
                                     val dialogType = DialogType.ConfirmDeletion(state.category)
-                                    sendIntent(CategoryIntent.OpenDialog(dialogType))
+                                    intentSender.sendIntentWithDelay(
+                                        CategoryIntent.OpenDialog(dialogType)
+                                    )
                                 }
                             ) {
                                 Icon(
@@ -353,11 +352,11 @@ private fun CategoryEditingScreenContent(
                     ) {
                         BasicFloatingActionButton(icon = Icons.Rounded.Add) {
                             when (currentScreen.value) {
-                                CategoryTabItem.Cashbacks -> sendIntent(
+                                CategoryTabItem.Cashbacks -> intentSender.sendIntentWithDelay(
                                     EditingIntent.CreateCashback
                                 )
 
-                                CategoryTabItem.Shops -> sendIntent(
+                                CategoryTabItem.Shops -> intentSender.sendIntentWithDelay(
                                     EditingIntent.StartCreatingShop
                                 )
                             }
@@ -366,9 +365,9 @@ private fun CategoryEditingScreenContent(
 
                     AnimatedVisibility(visible = !keyboardIsVisibleState.value) {
                         BasicFloatingActionButton(icon = Icons.Rounded.Save) {
-                            sendIntent(
+                            intentSender.sendIntentWithDelay(
                                 EditingIntent.SaveCategory {
-                                    sendIntent(
+                                    intentSender.sendIntent(
                                         EditingIntent.NavigateToCategoryViewing(
                                             startTab = currentScreen.value.type
                                         )
@@ -405,8 +404,10 @@ private fun CategoryEditingScreenContent(
                     EditableTextField(
                         text = state.category.name,
                         onTextChange = {
-                            sendIntent(EditingIntent.UpdateCategoryName(it))
-                            sendIntent(EditingIntent.UpdateErrorMessage(CategoryError.Name))
+                            intentSender.sendIntent(EditingIntent.UpdateCategoryName(it))
+                            intentSender.sendIntentWithDelay(
+                                EditingIntent.UpdateErrorMessage(CategoryError.Name)
+                            )
                         },
                         label = stringResource(R.string.category_placeholder),
                         imeAction = ImeAction.Done,
@@ -430,12 +431,10 @@ private fun CategoryEditingScreenContent(
                             .clip(ModalSheetDefaults.BottomSheetShape)
                     ) { pageIndex, page ->
                         ListContentTabPage(
-                            contentState = ListState.fromCollection(
-                                when (page) {
-                                    CategoryTabItem.Shops -> state.shops.keys
-                                    CategoryTabItem.Cashbacks -> state.cashbacks
-                                }
-                            ),
+                            contentState = when (page) {
+                                CategoryTabItem.Shops -> state.shops
+                                CategoryTabItem.Cashbacks -> state.cashbacks
+                            }.toListState(),
                             state = currentListState,
                             placeholderText = when (page) {
                                 CategoryTabItem.Shops -> stringResource(R.string.empty_shops_list_editing)
@@ -444,25 +443,37 @@ private fun CategoryEditingScreenContent(
                             bottomSpacing = fabPaddingDp.floatValue.dp.animate()
                         ) { index, item ->
                             when (item) {
-                                is Shop -> MaxCashbackOwnerComposable(
-                                    cashbackOwner = item.asCashbackOwner(),
-                                    maxCashbacks = state.shops[item]!!.toImmutableSet(),
-                                    isEditing = true,
-                                    isSwiped = state.selectedShopIndex == index,
-                                    onSwipe = { isSwiped ->
-                                        sendIntent(CategoryIntent.SwipeShop(index, isSwiped))
+                                is ShopWithCashback -> MaxCashbackOwnerComposable(
+                                    mainContent = {
+                                        Text(
+                                            text = item.shop.name,
+                                            style = MaterialTheme.typography.bodyMedium
+                                        )
                                     },
-                                    onClick = {},
-                                    onClickToCashback = { cashback ->
-                                        sendIntent(EditingIntent.ClickToCashback(cashback.id))
+                                    maxCashback = item.maxCashback,
+                                    isEnabledToSwipe = state.selectedShopIndex == index || state.selectedShopIndex == null,
+                                    onSwipeStatusChanged = { isOnSwipe ->
+                                        intentSender.sendIntentWithDelay(
+                                            CategoryIntent.SwipeShop(index, isOnSwipe)
+                                        )
+                                    },
+                                    onClick = {
+                                        intentSender.sendIntentWithDelay(
+                                            EditingIntent.ClickToShop(item.shop.id)
+                                        )
+                                    },
+                                    onClickToCashback = {
+                                        intentSender.sendIntentWithDelay(
+                                            EditingIntent.ClickToCashback(item.maxCashback!!.id)
+                                        )
                                     },
                                     onEdit = {
-                                        sendIntent(CategoryIntent.SwipeShop(null))
-                                        sendIntent(EditingIntent.ClickToShop(item.id))
+                                        intentSender.sendIntentWithDelay(
+                                            EditingIntent.ClickToEditShop(item.shop.id)
+                                        )
                                     },
                                     onDelete = {
-                                        sendIntent(CategoryIntent.SwipeShop(null))
-                                        sendIntent(
+                                        intentSender.sendIntentWithDelay(
                                             CategoryIntent.OpenDialog(
                                                 type = DialogType.ConfirmDeletion(item)
                                             )
@@ -470,19 +481,21 @@ private fun CategoryEditingScreenContent(
                                     }
                                 )
 
-                                is BasicCashback -> CashbackComposable(
+                                is Cashback -> CashbackComposable(
                                     cashback = item,
-                                    isSwiped = state.selectedCashbackIndex == index,
-                                    onSwipe = { isSwiped ->
-                                        sendIntent(CategoryIntent.SwipeCashback(index, isSwiped))
+                                    isEnabledToSwipe = state.selectedCashbackIndex == index || state.selectedCashbackIndex == null,
+                                    onSwipeStatusChanged = { isOnSwipe ->
+                                        intentSender.sendIntentWithDelay(
+                                            CategoryIntent.SwipeCashback(index, isOnSwipe)
+                                        )
                                     },
                                     onClick = {
-                                        sendIntent(CategoryIntent.SwipeCashback(null))
-                                        sendIntent(EditingIntent.ClickToCashback(item.id))
+                                        intentSender.sendIntentWithDelay(
+                                            EditingIntent.ClickToCashback(item.id)
+                                        )
                                     },
                                     onDelete = {
-                                        sendIntent(CategoryIntent.SwipeCashback(null))
-                                        sendIntent(
+                                        intentSender.sendIntentWithDelay(
                                             CategoryIntent.OpenDialog(
                                                 type = DialogType.ConfirmDeletion(item)
                                             )
