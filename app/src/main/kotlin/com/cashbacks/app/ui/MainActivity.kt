@@ -39,7 +39,6 @@ import com.cashbacks.features.settings.presentation.navigation.SettingsFeature
 import com.cashbacks.features.settings.presentation.utils.isDark
 import com.cashbacks.features.shop.presentation.impl.navigation.ShopFeature
 import kotlinx.coroutines.launch
-import org.koin.androidx.compose.KoinAndroidContext
 import org.koin.androidx.compose.koinViewModel
 
 class MainActivity : ComponentActivity() {
@@ -47,70 +46,68 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         setContent {
-            KoinAndroidContext {
-                val mainViewModel: MainViewModel = koinViewModel()
-                val settings by mainViewModel.settingsStateFlow.collectAsStateWithLifecycle()
+            val mainViewModel: MainViewModel = koinViewModel()
+            val settings by mainViewModel.settingsStateFlow.collectAsStateWithLifecycle()
 
-                val snackbarHostState = remember(::SnackbarHostState)
-                val scope = rememberCoroutineScope()
+            val snackbarHostState = remember(::SnackbarHostState)
+            val scope = rememberCoroutineScope()
 
-                val showSnackbar = remember {
-                    fun(message: String) {
-                        scope.launch { snackbarHostState.showSnackbar(message) }
-                    }
+            val showSnackbar = remember {
+                fun(message: String) {
+                    scope.launch { snackbarHostState.showSnackbar(message) }
                 }
+            }
 
 
-                // TODO: переделать на service
-                LaunchedEffect(Unit) {
-                    if (
-                        (application as App).checkExpiredCashbacks &&
-                        settings.autoDeleteExpiredCashbacks
-                    ) {
-                        mainViewModel.deleteExpiredCashbacks(
-                            success = { count ->
-                                val message = application.resources.getQuantityString(
-                                    R.plurals.expired_cashbacks_deletion_success,
-                                    count,
-                                    count
-                                )
-                                showSnackbar(message)
-                            },
-                            failure = showSnackbar
-                        )
-                        (application as App).checkExpiredCashbacks = false
-                    }
+            // TODO: переделать на service
+            LaunchedEffect(Unit) {
+                if (
+                    (application as App).checkExpiredCashbacks &&
+                    settings.autoDeleteExpiredCashbacks
+                ) {
+                    mainViewModel.deleteExpiredCashbacks(
+                        success = { count ->
+                            val message = application.resources.getQuantityString(
+                                R.plurals.expired_cashbacks_deletion_success,
+                                count,
+                                count
+                            )
+                            showSnackbar(message)
+                        },
+                        failure = showSnackbar
+                    )
+                    (application as App).checkExpiredCashbacks = false
                 }
+            }
 
-                val isDarkTheme = settings.colorDesign.isDark
+            val isDarkTheme = settings.colorDesign.isDark
 
-                CashbacksTheme(isDarkTheme, settings.dynamicColor) {
-                    enableEdgeToEdge(
-                        statusBarStyle = mainViewModel.statusBarStyle(isDarkTheme),
-                        navigationBarStyle = mainViewModel.navigationBarStyle(isDarkTheme),
+            CashbacksTheme(isDarkTheme, settings.dynamicColor) {
+                enableEdgeToEdge(
+                    statusBarStyle = mainViewModel.statusBarStyle(isDarkTheme),
+                    navigationBarStyle = mainViewModel.navigationBarStyle(isDarkTheme),
+                )
+
+                Box {
+                    NavHost(
+                        modifier = Modifier
+                            .zIndex(1f)
+                            .fillMaxSize()
                     )
 
-                    Box {
-                        NavHost(
-                            modifier = Modifier
-                                .zIndex(1f)
-                                .fillMaxSize()
+                    SnackbarHost(
+                        hostState = snackbarHostState,
+                        modifier = Modifier
+                            .padding(bottom = 180.dp)
+                            .align(Alignment.BottomCenter)
+                            .zIndex(2f)
+                    ) {
+                        Snackbar(
+                            snackbarData = it,
+                            shape = MaterialTheme.shapes.medium,
+                            containerColor = MaterialTheme.colorScheme.background.reversed.animate(),
+                            contentColor = MaterialTheme.colorScheme.onBackground.reversed.animate()
                         )
-
-                        SnackbarHost(
-                            hostState = snackbarHostState,
-                            modifier = Modifier
-                                .padding(bottom = 180.dp)
-                                .align(Alignment.BottomCenter)
-                                .zIndex(2f)
-                        ) {
-                            Snackbar(
-                                snackbarData = it,
-                                shape = MaterialTheme.shapes.medium,
-                                containerColor = MaterialTheme.colorScheme.background.reversed.animate(),
-                                contentColor = MaterialTheme.colorScheme.onBackground.reversed.animate()
-                            )
-                        }
                     }
                 }
             }
