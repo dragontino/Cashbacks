@@ -78,28 +78,29 @@ import com.cashbacks.common.composables.EditableTextFieldDefaults
 import com.cashbacks.common.composables.ListDropdownMenu
 import com.cashbacks.common.composables.LoadingInBox
 import com.cashbacks.common.composables.ModalBottomSheet
+import com.cashbacks.common.composables.management.BottomSheetType
+import com.cashbacks.common.composables.management.DialogType
+import com.cashbacks.common.composables.management.ListState
+import com.cashbacks.common.composables.management.ScreenState
 import com.cashbacks.common.composables.theme.DarkerGray
 import com.cashbacks.common.composables.utils.animate
 import com.cashbacks.common.composables.utils.reversed
 import com.cashbacks.common.resources.R
 import com.cashbacks.common.utils.DateUtils.getDisplayableString
-import com.cashbacks.common.composables.management.BottomSheetType
-import com.cashbacks.common.composables.management.DialogType
-import com.cashbacks.common.composables.management.ListState
-import com.cashbacks.common.composables.management.ScreenState
-import com.cashbacks.common.utils.today
+import com.cashbacks.common.utils.now
 import com.cashbacks.features.bankcard.domain.model.PaymentSystem
-import com.cashbacks.features.bankcard.presentation.impl.mvi.BankCardError
-import com.cashbacks.features.bankcard.presentation.impl.mvi.EditingLabel
-import com.cashbacks.features.bankcard.presentation.impl.mvi.EditingIntent
-import com.cashbacks.features.bankcard.presentation.impl.mvi.EditingState
-import com.cashbacks.features.bankcard.presentation.impl.mvi.model.EditableBankCard
 import com.cashbacks.features.bankcard.presentation.api.utils.PaymentSystemUtils
 import com.cashbacks.features.bankcard.presentation.api.utils.PaymentSystemUtils.title
+import com.cashbacks.features.bankcard.presentation.impl.mvi.BankCardError
+import com.cashbacks.features.bankcard.presentation.impl.mvi.EditingIntent
+import com.cashbacks.features.bankcard.presentation.impl.mvi.EditingLabel
+import com.cashbacks.features.bankcard.presentation.impl.mvi.EditingState
+import com.cashbacks.features.bankcard.presentation.impl.mvi.model.EditableBankCard
 import com.cashbacks.features.bankcard.presentation.impl.viewmodel.BankCardEditingViewModel
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.Month
+import kotlinx.datetime.number
 import kotlinx.serialization.Serializable
 import org.koin.androidx.compose.koinViewModel
 
@@ -660,8 +661,10 @@ private fun ValidityPeriodSelectionBottomSheet(
     onClose: () -> Unit
 ) {
     val (month, year) = rememberSaveable {
-        val date = initialValidityPeriod ?: Clock.System.today()
-        listOf(date.monthNumber, date.year).map { mutableStateOf(it.toString()) }
+        val date = initialValidityPeriod ?: LocalDate.now()
+        val month = date.month.number.toString().padStart(2, '0')
+        val year = date.year.toString()
+        mutableStateOf(month) to mutableStateOf(year)
     }
 
     ModalBottomSheet(
@@ -682,11 +685,11 @@ private fun ValidityPeriodSelectionBottomSheet(
                 },
                 incrementValue = {
                     val value = month.value.toIntOrNull() ?: 1
-                    month.value = (value % 12 + 1).toString().padStart(2, '0')
+                    (value % 12 + 1).toString().padStart(2, '0')
                 },
                 decrementValue = {
                     val value = month.value.toIntOrNull() ?: 2
-                    month.value = ((value + 10) % 12 + 1).toString().padStart(2, '0')
+                    ((value + 10) % 12 + 1).toString().padStart(2, '0')
                 },
                 onImeActionClick = {
                     val value = month.value.toIntOrNull() ?: 1
@@ -710,11 +713,11 @@ private fun ValidityPeriodSelectionBottomSheet(
                 },
                 incrementValue = {
                     val value = year.value.toIntOrNull() ?: 1
-                    year.value = ((value - 1999) % 100 + 2000).toString()
+                    ((value - 1999) % 100 + 2000).toString()
                 },
                 decrementValue = {
                     val value = year.value.toIntOrNull() ?: 2
-                    year.value = ((value - 1901) % 100 + 2000).toString()
+                    ((value - 1901) % 100 + 2000).toString()
                 },
                 imeAction = ImeAction.Done,
                 onImeActionClick = {
@@ -750,9 +753,12 @@ private fun ValidityPeriodSelectionBottomSheet(
                         ?: return@TextButton onClose()
                     val resultMonth =
                         month.value.toIntOrNull()?.coerceIn(1..12) ?: return@TextButton onClose()
-                    onConfirm(
-                        LocalDate(year = resultYear, monthNumber = resultMonth, dayOfMonth = 1)
+                    val resultDate = LocalDate(
+                        year = resultYear,
+                        month = Month(resultMonth),
+                        day = 1
                     )
+                    onConfirm(resultDate)
                     onClose()
                 },
                 colors = ButtonDefaults.textButtonColors(
@@ -817,14 +823,13 @@ private fun MaxCashbacksNumberSelectionBottomSheet(
             },
             controlButtonsOrientation = Orientation.Horizontal,
             incrementValue = {
-                maxCashbacksNumber.value.toIntOrNull()?.plus(1).let {
-                    maxCashbacksNumber.value = (it ?: 1).toString()
-                }
+                maxCashbacksNumber.value.toIntOrNull()?.plus(1)?.toString() ?: "1"
             },
             decrementValue = {
-                maxCashbacksNumber.value.toIntOrNull()?.takeIf { it > 1 }?.let {
-                    maxCashbacksNumber.value = (it - 1).toString()
-                }
+                maxCashbacksNumber.value
+                    .toIntOrNull()?.takeIf { it > 1 }
+                    ?.minus(1)?.toString()
+                    ?: "1"
             },
             imeAction = ImeAction.Done,
             textFieldColors = EditableTextFieldDefaults.colors(
@@ -883,11 +888,11 @@ private fun NumberControlPanel(
     modifier: Modifier = Modifier,
     inputFieldModifier: Modifier = Modifier,
     controlButtonsOrientation: Orientation = Orientation.Vertical,
-    incrementValue: () -> Unit = {
-        value.toIntOrNull()?.plus(1)?.toString()?.let(onValueChange)
+    incrementValue: () -> String = {
+        value.toIntOrNull()?.plus(1)?.toString() ?: value
     },
-    decrementValue: () -> Unit = {
-        value.toIntOrNull()?.minus(1)?.toString()?.let(onValueChange)
+    decrementValue: () -> String = {
+        value.toIntOrNull()?.minus(1)?.toString() ?: value
     },
     imeAction: ImeAction = ImeAction.Next,
     onImeActionClick: KeyboardActionScope.() -> Unit = { defaultKeyboardAction(imeAction) },
@@ -918,7 +923,7 @@ private fun NumberControlPanel(
     fun IncrementButton() {
         when (controlButtonsOrientation) {
             Orientation.Vertical -> IconButton(
-                onClick = incrementValue,
+                onClick = { onValueChange(incrementValue()) },
                 colors = IconButtonDefaults.iconButtonColors(
                     containerColor = containerColor,
                     contentColor = iconContentColor
@@ -932,7 +937,7 @@ private fun NumberControlPanel(
             }
 
             Orientation.Horizontal -> TextButton(
-                onClick = incrementValue,
+                onClick = { onValueChange(incrementValue()) },
                 colors = ButtonDefaults.textButtonColors(
                     containerColor = containerColor,
                     contentColor = iconContentColor
@@ -950,7 +955,7 @@ private fun NumberControlPanel(
     fun DecrementButton() {
         when (controlButtonsOrientation) {
             Orientation.Vertical -> IconButton(
-                onClick = decrementValue,
+                onClick = { onValueChange(decrementValue()) },
                 colors = IconButtonDefaults.iconButtonColors(
                     containerColor = containerColor,
                     contentColor = iconContentColor
@@ -964,7 +969,7 @@ private fun NumberControlPanel(
             }
 
             Orientation.Horizontal -> TextButton(
-                onClick = decrementValue,
+                onClick = { onValueChange(decrementValue()) },
                 colors = ButtonDefaults.textButtonColors(
                     containerColor = containerColor,
                     contentColor = iconContentColor
