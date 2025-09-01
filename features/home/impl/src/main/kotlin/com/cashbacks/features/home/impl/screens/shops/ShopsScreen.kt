@@ -22,7 +22,7 @@ import androidx.compose.foundation.layout.tappableElement
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
@@ -33,6 +33,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -48,6 +49,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.cashbacks.common.composables.BasicFloatingActionButton
@@ -56,6 +58,10 @@ import com.cashbacks.common.composables.CollapsingToolbarScaffold
 import com.cashbacks.common.composables.ConfirmDeletionDialog
 import com.cashbacks.common.composables.EmptyList
 import com.cashbacks.common.composables.LoadingInBox
+import com.cashbacks.common.composables.management.DialogType
+import com.cashbacks.common.composables.management.ListState
+import com.cashbacks.common.composables.management.ViewModelState
+import com.cashbacks.common.composables.management.toListState
 import com.cashbacks.common.composables.utils.animate
 import com.cashbacks.common.composables.utils.floatingActionButtonEnterAnimation
 import com.cashbacks.common.composables.utils.floatingActionButtonExitAnimation
@@ -63,11 +69,7 @@ import com.cashbacks.common.composables.utils.keyboardAsState
 import com.cashbacks.common.composables.utils.mix
 import com.cashbacks.common.composables.utils.reversed
 import com.cashbacks.common.resources.R
-import com.cashbacks.common.composables.management.DialogType
-import com.cashbacks.common.composables.management.ListState
-import com.cashbacks.common.composables.management.ViewModelState
-import com.cashbacks.common.composables.management.toListState
-import com.cashbacks.features.cashback.domain.utils.asCashbackOwner
+import com.cashbacks.common.utils.IntentSender
 import com.cashbacks.features.cashback.presentation.api.CashbackArgs
 import com.cashbacks.features.cashback.presentation.api.composables.MaxCashbackOwnerComposable
 import com.cashbacks.features.home.impl.composables.HomeAppBarDefaults
@@ -254,7 +256,10 @@ private fun ShopsList(
                         is HomeTopAppBarState.Search -> {
                             when {
                                 appBarState.query.isBlank() -> stringResource(R.string.empty_search_query)
-                                else -> stringResource(R.string.empty_search_results)
+                                else -> stringResource(
+                                    R.string.empty_search_results,
+                                    appBarState.query
+                                )
                             }
                         }
 
@@ -291,52 +296,65 @@ private fun ShopsList(
                     }
                 }
 
-                itemsIndexed(listState.data) { index, (shop, maxCashbacks) ->
+                items(
+                    key = { it.id },
+                    items = listState.data
+                ) { shopWithCashback ->
+                    val (shop, maxCashback) = shopWithCashback
                     MaxCashbackOwnerComposable(
-                        cashbackOwner = shop.asCashbackOwner(),
-                        maxCashbacks = maxCashbacks.toImmutableSet(),
-                        isEditing = state.viewModelState == ViewModelState.Editing,
-                        isSwiped = state.selectedShopIndex == index,
-                        onSwipe = { isSwiped ->
-                            sendIntent(ShopsIntent.SwipeShop(index, isSwiped))
+                        title = {
+                            Text(
+                                text = shop.parent.name,
+                                style = MaterialTheme.typography.bodySmall,
+                                maxLines = 1,
+                                overflow = TextOverflow.MiddleEllipsis
+                            )
+                        },
+                        mainContent = {
+                            Text(
+                                text = shop.name,
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        },
+                        maxCashback = maxCashback,
+                        isEnabledToSwipe = state.swipedShopId in setOf(shopWithCashback.id, null),
+                        onSwipeStatusChanged = { isOnSwipe ->
+                            intentSender.sendIntentWithDelay(
+                                ShopsIntent.SwipeShop(shopWithCashback.id, isOnSwipe)
+                            )
+                        },
+                        isExpanded = state.selectedShopId == shopWithCashback.id,
+                        onExpandedStatusChanged = { isExpanded ->
+                            intentSender.sendIntentWithDelay(
+                                ShopsIntent.SelectShop(shopWithCashback.id, isExpanded)
+                            )
                         },
                         onClick = {
-                            sendIntent(ShopsIntent.SwipeShop(null))
-                            sendIntent(
+                            intentSender.sendIntentWithDelay(
                                 ShopsIntent.NavigateToShop(
-                                    ShopArgs(
-                                        shop.id,
-                                        isEditing = false
-                                    )
+                                    ShopArgs(shop.id, isEditing = false)
                                 )
                             )
                         },
-                        onClickToCashback = { cashback ->
-                            sendIntent(
+                        onClickToCashback = {
+                            intentSender.sendIntentWithDelay(
                                 ShopsIntent.NavigateToCashback(
                                     CashbackArgs.fromShop(
-                                        cashbackId = cashback.id,
+                                        cashbackId = maxCashback!!.id,
                                         shopId = shop.id
                                     )
                                 )
                             )
                         },
                         onEdit = {
-                            sendIntent(
-                                ShopsIntent.SwipeShop(position = null)
-                            )
-                            sendIntent(
+                            intentSender.sendIntentWithDelay(
                                 ShopsIntent.NavigateToShop(
-                                    ShopArgs(
-                                        shop.id,
-                                        isEditing = true
-                                    )
+                                    ShopArgs(shop.id, isEditing = true)
                                 )
                             )
                         },
                         onDelete = {
-                            sendIntent(ShopsIntent.SwipeShop(position = null))
-                            sendIntent(
+                            intentSender.sendIntentWithDelay(
                                 ShopsIntent.OpenDialog(DialogType.ConfirmDeletion(shop))
                             )
                         },
