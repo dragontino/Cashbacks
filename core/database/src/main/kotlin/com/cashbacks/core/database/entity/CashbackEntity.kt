@@ -10,7 +10,8 @@ import com.cashbacks.features.bankcard.domain.model.PreviewBankCard
 import com.cashbacks.features.cashback.domain.model.MeasureUnit
 import kotlinx.datetime.LocalDate
 
-data class AmountDB(val value: Double) : Comparable<AmountDB> {
+@JvmInline
+value class AmountDB(val value: Double) : Comparable<AmountDB> {
     constructor(value: String) : this(value.toDoubleOrNull() ?: -1.0)
 
     override fun compareTo(other: AmountDB): Int {
