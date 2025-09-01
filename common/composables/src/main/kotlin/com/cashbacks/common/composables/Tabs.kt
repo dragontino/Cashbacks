@@ -2,8 +2,10 @@ package com.cashbacks.common.composables
 
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.interaction.collectIsDraggedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -11,7 +13,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -24,27 +29,32 @@ import androidx.compose.material.icons.rounded.DataArray
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Tab
+import androidx.compose.material3.TabPosition
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.TabRowDefaults
+import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.cashbacks.common.composables.management.ListState
 import com.cashbacks.common.composables.model.AppBarItem
 import com.cashbacks.common.composables.utils.animate
-import com.cashbacks.common.composables.management.ListState
 import kotlinx.coroutines.launch
+import kotlin.math.abs
 
 
 @Composable
@@ -90,12 +100,14 @@ private fun <T : AppBarItem> TabsLayout(
         derivedStateOf { pagerState.currentPage }
     }
 
-    val scrollToPage = { index: Int ->
-        scope.launch {
-            pagerState.animateScrollToPage(
-                page = index,
-                animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)
-            )
+    val scrollToPage = remember(scope) {
+        fun(index: Int) {
+            scope.launch {
+                pagerState.animateScrollToPage(
+                    page = index,
+                    animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)
+                )
+            }
         }
     }
 
@@ -107,32 +119,27 @@ private fun <T : AppBarItem> TabsLayout(
         isPrimary -> Color.Black
         else -> MaterialTheme.colorScheme.onBackground
     }
+    val indicatorColor = when {
+        isPrimary -> MaterialTheme.colorScheme.onBackground
+        else -> MaterialTheme.colorScheme.primary
+    }
 
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier.fillMaxWidth()
     ) {
-        PrimaryTabRow(
+        TabRow(
             selectedTabIndex = selectedTabIndex.value,
             containerColor = tabRowColor.animate(),
             contentColor = contentColorFor(tabRowColor).animate(),
-            indicator = {
-                when {
-                    isPrimary -> TabRowDefaults.SecondaryIndicator(
-                        modifier = Modifier.tabIndicatorOffset(
-                            selectedTabIndex.value,
-                            matchContentSize = false
-                        ),
-                        color = MaterialTheme.colorScheme.onBackground.animate()
+            indicator = { tabPositions ->
+                TabRowDefaults.SecondaryIndicator(
+                    color = indicatorColor.animate(),
+                    modifier = Modifier.tabIndicatorOffset(
+                        currentTabPosition = tabPositions[pagerState.currentPage]
                     )
-                    else -> TabRowDefaults.SecondaryIndicator(
-                        modifier = Modifier.tabIndicatorOffset(
-                            selectedTabIndex.value,
-                            matchContentSize = false
-                        )
-                    )
-                }
+                )
             },
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -172,6 +179,50 @@ private fun <T : AppBarItem> TabsLayout(
             pageContent = { page -> contentIndexed(page, pages[page]) }
         )
     }
+}
+
+
+private fun Modifier.smoothTabIndicatorOffset(
+    currentTabPosition: TabPosition,
+    pagerState: PagerState
+): Modifier = composed {
+    val currentTabWidth by animateDpAsState(
+        targetValue = currentTabPosition.width,
+        animationSpec = tween(durationMillis = 250, easing = FastOutSlowInEasing)
+    )
+    val indicatorOffset by animateDpAsState(
+        targetValue = getPageIndicatorOffset(currentTabPosition, pagerState),
+        animationSpec = tween(durationMillis = 250, easing = FastOutSlowInEasing)
+    )
+    fillMaxWidth()
+        .wrapContentSize(Alignment.BottomStart)
+        .offset(x = getPageIndicatorOffset(currentTabPosition, pagerState))
+        .width(currentTabPosition.width)
+}
+
+
+@Composable
+private fun getPageIndicatorOffset(currentTabPosition: TabPosition, pagerState: PagerState): Dp {
+    val isDragging = pagerState.interactionSource.collectIsDraggedAsState()
+
+    if (!isDragging.value) {
+        return currentTabPosition.left
+    }
+
+    val isScrolling = pagerState.isScrollInProgress
+    val currentTab = pagerState.currentPage
+    val settledTab = pagerState.settledPage
+
+    if (isScrolling) {
+        if (settledTab == currentTab) { // We are in the first half of scrolling to a next page
+            return currentTabPosition.left + currentTabPosition.width * pagerState.currentPageOffsetFraction
+        }
+        // We are in the second half, now the currentab.left is the target position so we use this to create a smooth transition using the fraction
+        val offsetFraction = (1 - abs(pagerState.currentPageOffsetFraction))
+        val settledPageLeft = currentTabPosition.left - currentTabPosition.width // Should work as long as we dont mess with the width
+        return settledPageLeft + currentTabPosition.width * offsetFraction
+    }
+    return currentTabPosition.left.animate()
 }
 
 
