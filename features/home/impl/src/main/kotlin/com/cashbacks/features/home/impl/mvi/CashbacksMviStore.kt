@@ -29,8 +29,8 @@ internal sealed interface CashbacksIntent {
 
     data class NavigateToCashback(val args: CashbackArgs) : CashbacksIntent
 
-    data class SwipeCashback(val position: Int? = null) : CashbacksIntent {
-        constructor(position: Int, isSwiped: Boolean) : this(position.takeIf { isSwiped })
+    data class SwipeCashback(val id: Long? = null) : CashbacksIntent {
+        constructor(id: Long, isSwiped: Boolean) : this(id.takeIf { isSwiped })
     }
 
     data class DeleteCashback(val cashback: Cashback) : CashbacksIntent
@@ -50,7 +50,7 @@ internal sealed interface CashbacksMessage {
     data class UpdateAppBarState(val state: HomeTopAppBarState) : CashbacksMessage
     data class UpdateCashbacks(val cashbacks: List<FullCashback>?) : CashbacksMessage
     data class UpdateShowingBottomSheet(val showBottomSheet: Boolean) : CashbacksMessage
-    data class UpdateSelectedCashbackIndex(val index: Int?) : CashbacksMessage
+    data class UpdateSwipedCashbackId(val id: Long?) : CashbacksMessage
 }
 
 
@@ -61,5 +61,5 @@ internal data class CashbacksState(
     val appBarState: HomeTopAppBarState = HomeTopAppBarState.TopBar,
     val cashbacks: List<FullCashback>? = emptyList(),
     val showBottomSheet: Boolean = false,
-    val selectedCashbackIndex: Int? = null
+    val swipedCashbackId: Long? = null
 )
