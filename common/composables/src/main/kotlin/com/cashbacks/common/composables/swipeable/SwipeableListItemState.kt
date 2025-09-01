@@ -1,10 +1,11 @@
-package com.cashbacks.common.composables.swipeablelistitem
+package com.cashbacks.common.composables.swipeable
 
-import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.FloatState
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.mutableFloatStateOf
@@ -13,7 +14,8 @@ import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 
 
-interface SwipeableListItemState {
+@Stable
+sealed interface SwipeableListItemState {
     /**
      * Определяет, можно ли скроллить
      * @param delta направление скролла. Значение < 0 означает сколл влево, значение > 0 — вправо
@@ -24,7 +26,9 @@ interface SwipeableListItemState {
 
     val isSwiped: State<Boolean>
 
-    suspend fun onSwipe(delta: Float): Float
+    fun onPreSwipe(delta: Float): Float
+
+    suspend fun onPostSwipe()
 
     fun coerceMinOffset(minOffset: Float)
 
@@ -42,23 +46,26 @@ private class SwipeableListItemStateImpl(
 
     override val contentOffset = mutableFloatStateOf(initialOffset)
 
-    override val isSwiped = derivedStateOf { contentOffset.floatValue < maxOffset }
+    override val isSwiped = derivedStateOf { contentOffset.floatValue != 0f }
 
 
     override fun canSwipe(delta: Float): Boolean {
         return delta < 0 && contentOffset.floatValue > minOffset.floatValue
-                || delta > 0 && contentOffset.floatValue < 0f
+                || delta > 0 && contentOffset.floatValue < maxOffset
     }
 
-    override suspend fun onSwipe(delta: Float): Float {
+    override fun onPreSwipe(delta: Float): Float {
         val previousOffset = contentOffset.floatValue
         contentOffset.floatValue = (contentOffset.floatValue + delta).coerceIn(
             minimumValue = this.minOffset.floatValue,
             maximumValue = this.maxOffset
         )
         val consumedOffset = contentOffset.floatValue - previousOffset
-        animateOffset()
         return consumedOffset
+    }
+
+    override suspend fun onPostSwipe() {
+        roundContentOffset()
     }
 
     override fun coerceMinOffset(minOffset: Float) {
@@ -81,7 +88,7 @@ private class SwipeableListItemStateImpl(
         animateOffset(maxOffset)
     }
 
-    private suspend fun animateOffset() {
+    private suspend fun roundContentOffset() {
         val targetOffset = when {
             contentOffset.floatValue < minOffset.floatValue / 2 -> minOffset.floatValue
             else -> maxOffset
@@ -93,7 +100,7 @@ private class SwipeableListItemStateImpl(
         animate(
             initialValue = contentOffset.floatValue,
             targetValue = target,
-            animationSpec = tween(durationMillis = 400, easing = LinearEasing)
+            animationSpec = animationSpec
         ) { offset, _ ->
             contentOffset.floatValue = offset
         }
@@ -102,6 +109,11 @@ private class SwipeableListItemStateImpl(
     companion object {
         private const val MIN_OFFSET_KEY = "minOffset"
         private const val CONTENT_OFFSET_KEY = "contentOffset"
+
+        private val animationSpec = tween<Float>(
+            durationMillis = 300,
+            easing = FastOutSlowInEasing
+        )
 
         val Saver: Saver<SwipeableListItemStateImpl, *> = Saver(
             save = {
