@@ -8,11 +8,11 @@ import com.arkivanov.mvikotlin.extensions.coroutines.coroutineBootstrapper
 import com.arkivanov.mvikotlin.extensions.coroutines.coroutineExecutorFactory
 import com.arkivanov.mvikotlin.extensions.coroutines.labels
 import com.arkivanov.mvikotlin.extensions.coroutines.stateFlow
+import com.cashbacks.common.composables.management.ScreenState
 import com.cashbacks.common.resources.MessageHandler
 import com.cashbacks.common.utils.AnimationDefaults
 import com.cashbacks.common.utils.dispatchFromAnotherThread
 import com.cashbacks.common.utils.forwardFromAnotherThread
-import com.cashbacks.common.composables.management.ScreenState
 import com.cashbacks.common.utils.publishFromAnotherThread
 import com.cashbacks.features.bankcard.domain.usecase.AddBankCardUseCase
 import com.cashbacks.features.bankcard.domain.usecase.GetBankCardUseCase
@@ -35,6 +35,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class BankCardEditingViewModel(
     private val getBankCardUseCase: GetBankCardUseCase,
@@ -115,7 +116,9 @@ class BankCardEditingViewModel(
                             forwardFromAnotherThread(BankCardAction.LoadStarted)
                             delay(100)
                             saveCard(state.card)
-                                .onSuccess { intent.onSuccess() }
+                                .onSuccess {
+                                    withContext(Dispatchers.Main) { intent.onSuccess() }
+                                }
                                 .onFailure { throwable ->
                                     throwable.message
                                         ?.takeIf { it.isNotBlank() }
