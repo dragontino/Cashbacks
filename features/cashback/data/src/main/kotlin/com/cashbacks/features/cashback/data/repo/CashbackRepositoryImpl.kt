@@ -73,6 +73,7 @@ internal class CashbackRepositoryImpl(
         val affectedDates = cashback.getDateRange()
         val cardCashbacksDates = dao
             .getAllCashbacksWithBankCard(cashback.bankCard.id)
+            .filter { it.id != cashback.id }
             .map { it.getDateRange() }
             .filter { it.start in affectedDates || it.endInclusive in affectedDates }
 
