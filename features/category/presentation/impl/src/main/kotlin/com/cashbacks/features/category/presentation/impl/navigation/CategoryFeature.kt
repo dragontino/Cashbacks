@@ -140,8 +140,8 @@ object CategoryFeature : FeatureApi {
                         launchSingleTop = true
                     }
                 },
-                navigateToCashback = {
-                    navController.navigate(it) {
+                navigateToCashback = { args ->
+                    navController.navigate(args) {
                         popUpTo<CategoryArgs.Editing>()
                         launchSingleTop = true
                     }

@@ -3,7 +3,6 @@ package com.cashbacks.common.composables
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -42,9 +41,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalConfiguration
@@ -54,6 +51,7 @@ import com.cashbacks.common.composables.model.Header
 import com.cashbacks.common.composables.theme.DarkerGray
 import com.cashbacks.common.composables.utils.animate
 import com.cashbacks.common.composables.utils.composableLet
+import com.cashbacks.common.utils.OnClick
 import kotlinx.coroutines.launch
 
 
@@ -176,6 +174,7 @@ private fun ColumnScope.BottomSheetContent(
 }
 
 
+@Suppress("UnusedReceiverParameter")
 @Composable
 private fun ColumnScope.BottomSheetHeader(
     header: Header,
@@ -239,13 +238,14 @@ private fun ColumnScope.BottomSheetHeader(
 }
 
 
+@Suppress("unused")
 object ModalSheetItems {
     @Composable
     fun ColumnScope.TextItem(
         text: String,
         modifier: Modifier = Modifier,
         selected: Boolean = false,
-        onClick: (text: String) -> Unit
+        onClick: OnClick
     ) {
         BottomSheetItem(
             text = text,
@@ -265,7 +265,7 @@ object ModalSheetItems {
         iconModifier: Modifier = Modifier,
         selected: Boolean = false,
         iconAlignment: Alignment.Horizontal = Alignment.Start,
-        onClick: (String) -> Unit
+        onClick: OnClick
     ) {
         val iconContent = @Composable {
             Icon(
@@ -279,16 +279,15 @@ object ModalSheetItems {
         BottomSheetItem(
             text = text,
             onClick = onClick,
-            leadingIcon = {
-                if (iconAlignment == Alignment.Start) {
-                    iconContent()
-                }
-            },
-            trailingIcon = {
-                if (iconAlignment == Alignment.End) {
-                    iconContent()
-                }
-            },
+            leadingIcon = iconAlignment
+                .takeIf { it == Alignment.Start }
+                ?.composableLet {
+                    iconContent.invoke()
+                },
+            trailingIcon = takeIf { iconAlignment == Alignment.End }
+                ?.composableLet {
+                    iconContent.invoke()
+                },
             selected = selected,
             modifier = modifier,
         )
@@ -298,7 +297,7 @@ object ModalSheetItems {
     @Composable
     private fun ColumnScope.BottomSheetItem(
         text: String,
-        onClick: (text: String) -> Unit,
+        onClick: OnClick,
         modifier: Modifier = Modifier,
         selected: Boolean = false,
         leadingIcon: @Composable (() -> Unit)? = null,
@@ -316,19 +315,19 @@ object ModalSheetItems {
             icon = leadingIcon,
             badge = trailingIcon,
             selected = selected,
-            onClick = { onClick(text) },
+            onClick = onClick,
             shape = MaterialTheme.shapes.small,
             colors = NavigationDrawerItemDefaults.colors(
-                selectedContainerColor = Color.Transparent,
+                selectedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
                 unselectedContainerColor = Color.Transparent
             ),
             modifier = Modifier
                 .padding(horizontal = 4.dp)
-                .background(
+                /*.background(
                     brush = when {
                         selected -> Brush.horizontalGradient(
                             colors = listOf(
-                                MaterialTheme.colorScheme.surface,
+                                MaterialTheme.colorScheme.surfaceVariant,
                                 MaterialTheme.colorScheme.primaryContainer,
                                 MaterialTheme.colorScheme.secondary,
                             )
@@ -338,7 +337,7 @@ object ModalSheetItems {
                     },
                     shape = MaterialTheme.shapes.small,
                     alpha = .25f
-                )
+                )*/
                 .then(modifier)
                 .align(Alignment.Start)
                 .fillMaxWidth()

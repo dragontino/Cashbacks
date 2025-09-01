@@ -51,6 +51,7 @@ fun CollapsingToolbarScaffold(
     topBarState: TopAppBarState = rememberTopAppBarState(initialHeightOffsetLimit = -100f),
     contentState: LazyListState = rememberLazyListState(),
     topBarScrollEnabled: Boolean = true,
+    contentScrollEnabled: Boolean = true,
     floatingActionButtons: @Composable (ColumnScope.() -> Unit) = {},
     fabModifier: Modifier = Modifier.windowInsetsPadding(
         WindowInsets.tappableElement.only(WindowInsetsSides.Horizontal + WindowInsetsSides.End)
@@ -60,32 +61,30 @@ fun CollapsingToolbarScaffold(
     content: @Composable (() -> Unit),
 ) {
     val scope = rememberCoroutineScope()
-    val nestedScrollConnection = remember(
-        topBarState,
-        contentState.canScrollForward,
-        contentState.canScrollBackward,
-        topBarScrollEnabled
-    ) {
+    val nestedScrollConnection = remember {
         object : NestedScrollConnection {
             override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
                 val delta = available.y
-                if (delta < 0 && !contentState.canScrollForward) return Offset.Zero
-
                 val previousContentOffset = topBarState.contentOffset
 
-                if (topBarScrollEnabled) {
-                    topBarState.heightOffset = (topBarState.heightOffset + delta)
-                        .coerceIn(topBarState.heightOffsetLimit, 0f)
+                if (source == NestedScrollSource.SideEffect) {
+                    println("delta = $delta, can scroll backward? ${contentState.canScrollBackward}")
                 }
 
-                if (delta > 0 && !contentState.canScrollBackward || delta < 0) {
-                    topBarState.contentOffset = (topBarState.contentOffset + delta)
-                        .coerceIn(topBarState.heightOffsetLimit, 0f)
+                if (topBarScrollEnabled) {
+                    topBarState.heightOffset += delta
+                }
+
+                if (contentScrollEnabled) {
+                    if (delta > 0 && contentState.firstVisibleItemIndex == 0 && contentState.firstVisibleItemScrollOffset == 0 || delta < 0) {
+                        topBarState.contentOffset = (topBarState.contentOffset + delta)
+                            .coerceIn(topBarState.heightOffsetLimit, 0f)
+                    }
                 }
 
                 return when (topBarState.contentOffset) {
                     previousContentOffset -> Offset.Zero
-                    else -> available.copy(x = 0f)
+                    else -> Offset(x = 0f, y = topBarState.contentOffset - previousContentOffset)
                 }
             }
 

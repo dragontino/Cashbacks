@@ -25,10 +25,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.cashbacks.common.composables.management.ListState
+import com.cashbacks.common.composables.management.toListState
 import com.cashbacks.common.composables.theme.CashbacksTheme
 import com.cashbacks.common.composables.utils.animate
 import com.cashbacks.common.composables.utils.composableLet
-import com.cashbacks.common.composables.management.ListState
 import kotlinx.coroutines.flow.StateFlow
 
 
@@ -42,7 +43,7 @@ fun <T> ExposedDropdownMenuBoxScope.DropdownMenu(
     modifier: Modifier = Modifier,
     content: @Composable (ColumnScope.(List<T>) -> Unit)
 ) {
-    val listState = ListState.fromCollection(itemsFlow.collectAsStateWithLifecycle().value)
+    val listState = itemsFlow.collectAsStateWithLifecycle().value.toListState()
     ListDropdownMenu(listState, expanded, onClose, modifier, content)
 }
 
@@ -87,6 +88,7 @@ fun <T> ExposedDropdownMenuBoxScope.ListDropdownMenu(
 
 
 
+@Suppress("UnusedReceiverParameter")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun <T : Any> ColumnScope.DropdownMenuListContent(
