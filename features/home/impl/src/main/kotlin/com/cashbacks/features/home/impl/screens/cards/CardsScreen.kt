@@ -81,10 +81,13 @@ import com.cashbacks.common.composables.CollapsingToolbarScaffold
 import com.cashbacks.common.composables.ConfirmDeletionDialog
 import com.cashbacks.common.composables.EmptyList
 import com.cashbacks.common.composables.LoadingInBox
-import com.cashbacks.common.composables.swipeablelistitem.EditDeleteContent
-import com.cashbacks.common.composables.swipeablelistitem.SwipeableListItem
-import com.cashbacks.common.composables.swipeablelistitem.SwipeableListItemDefaults
-import com.cashbacks.common.composables.swipeablelistitem.rememberSwipeableListItemState
+import com.cashbacks.common.composables.management.DialogType
+import com.cashbacks.common.composables.management.ListState
+import com.cashbacks.common.composables.management.toListState
+import com.cashbacks.common.composables.swipeable.EditDeleteActions
+import com.cashbacks.common.composables.swipeable.SwipeableListItem
+import com.cashbacks.common.composables.swipeable.SwipeableListItemDefaults
+import com.cashbacks.common.composables.swipeable.rememberSwipeableListItemState
 import com.cashbacks.common.composables.theme.CashbacksTheme
 import com.cashbacks.common.composables.theme.VerdanaFont
 import com.cashbacks.common.composables.utils.animate
@@ -354,8 +357,8 @@ private fun BankCardListElement(
     SwipeableListItem(
         modifier = modifier,
         state = state,
-        hiddenContent = {
-            EditDeleteContent(
+        actions = {
+            EditDeleteActions(
                 onEditClick = {
                     sendIntent(BankCardsIntent.EditBankCard(bankCard.id))
                     sendIntent(BankCardsIntent.SwipeCard(null))
@@ -514,7 +517,6 @@ private fun CardsScreenPreview() {
                 }
             ),
             snackbarHostState = remember { SnackbarHostState() },
-            contentPadding = PaddingValues(0.dp),
             sendIntent = {}
         )
     }
