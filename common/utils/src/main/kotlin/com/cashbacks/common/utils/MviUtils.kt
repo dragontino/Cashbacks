@@ -28,3 +28,20 @@ suspend fun <Label : Any> CoroutineExecutorScope<*, *, *, Label>.publishFromAnot
 ) = withContext(Dispatchers.Main) {
     publish(label)
 }
+
+
+@JvmInline
+value class IntentSender<Intent : Any>(
+    private val lambda: (intent: Intent, withDelay: Boolean) -> Unit
+) {
+    fun sendIntent(intent: Intent) {
+        lambda(intent, false)
+    }
+
+    fun sendIntentWithDelay(intent: Intent) {
+        lambda(intent, true)
+    }
+}
+
+
+fun <Intent : Any> IntentSender() = IntentSender<Intent> { _, _ -> }
