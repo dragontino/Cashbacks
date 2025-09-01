@@ -54,6 +54,7 @@ import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -62,12 +63,12 @@ import com.cashbacks.common.composables.ConfirmDeletionDialog
 import com.cashbacks.common.composables.DataTextField
 import com.cashbacks.common.composables.EditableTextFieldDefaults
 import com.cashbacks.common.composables.LoadingInBox
+import com.cashbacks.common.composables.management.DialogType
+import com.cashbacks.common.composables.management.ScreenState
 import com.cashbacks.common.composables.theme.CashbacksTheme
 import com.cashbacks.common.composables.utils.animate
 import com.cashbacks.common.composables.utils.mix
 import com.cashbacks.common.resources.R
-import com.cashbacks.common.composables.management.DialogType
-import com.cashbacks.common.composables.management.ScreenState
 import com.cashbacks.features.bankcard.domain.model.BasicBankCard
 import com.cashbacks.features.bankcard.domain.model.FullBankCard
 import com.cashbacks.features.bankcard.presentation.api.BankCardArgs
@@ -154,7 +155,9 @@ internal fun BankCardViewingScreen(
                             stringResource(R.string.bank_card)
                         },
                         style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.MiddleEllipsis
                     )
                 },
                 navigationIcon = {

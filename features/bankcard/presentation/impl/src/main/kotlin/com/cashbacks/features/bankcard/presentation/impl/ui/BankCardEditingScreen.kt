@@ -884,7 +884,7 @@ private fun MaxCashbacksNumberSelectionBottomSheet(
 @Composable
 private fun NumberControlPanel(
     value: String,
-    onValueChange: (String) -> Unit = {},
+    onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
     inputFieldModifier: Modifier = Modifier,
     controlButtonsOrientation: Orientation = Orientation.Vertical,
