@@ -22,6 +22,7 @@ import com.cashbacks.features.category.presentation.impl.mvi.CategoryAction
 import com.cashbacks.features.category.presentation.impl.mvi.CategoryLabel
 import com.cashbacks.features.category.presentation.impl.mvi.CategoryMessage
 import com.cashbacks.features.category.presentation.impl.mvi.CategoryViewingState
+import com.cashbacks.features.category.presentation.impl.mvi.ShopWithCashback
 import com.cashbacks.features.category.presentation.impl.mvi.ViewingIntent
 import com.cashbacks.features.category.presentation.impl.mvi.ViewingLabel
 import com.cashbacks.features.category.presentation.impl.mvi.ViewingMessage
@@ -32,15 +33,21 @@ import com.cashbacks.features.shop.domain.usecase.DeleteShopUseCase
 import com.cashbacks.features.shop.domain.usecase.FetchShopsFromCategoryUseCase
 import com.cashbacks.features.shop.presentation.api.ShopArgs
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.sample
 import kotlinx.coroutines.launch
 
+@OptIn(FlowPreview::class)
 class CategoryViewingViewModel(
     private val fetchCategory: FetchCategoryUseCase,
     private val fetchShopsFromCategory: FetchShopsFromCategoryUseCase,
@@ -75,31 +82,34 @@ class CategoryViewingViewModel(
                         .launchIn(this)
 
                     fetchShopsFromCategory(categoryId, cashbacksRequired = true)
+                        .map { shops ->
+                            shops.flatMap { shop ->
+                                val cashbacks = getMaxCashbacksFromShop(shop.id)
+                                    .onFailure { throw it }
+                                    .getOrNull()
+                                if (cashbacks.isNullOrEmpty()) {
+                                    listOf(ShopWithCashback(shop, maxCashback = null))
+                                } else {
+                                    cashbacks.map { ShopWithCashback(shop, it) }
+                                }
+                            }
+                        }
+                        .onEach { dispatchFromAnotherThread(CategoryAction.LoadShops(it)) }
                         .catch { throwable ->
                             throwable.message?.takeIf { it.isNotBlank() }?.let {
                                 dispatchFromAnotherThread(CategoryAction.DisplayMessage(it))
                             }
-                        }
-                        .onEach { shops ->
-                            val shopsWithMaxCashbacks = shops.associateWith {
-                                getMaxCashbacksFromShop(it.id).onFailure { throwable ->
-                                    throwable.message?.takeIf { it.isNotBlank() }?.let {
-                                        dispatchFromAnotherThread(CategoryAction.DisplayMessage(it))
-                                    }
-                                }.getOrNull() ?: emptySet()
-                            }
-                            dispatchFromAnotherThread(CategoryAction.LoadShops(shopsWithMaxCashbacks))
                         }
                         .launchIn(this)
 
                     fetchCashbacksFromCategory(categoryId)
+                        .onEach {
+                            dispatchFromAnotherThread(CategoryAction.LoadCashbacks(it))
+                        }
                         .catch { throwable ->
                             throwable.message?.takeIf { it.isNotBlank() }?.let {
                                 dispatchFromAnotherThread(CategoryAction.DisplayMessage(it))
                             }
-                        }
-                        .onEach {
-                            dispatchFromAnotherThread(CategoryAction.LoadCashbacks(it))
                         }
                         .launchIn(this)
                 }
@@ -112,10 +122,10 @@ class CategoryViewingViewModel(
                     val args = CategoryArgs.Editing(id = categoryId, startTab = it.startTab)
                     publish(ViewingLabel.NavigateToCategoryEditingScreen(args))
                 }
-                onIntent<ViewingIntent.DeleteCashback> {
+                onIntent<ViewingIntent.DeleteCashback> { intent ->
                     launchWithLoading(Dispatchers.Default) {
                         delay(100)
-                        deleteCashback(it.cashback).onFailure { throwable ->
+                        deleteCashback(intent.cashback).onFailure { throwable ->
                             throwable.message?.takeIf { it.isNotBlank() }?.let {
                                 forwardFromAnotherThread(CategoryAction.DisplayMessage(it))
                             }
@@ -123,10 +133,10 @@ class CategoryViewingViewModel(
                         delay(100)
                     }
                 }
-                onIntent<ViewingIntent.DeleteShop> {
+                onIntent<ViewingIntent.DeleteShop> { intent ->
                     launchWithLoading(Dispatchers.Default) {
                         delay(100)
-                        deleteShop(it.shop).onFailure { throwable ->
+                        deleteShop(intent.shop).onFailure { throwable ->
                             throwable.message?.takeIf { it.isNotBlank() }?.let {
                                 forwardFromAnotherThread(CategoryAction.DisplayMessage(it))
                             }
@@ -168,7 +178,29 @@ class CategoryViewingViewModel(
         viewingStore.labels
     }
 
-    internal fun sendIntent(intent: ViewingIntent) {
-        viewingStore.accept(intent)
+
+    private val intentSharedFlow = MutableSharedFlow<ViewingIntent>(
+        extraBufferCapacity = 1,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST
+    )
+
+    init {
+        viewingStore.init()
+        intentSharedFlow
+            .sample(DELAY_MILLIS)
+            .onEach { viewingStore.accept(it) }
+            .launchIn(viewModelScope)
+    }
+
+    internal fun sendIntent(intent: ViewingIntent, withDelay: Boolean = false) {
+        when {
+            withDelay -> intentSharedFlow.tryEmit(intent)
+            else -> viewingStore.accept(intent)
+        }
+    }
+
+
+    private companion object {
+        const val DELAY_MILLIS = 50L
     }
 }

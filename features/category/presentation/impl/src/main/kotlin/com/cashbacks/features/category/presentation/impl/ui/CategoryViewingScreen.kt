@@ -55,14 +55,14 @@ import com.cashbacks.common.composables.ListContentTabPage
 import com.cashbacks.common.composables.Loading
 import com.cashbacks.common.composables.LoadingInBox
 import com.cashbacks.common.composables.PrimaryTabsLayout
-import com.cashbacks.common.composables.utils.animate
-import com.cashbacks.common.resources.R
 import com.cashbacks.common.composables.management.DialogType
 import com.cashbacks.common.composables.management.ScreenState
 import com.cashbacks.common.composables.management.toListState
+import com.cashbacks.common.composables.utils.animate
+import com.cashbacks.common.resources.R
+import com.cashbacks.common.utils.IntentSender
 import com.cashbacks.features.cashback.domain.model.BasicCashback
 import com.cashbacks.features.cashback.domain.model.Cashback
-import com.cashbacks.features.cashback.domain.utils.asCashbackOwner
 import com.cashbacks.features.cashback.presentation.api.CashbackArgs
 import com.cashbacks.features.cashback.presentation.api.composables.CashbackComposable
 import com.cashbacks.features.cashback.presentation.api.composables.MaxCashbackOwnerComposable
@@ -71,13 +71,13 @@ import com.cashbacks.features.category.presentation.impl.CategoryTabItem
 import com.cashbacks.features.category.presentation.impl.mvi.CategoryIntent
 import com.cashbacks.features.category.presentation.impl.mvi.CategoryLabel
 import com.cashbacks.features.category.presentation.impl.mvi.CategoryViewingState
+import com.cashbacks.features.category.presentation.impl.mvi.ShopWithCashback
 import com.cashbacks.features.category.presentation.impl.mvi.ViewingIntent
 import com.cashbacks.features.category.presentation.impl.mvi.ViewingLabel
 import com.cashbacks.features.category.presentation.impl.tabItems
 import com.cashbacks.features.category.presentation.impl.viewmodel.CategoryViewingViewModel
 import com.cashbacks.features.shop.domain.model.Shop
 import com.cashbacks.features.shop.presentation.api.ShopArgs
-import kotlinx.collections.immutable.toImmutableSet
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 
@@ -137,7 +137,7 @@ internal fun CategoryViewingRoot(
         state = state,
         snackbarHostState = snackbarHostState,
         pagerState = pagerState,
-        sendIntent = viewModel::sendIntent
+        intentSender = IntentSender(viewModel::sendIntent)
     )
 }
 
@@ -148,10 +148,10 @@ private fun CategoryViewingScreen(
     state: CategoryViewingState,
     snackbarHostState: SnackbarHostState,
     pagerState: PagerState,
-    sendIntent: (ViewingIntent) -> Unit
+    intentSender: IntentSender<ViewingIntent>
 ) {
     BackHandler {
-        sendIntent(CategoryIntent.ClickButtonBack)
+        intentSender.sendIntentWithDelay(CategoryIntent.ClickButtonBack)
     }
 
     val currentScreen = remember(pagerState.currentPage) {
@@ -176,7 +176,11 @@ private fun CategoryViewingScreen(
                     }
                 },
                 navigationIcon = {
-                    IconButton(onClick = { sendIntent(CategoryIntent.ClickButtonBack) }) {
+                    IconButton(
+                        onClick = {
+                            intentSender.sendIntentWithDelay(CategoryIntent.ClickButtonBack)
+                        }
+                    ) {
                         Icon(
                             imageVector = Icons.Rounded.ArrowBackIosNew,
                             contentDescription = "return to previous screen",
@@ -193,11 +197,12 @@ private fun CategoryViewingScreen(
             )
         },
         topBarScrollEnabled = false,
+        contentScrollEnabled = !pagerState.isScrollInProgress,
         floatingActionButtons = {
             BasicFloatingActionButton(
                 icon = Icons.Rounded.Edit,
                 onClick = {
-                    sendIntent(
+                    intentSender.sendIntentWithDelay(
                         ViewingIntent.NavigateToCategoryEditing(currentScreen.value.type)
                     )
                 }
@@ -232,7 +237,7 @@ private fun CategoryViewingScreen(
                     state = state,
                     pagerState = pagerState,
                     bottomPadding = fabHeightDp.floatValue.dp,
-                    sendIntent = sendIntent
+                    intentSender = intentSender
                 )
             }
         }
@@ -245,7 +250,7 @@ private fun CategoryViewingContent(
     state: CategoryViewingState,
     pagerState: PagerState,
     bottomPadding: Dp,
-    sendIntent: (ViewingIntent) -> Unit,
+    intentSender: IntentSender<ViewingIntent>,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -262,7 +267,7 @@ private fun CategoryViewingContent(
         ) { _, page ->
             ListContentTabPage(
                 contentState = when (page) {
-                    CategoryTabItem.Shops -> state.shops.keys
+                    CategoryTabItem.Shops -> state.shops
                     CategoryTabItem.Cashbacks -> state.cashbacks
                 }.toListState(),
                 placeholderText = when (page) {
@@ -273,44 +278,59 @@ private fun CategoryViewingContent(
                 modifier = Modifier.padding(8.dp)
             ) { index, item ->
                 when (item) {
-                    is Shop -> MaxCashbackOwnerComposable(
-                        cashbackOwner = item.asCashbackOwner(),
-                        maxCashbacks = state.shops[item]!!.toImmutableSet(),
-                        isEditing = false,
-                        isSwiped = state.selectedShopIndex == index,
-                        onSwipe = { isSwiped ->
-                            sendIntent(CategoryIntent.SwipeShop(index, isSwiped))
+                    is ShopWithCashback -> MaxCashbackOwnerComposable(
+                        mainContent = {
+                            Text(
+                                text = item.shop.name,
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        },
+                        maxCashback = item.maxCashback,
+                        isEnabledToSwipe = state.selectedShopIndex == index || state.selectedShopIndex == null,
+                        onSwipeStatusChanged = { isOnSwipe ->
+                            intentSender.sendIntentWithDelay(
+                                CategoryIntent.SwipeShop(index, isOnSwipe)
+                            )
                         },
                         onClick = {
-                            sendIntent(CategoryIntent.SwipeShop(null))
-                            sendIntent(ViewingIntent.NavigateToShop(item.id))
+                            intentSender.sendIntentWithDelay(
+                                ViewingIntent.NavigateToShop(item.shop.id)
+                            )
                         },
-                        onClickToCashback = { cashback ->
-                            sendIntent(ViewingIntent.NavigateToCashback(cashback.id))
+                        onClickToCashback = {
+                            intentSender.sendIntentWithDelay(
+                                ViewingIntent.NavigateToCashback(item.maxCashback!!.id)
+                            )
                         },
                         onEdit = {
-                            sendIntent(CategoryIntent.SwipeShop(null))
-                            sendIntent(ViewingIntent.NavigateToShop(item.id))
+                            intentSender.sendIntentWithDelay(
+                                ViewingIntent.NavigateToShop(item.shop.id)
+                            )
                         },
                         onDelete = {
-                            sendIntent(CategoryIntent.SwipeShop(null))
-                            sendIntent(CategoryIntent.OpenDialog(DialogType.ConfirmDeletion(item)))
+                            intentSender.sendIntentWithDelay(
+                                CategoryIntent.OpenDialog(DialogType.ConfirmDeletion(item))
+                            )
                         }
                     )
 
                     is BasicCashback -> CashbackComposable(
                         cashback = item,
-                        isSwiped = state.selectedCashbackIndex == index,
-                        onSwipe = { isSwiped ->
-                            sendIntent(CategoryIntent.SwipeCashback(index, isSwiped))
+                        isEnabledToSwipe = state.selectedCashbackIndex == index || state.selectedCashbackIndex == null,
+                        onSwipeStatusChanged = { isOnSwipe ->
+                            intentSender.sendIntentWithDelay(
+                                CategoryIntent.SwipeCashback(index, isOnSwipe)
+                            )
                         },
                         onClick = {
-                            sendIntent(CategoryIntent.SwipeCashback(null))
-                            sendIntent(ViewingIntent.NavigateToCashback(item.id))
+                            intentSender.sendIntentWithDelay(
+                                ViewingIntent.NavigateToCashback(item.id)
+                            )
                         },
                         onDelete = {
-                            sendIntent(CategoryIntent.SwipeCashback(null))
-                            sendIntent(CategoryIntent.OpenDialog(DialogType.ConfirmDeletion(item)))
+                            intentSender.sendIntentWithDelay(
+                                CategoryIntent.OpenDialog(DialogType.ConfirmDeletion(item))
+                            )
                         }
                     )
                 }

@@ -3,13 +3,14 @@ package com.cashbacks.features.category.presentation.impl.utils
 import com.arkivanov.mvikotlin.extensions.coroutines.CoroutineBootstrapperScope
 import com.arkivanov.mvikotlin.extensions.coroutines.CoroutineExecutorScope
 import com.arkivanov.mvikotlin.extensions.coroutines.ExecutorBuilder
+import com.cashbacks.common.composables.management.ScreenState
 import com.cashbacks.common.utils.dispatchFromAnotherThread
 import com.cashbacks.common.utils.forwardFromAnotherThread
-import com.cashbacks.common.composables.management.ScreenState
 import com.cashbacks.features.category.presentation.impl.mvi.CategoryAction
 import com.cashbacks.features.category.presentation.impl.mvi.CategoryIntent
 import com.cashbacks.features.category.presentation.impl.mvi.CategoryLabel
 import com.cashbacks.features.category.presentation.impl.mvi.CategoryMessage
+import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.launch
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
@@ -25,10 +26,10 @@ internal fun ExecutorBuilder<*, in CategoryAction, *, in CategoryMessage, in Cat
         dispatch(CategoryMessage.UpdateCategory(it.category))
     }
     onAction<CategoryAction.LoadShops> {
-        dispatch(CategoryMessage.UpdateShops(it.shops))
+        dispatch(CategoryMessage.UpdateShops(it.shops.toImmutableList()))
     }
     onAction<CategoryAction.LoadCashbacks> {
-        dispatch(CategoryMessage.UpdateCashbacks(it.cashbacks))
+        dispatch(CategoryMessage.UpdateCashbacks(it.cashbacks.toImmutableList()))
     }
     onAction<CategoryAction.DisplayMessage> {
         publish(CategoryLabel.DisplayMessage(it.message))
