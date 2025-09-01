@@ -3,9 +3,7 @@ package com.cashbacks.common.composables.utils
 import android.content.Context
 import android.content.ContextWrapper
 import androidx.activity.ComponentActivity
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -13,30 +11,17 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.State
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.Saver
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import kotlin.math.roundToInt
-
-@Composable
-fun Color.animate(durationMillis: Int = 400): Color =
-    animateColorAsState(
-        targetValue = this,
-        animationSpec = tween(durationMillis, easing = FastOutSlowInEasing),
-        label = "colorAnimation"
-    ).value
-
-
-
-@Composable
-fun Dp.animate(durationMillis: Int = 400): Dp =
-    animateDpAsState(
-        targetValue = this,
-        animationSpec = tween(durationMillis, easing = FastOutSlowInEasing),
-        label = "dpAnimation"
-    ).value
-
 
 
 suspend fun LazyListState.smoothScrollToItem(targetPosition: Int) {
@@ -93,9 +78,12 @@ fun Context.getActivity(): ComponentActivity? = when (this) {
 }
 
 
+@Stable
 val Color.reversed get() = copy(red = 1 - red, green = 1 - green, blue = 1 - blue)
 
+@Immutable
 data class ColorPair(val firstColor: Color, val secondColor: Color) {
+    @Stable
     infix fun ratio(ratio: Float): Color {
         val secondColorRatio = 1 - ratio
 
@@ -114,16 +102,19 @@ data class ColorPair(val firstColor: Color, val secondColor: Color) {
     }
 }
 
+@Stable
 infix fun Color.mix(otherColor: Color) =
     ColorPair(firstColor = this, secondColor = otherColor)
 
 
+@Stable
 @Composable
 fun <T, R> T.composableLet(block: @Composable (T) -> R): @Composable () -> R = {
     block(this)
 }
 
 
+@Stable
 @Composable
 fun <R> composableBlock(
     condition: Boolean,
@@ -132,3 +123,20 @@ fun <R> composableBlock(
     condition -> block
     else -> null
 }
+
+
+fun <T, S : Any> mutableStateSaver(valueSaver: Saver<T, S>) = Saver<MutableState<T>, S>(
+    save = { state ->
+        with(valueSaver) { save(state.value) }
+    },
+    restore = { saved ->
+        valueSaver.restore(saved)?.let(::mutableStateOf)
+    }
+)
+
+
+inline val Dp.Companion.Saver: Saver<Dp, Float>
+    get() = Saver(
+        save = { it.value },
+        restore = { it.dp }
+    )
