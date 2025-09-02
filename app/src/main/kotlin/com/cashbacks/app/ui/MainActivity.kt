@@ -1,5 +1,7 @@
 package com.cashbacks.app.ui
 
+import android.Manifest
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -25,6 +27,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
 import com.cashbacks.app.app.App
+import com.cashbacks.common.composables.AppLaunchPermissionsDialog
 import com.cashbacks.common.composables.theme.CashbacksTheme
 import com.cashbacks.common.composables.utils.animate
 import com.cashbacks.common.composables.utils.reversed
@@ -87,6 +90,12 @@ class MainActivity : ComponentActivity() {
                     statusBarStyle = mainViewModel.statusBarStyle(isDarkTheme),
                     navigationBarStyle = mainViewModel.navigationBarStyle(isDarkTheme),
                 )
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    AppLaunchPermissionsDialog(Manifest.permission.POST_NOTIFICATIONS) {
+                        showSnackbar(getString(R.string.permission_required))
+                    }
+                }
 
                 Box {
                     NavHost(

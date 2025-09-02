@@ -3,7 +3,6 @@ package com.cashbacks.features.home.impl.ui
 import android.Manifest
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.Crossfade
@@ -52,7 +51,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
-import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavDestination.Companion.hasRoute
@@ -64,6 +62,7 @@ import com.cashbacks.common.composables.BoundedSnackbar
 import com.cashbacks.common.composables.ModalSheetDefaults
 import com.cashbacks.common.composables.ModalSheetItems.IconTextItem
 import com.cashbacks.common.composables.theme.VerdanaFont
+import com.cashbacks.common.composables.usePermissions
 import com.cashbacks.common.composables.utils.Saver
 import com.cashbacks.common.composables.utils.animate
 import com.cashbacks.common.composables.utils.getActivity
@@ -169,19 +168,22 @@ private fun HomeScreen(
 ) {
     val context = LocalContext.current
 
+
+    val makeExportDataIntent = remember(context, sendIntent) {
+        fun (): HomeIntent = HomeIntent.ClickButtonExportData { path ->
+            val message = context.getString(R.string.data_exported, path)
+            val action = SnackbarAction(context.getString(R.string.open)) {
+                sendIntent(HomeIntent.OpenExternalFolder(path))
+            }
+            sendIntent(HomeIntent.ShowMessage(message, action))
+        }
+    }
+
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         if (isGranted) {
-            sendIntent(
-                HomeIntent.ClickButtonExportData { path ->
-                    val message = context.getString(R.string.data_exported, path)
-                    val action = SnackbarAction(context.getString(R.string.open)) {
-                        sendIntent(HomeIntent.OpenExternalFolder(path))
-                    }
-                    sendIntent(HomeIntent.ShowMessage(message, action))
-                }
-            )
+            sendIntent(makeExportDataIntent())
         } else {
             sendIntent(HomeIntent.ShowMessage(context.getString(R.string.permission_required)))
         }
@@ -237,19 +239,10 @@ private fun HomeScreen(
                     usePermissions(
                         Manifest.permission.WRITE_EXTERNAL_STORAGE,
                         context = context,
-                        onGranted = {
-                            sendIntent(
-                                HomeIntent.ClickButtonExportData { path ->
-                                    val message = context.getString(R.string.data_exported, path)
-                                    val action = SnackbarAction(context.getString(R.string.open)) {
-                                        sendIntent(HomeIntent.OpenExternalFolder(path))
-                                    }
-                                    sendIntent(HomeIntent.ShowMessage(message, action))
-                                }
-                            )
-                        },
-                        onDenied = { permissionLauncher.launch(it) }
-                    )
+                        grantPermission = { permissionLauncher.launch(it) },
+                    ) {
+                        sendIntent(makeExportDataIntent())
+                    }
                 }
             }
         },
@@ -384,29 +377,6 @@ private fun HomeScreen(
         }
     }
 }
-
-
-
-@Suppress("SameParameterValue")
-private inline fun usePermissions(
-    vararg permissions: String,
-    context: Context,
-    onGranted: () -> Unit,
-    onDenied: (permission: String) -> Unit
-) {
-    val isAllPermissionsGranted = permissions.all { permission ->
-        val checkPermission = ContextCompat.checkSelfPermission(context, permission)
-        if (checkPermission == PackageManager.PERMISSION_DENIED) {
-            onDenied(permission)
-        }
-        return@all checkPermission == PackageManager.PERMISSION_GRANTED
-    }
-
-    if (isAllPermissionsGranted) {
-        onGranted()
-    }
-}
-
 
 
 @Composable
