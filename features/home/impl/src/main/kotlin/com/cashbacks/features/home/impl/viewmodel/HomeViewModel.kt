@@ -7,9 +7,9 @@ import com.arkivanov.mvikotlin.core.store.StoreFactory
 import com.arkivanov.mvikotlin.extensions.coroutines.coroutineExecutorFactory
 import com.arkivanov.mvikotlin.extensions.coroutines.labels
 import com.arkivanov.mvikotlin.extensions.coroutines.stateFlow
+import com.cashbacks.common.composables.management.ScreenState
 import com.cashbacks.common.resources.AppInfo
 import com.cashbacks.common.utils.forwardFromAnotherThread
-import com.cashbacks.common.composables.management.ScreenState
 import com.cashbacks.features.home.impl.mvi.HomeAction
 import com.cashbacks.features.home.impl.mvi.HomeIntent
 import com.cashbacks.features.home.impl.mvi.HomeLabel
@@ -18,11 +18,18 @@ import com.cashbacks.features.home.impl.mvi.HomeState
 import com.cashbacks.features.home.impl.utils.launchWithLoading
 import com.cashbacks.features.share.domain.usecase.ExportDataUseCase
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.sample
 import kotlinx.coroutines.withContext
 
+@OptIn(FlowPreview::class)
 internal class HomeViewModel(
     private val exportData: ExportDataUseCase,
     private val appInfo: AppInfo,
@@ -91,6 +98,12 @@ internal class HomeViewModel(
     }
 
 
+    private val intentSharedFlow = MutableSharedFlow<HomeIntent>(
+        extraBufferCapacity = 1,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST
+    )
+
+
     internal val stateFlow: StateFlow<HomeState> by lazy {
         homeStore.stateFlow(
             scope = viewModelScope,
@@ -100,7 +113,30 @@ internal class HomeViewModel(
 
     internal val labelFlow: Flow<HomeLabel> by lazy { homeStore.labels }
 
-    internal fun sendIntent(intent: HomeIntent) {
-        homeStore.accept(intent)
+
+    init {
+        intentSharedFlow
+            .sample(DELAY_MILLIS)
+            .onEach { homeStore.accept(it) }
+            .launchIn(viewModelScope)
+    }
+
+
+    internal fun sendIntent(intent: HomeIntent, withDelay: Boolean = false) {
+        when {
+            withDelay -> intentSharedFlow.tryEmit(intent)
+            else -> homeStore.accept(intent)
+        }
+    }
+
+
+    override fun onCleared() {
+        homeStore.dispose()
+        super.onCleared()
+    }
+
+
+    private companion object {
+        const val DELAY_MILLIS = 50L
     }
 }
