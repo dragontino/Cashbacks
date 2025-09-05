@@ -4,6 +4,7 @@
     <string name="export_data">Export data</string>
     <string name="data_exported">All data is successfully saved in folder %s</string>
     <string name="permission_required">Permission is required for this feature to work correctly!</string>
+    <string name="open_in">Open in…</string>
 
     <string name="home">Home</string>
     <string name="categories_title">My categories</string>
