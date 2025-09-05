@@ -25,8 +25,11 @@ import com.cashbacks.features.home.impl.mvi.BankCardsState
 import com.cashbacks.features.home.impl.mvi.HomeAction
 import com.cashbacks.features.home.impl.utils.launchWithLoading
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
@@ -35,7 +38,9 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.sample
 
+@OptIn(FlowPreview::class)
 class CardsViewModel(
     fetchBankCardsUseCase: FetchBankCardsUseCase,
     searchBankCardsUseCase: SearchBankCardsUseCase,
@@ -104,10 +109,10 @@ class CardsViewModel(
                     val args = BankCardArgs.Editing(it.cardId)
                     publish(BankCardsLabel.NavigateToBankCard(args))
                 }
-                onIntent<BankCardsIntent.DeleteBankCard> {
+                onIntent<BankCardsIntent.DeleteBankCard> { intent ->
                     launchWithLoading {
                         delay(100)
-                        deleteBankCardUseCase(it.card).onFailure { throwable ->
+                        deleteBankCardUseCase(intent.card).onFailure { throwable ->
                             throwable.message?.takeIf { it.isNotBlank() }?.let {
                                 forwardFromAnotherThread(HomeAction.DisplayMessage(it))
                             }
@@ -150,16 +155,35 @@ class CardsViewModel(
 
     internal val labelFlow: Flow<BankCardsLabel> = store.labels
 
-    internal fun sendIntent(intent: BankCardsIntent) {
-        store.accept(intent)
-    }
+
+    private val intentSharedFlow = MutableSharedFlow<BankCardsIntent>(
+        extraBufferCapacity = 1,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST
+    )
+
 
     init {
         store.init()
+        intentSharedFlow
+            .sample(DELAY_MILLIS)
+            .onEach(store::accept)
+            .launchIn(viewModelScope)
+    }
+
+    internal fun sendIntent(intent: BankCardsIntent, withDelay: Boolean = false) {
+        when {
+            withDelay -> intentSharedFlow.tryEmit(intent)
+            else -> store.accept(intent)
+        }
     }
 
     override fun onCleared() {
         store.dispose()
         super.onCleared()
+    }
+
+
+    private companion object {
+        const val DELAY_MILLIS = 50L
     }
 }

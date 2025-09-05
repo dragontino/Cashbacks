@@ -95,6 +95,7 @@ import com.cashbacks.common.composables.utils.expandedAnimationSpec
 import com.cashbacks.common.composables.utils.mix
 import com.cashbacks.common.composables.utils.reversed
 import com.cashbacks.common.resources.R
+import com.cashbacks.common.utils.IntentSender
 import com.cashbacks.features.bankcard.domain.model.BankCard
 import com.cashbacks.features.bankcard.domain.model.BasicBankCard
 import com.cashbacks.features.bankcard.domain.model.PrimaryBankCard
@@ -156,7 +157,7 @@ fun BankCardsRoot(
     CardsScreen(
         state = state,
         snackbarHostState = snackbarHostState,
-        sendIntent = viewModel::sendIntent,
+        intentSender = IntentSender(viewModel::sendIntent),
         modifier = modifier
     )
 }
@@ -166,7 +167,7 @@ fun BankCardsRoot(
 private fun CardsScreen(
     state: BankCardsState,
     snackbarHostState: SnackbarHostState,
-    sendIntent: (BankCardsIntent) -> Unit,
+    intentSender: IntentSender<BankCardsIntent>,
     modifier: Modifier = Modifier
 ) {
     val topBarState = rememberTopAppBarState()
@@ -179,10 +180,12 @@ private fun CardsScreen(
                 title = HomeDestination.Cards.screenTitle,
                 state = state.appBarState,
                 onStateChange = {
-                    sendIntent(BankCardsIntent.ChangeAppBarState(it))
+                    intentSender.sendIntent(BankCardsIntent.ChangeAppBarState(it))
                 },
                 searchPlaceholder = stringResource(R.string.search_cards_placeholder),
-                onNavigationIconClick = { sendIntent(BankCardsIntent.ClickNavigationButton) },
+                onNavigationIconClick = {
+                    intentSender.sendIntentWithDelay(BankCardsIntent.ClickNavigationButton)
+                },
                 colors = HomeAppBarDefaults.colors(
                     topBarContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = .6f)
                         .mix(MaterialTheme.colorScheme.primary)
@@ -196,7 +199,7 @@ private fun CardsScreen(
         floatingActionButtons = {
             AnimatedVisibility(visible = state.appBarState is HomeTopAppBarState.TopBar) {
                 BasicFloatingActionButton(icon = Icons.Rounded.Add) {
-                    sendIntent(BankCardsIntent.CreateBankCard)
+                    intentSender.sendIntentWithDelay(BankCardsIntent.CreateBankCard)
                 }
             }
         },
@@ -226,7 +229,7 @@ private fun CardsScreen(
                     LocalBottomBarHeight.current + fabHeightPx.floatValue.toDp()
                 }
             ),
-            sendIntent = sendIntent,
+            intentSender = intentSender,
         )
     }
 }
@@ -237,7 +240,7 @@ private fun BankCardList(
     state: BankCardsState,
     contentState: LazyListState,
     contentPadding: PaddingValues,
-    sendIntent: (BankCardsIntent) -> Unit,
+    intentSender: IntentSender<BankCardsIntent>,
     modifier: Modifier = Modifier
 ) {
     Crossfade(
@@ -289,7 +292,7 @@ private fun BankCardList(
                         BankCardListElement(
                             bankCard = card,
                             position = index,
-                            sendIntent = sendIntent,
+                            intentSender = intentSender,
                             isExpanded = state.expandedCardIndex == index,
                             isSwiped = state.swipedCardIndex == index,
                             modifier = Modifier
@@ -319,7 +322,7 @@ private fun BankCardList(
 private fun BankCardListElement(
     bankCard: BankCard,
     position: Int,
-    sendIntent: (BankCardsIntent) -> Unit,
+    intentSender: IntentSender<BankCardsIntent>,
     isExpanded: Boolean,
     isSwiped: Boolean,
     modifier: Modifier = Modifier
@@ -345,7 +348,7 @@ private fun BankCardListElement(
 
     LaunchedEffect(state.isSwiped.value) {
         if (state.isSwiped.value != isSwiped) {
-            sendIntent(
+            intentSender.sendIntent(
                 BankCardsIntent.SwipeCard(
                     position = position,
                     isSwiped = state.isSwiped.value
@@ -360,17 +363,17 @@ private fun BankCardListElement(
         actions = {
             EditDeleteActions(
                 onEditClick = {
-                    sendIntent(BankCardsIntent.EditBankCard(bankCard.id))
-                    sendIntent(BankCardsIntent.SwipeCard(null))
+                    intentSender.sendIntentWithDelay(BankCardsIntent.EditBankCard(bankCard.id))
+                    intentSender.sendIntent(BankCardsIntent.SwipeCard(null))
                 },
                 onDeleteClick = {
-                    sendIntent(BankCardsIntent.OpenDialog(DialogType.ConfirmDeletion(bankCard)))
-                    sendIntent(BankCardsIntent.SwipeCard(null))
+                    intentSender.sendIntentWithDelay(BankCardsIntent.OpenDialog(DialogType.ConfirmDeletion(bankCard)))
+                    intentSender.sendIntent(BankCardsIntent.SwipeCard(null))
                 }
             )
         },
         onClick = {
-            sendIntent(
+            intentSender.sendIntentWithDelay(
                 BankCardsIntent.ExpandCard(position, isExpanded = isExpanded.not())
             )
         },
@@ -434,7 +437,7 @@ private fun BankCardListElement(
                 trailingContent = {
                     IconButton(
                         onClick = {
-                            sendIntent(
+                            intentSender.sendIntentWithDelay(
                                 BankCardsIntent.SwipeCard(
                                     position = position,
                                     isSwiped = isSwiped.not()
@@ -470,7 +473,7 @@ private fun BankCardListElement(
                                 val clipData = ClipData.newPlainText("CardsScreen", text)
                                 clipboard.setClipEntry(ClipEntry(clipData))
                             }
-                            sendIntent(
+                            intentSender.sendIntentWithDelay(
                                 BankCardsIntent.DisplayMessage(
                                     context.getString(
                                         R.string.card_part_text_is_copied,
@@ -479,14 +482,14 @@ private fun BankCardListElement(
                                 )
                             )
                         },
-                        onClick = { sendIntent(BankCardsIntent.OpenBankCardDetails(bankCard.id)) },
+                        onClick = { intentSender.sendIntentWithDelay(BankCardsIntent.OpenBankCardDetails(bankCard.id)) },
                         modifier = Modifier
                             .padding(16.dp)
                             .align(Alignment.CenterHorizontally)
                     )
 
                     TextButton(
-                        onClick = { sendIntent(BankCardsIntent.OpenBankCardDetails(bankCard.id)) },
+                        onClick = { intentSender.sendIntentWithDelay(BankCardsIntent.OpenBankCardDetails(bankCard.id)) },
                         shape = MaterialTheme.shapes.medium,
                         modifier = Modifier
                             .align(Alignment.CenterHorizontally)
@@ -517,7 +520,7 @@ private fun CardsScreenPreview() {
                 }
             ),
             snackbarHostState = remember { SnackbarHostState() },
-            sendIntent = {}
+            intentSender = IntentSender()
         )
     }
 }
@@ -530,7 +533,7 @@ private fun CardsContentScreenPreview() {
         BankCardListElement(
             bankCard = PrimaryBankCard(id = 0, number = "4422222211113333"),
             position = 1,
-            sendIntent = {},
+            intentSender = IntentSender(),
             isSwiped = false,
             isExpanded = true
         )
