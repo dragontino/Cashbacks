@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.provider.DocumentsContract
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.Crossfade
@@ -89,6 +90,7 @@ import com.cashbacks.features.home.impl.viewmodel.HomeViewModel
 import com.cashbacks.features.shop.presentation.api.ShopArgs
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
+import java.io.File
 
 @Suppress("DEPRECATION")
 @Composable
@@ -150,11 +152,13 @@ internal fun HomeRoot(
 
 
 private fun openExternalFolder(context: Context, path: String) {
-    val uri = path.toUri()
-    val intent = Intent(Intent.ACTION_VIEW)
-    intent.setDataAndType(uri, "text/csv")
+    val uri = File(path.removePrefix("/")).toUri()
+    val intent = Intent(Intent.ACTION_VIEW).apply {
+        putExtra(DocumentsContract.EXTRA_INITIAL_URI, uri)
+        type = "*/*"
+    }
     context.startActivity(
-        Intent.createChooser(intent, context.getString(R.string.open) + "…")
+        Intent.createChooser(intent, context.getString(R.string.open_in))
     )
 }
 
