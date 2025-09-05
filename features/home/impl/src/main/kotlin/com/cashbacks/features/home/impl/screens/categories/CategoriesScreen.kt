@@ -4,8 +4,6 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
@@ -74,6 +72,7 @@ import com.cashbacks.common.composables.management.ViewModelState
 import com.cashbacks.common.composables.management.toListState
 import com.cashbacks.common.composables.theme.CashbacksTheme
 import com.cashbacks.common.composables.utils.animate
+import com.cashbacks.common.composables.utils.expandedAnimationSpec
 import com.cashbacks.common.composables.utils.floatingActionButtonEnterAnimation
 import com.cashbacks.common.composables.utils.floatingActionButtonExitAnimation
 import com.cashbacks.common.composables.utils.loadingContentAnimationSpec
@@ -436,9 +435,9 @@ private fun CategoriesList(
                                         .calculateEndPadding(LocalLayoutDirection.current)
                                 )
                                 .animateItem(
-                                    fadeInSpec = spring(stiffness = Spring.StiffnessVeryLow),
-                                    fadeOutSpec = spring(stiffness = Spring.StiffnessVeryLow),
-                                    placementSpec = spring(stiffness = Spring.StiffnessVeryLow)
+                                    fadeInSpec = expandedAnimationSpec(),
+                                    fadeOutSpec = expandedAnimationSpec(),
+                                    placementSpec = expandedAnimationSpec()
                                 )
                         )
                     }
