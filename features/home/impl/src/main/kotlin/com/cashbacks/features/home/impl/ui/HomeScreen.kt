@@ -126,15 +126,19 @@ internal fun HomeRoot(
                 is HomeLabel.NavigateToCashback -> navigateToCashback(label.args)
                 is HomeLabel.NavigateToBankCard -> navigateToCard(label.args)
 
-                HomeLabel.OpenDrawer -> drawerState.animateTo(
-                    targetValue = DrawerValue.Open,
-                    anim = ModalSheetDefaults.drawerAnimationSpec
-                )
+                HomeLabel.OpenDrawer -> launch {
+                    drawerState.animateTo(
+                        targetValue = DrawerValue.Open,
+                        anim = ModalSheetDefaults.drawerAnimationSpec
+                    )
+                }
 
-                HomeLabel.CloseDrawer -> drawerState.animateTo(
-                    targetValue = DrawerValue.Closed,
-                    anim = ModalSheetDefaults.drawerAnimationSpec
-                )
+                HomeLabel.CloseDrawer -> launch {
+                    drawerState.animateTo(
+                        targetValue = DrawerValue.Closed,
+                        anim = ModalSheetDefaults.drawerAnimationSpec
+                    )
+                }
 
                 is HomeLabel.OpenExternalFolder -> openExternalFolder(context, label.path)
             }
