@@ -72,6 +72,7 @@ import com.cashbacks.common.composables.utils.mutableStateSaver
 import com.cashbacks.common.navigation.enterScreenTransition
 import com.cashbacks.common.navigation.exitScreenTransition
 import com.cashbacks.common.resources.R
+import com.cashbacks.common.utils.IntentSender
 import com.cashbacks.features.bankcard.presentation.api.BankCardArgs
 import com.cashbacks.features.cashback.presentation.api.CashbackArgs
 import com.cashbacks.features.category.presentation.api.CategoryArgs
@@ -149,7 +150,7 @@ internal fun HomeRoot(
         state = state,
         drawerState = drawerState,
         snackbarHostState = snackbarHostState,
-        sendIntent = viewModel::sendIntent,
+        intentSender = IntentSender(viewModel::sendIntent),
         modifier = modifier
     )
 }
@@ -172,7 +173,7 @@ private fun HomeScreen(
     state: HomeState,
     drawerState: DrawerState,
     snackbarHostState: SnackbarHostState,
-    sendIntent: (HomeIntent) -> Unit,
+    intentSender: IntentSender<HomeIntent>,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -181,17 +182,19 @@ private fun HomeScreen(
         contract = ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         if (isGranted) {
-            sendIntent(
+            intentSender.sendIntent(
                 HomeIntent.ClickButtonExportData { path ->
                     val message = context.getString(R.string.data_exported, path)
                     val action = SnackbarAction(context.getString(R.string.open)) {
-                        sendIntent(HomeIntent.OpenExternalFolder(path))
+                        intentSender.sendIntent(HomeIntent.OpenExternalFolder(path))
                     }
-                    sendIntent(HomeIntent.ShowMessage(message, action))
+                    intentSender.sendIntent(HomeIntent.ShowMessage(message, action))
                 }
             )
         } else {
-            sendIntent(HomeIntent.ShowMessage(context.getString(R.string.permission_required)))
+            intentSender.sendIntentWithDelay(
+                HomeIntent.ShowMessage(context.getString(R.string.permission_required))
+            )
         }
     }
 
@@ -221,7 +224,9 @@ private fun HomeScreen(
                     icon = Icons.Rounded.Home,
                     iconTintColor = MaterialTheme.colorScheme.primary.animate(),
                     selected = true,
-                    onClick = { sendIntent(HomeIntent.ClickButtonCloseDrawer) }
+                    onClick = {
+                        intentSender.sendIntentWithDelay(HomeIntent.ClickButtonCloseDrawer)
+                    }
                 )
 
                 HorizontalDivider(Modifier.padding(top = 8.dp, bottom = 4.dp))
@@ -232,8 +237,8 @@ private fun HomeScreen(
                     iconTintColor = MaterialTheme.colorScheme.primary.animate(),
                     selected = false
                 ) {
-                    sendIntent(HomeIntent.ClickButtonCloseDrawer)
-                    sendIntent(HomeIntent.ClickButtonOpenSettings)
+                    intentSender.sendIntent(HomeIntent.ClickButtonCloseDrawer)
+                    intentSender.sendIntentWithDelay(HomeIntent.ClickButtonOpenSettings)
                 }
 
                 IconTextItem(
@@ -241,18 +246,18 @@ private fun HomeScreen(
                     icon = Icons.Rounded.Download,
                     iconTintColor = MaterialTheme.colorScheme.primary.animate()
                 ) {
-                    sendIntent(HomeIntent.ClickButtonCloseDrawer)
+                    intentSender.sendIntent(HomeIntent.ClickButtonCloseDrawer)
                     usePermissions(
                         Manifest.permission.WRITE_EXTERNAL_STORAGE,
                         context = context,
                         onGranted = {
-                            sendIntent(
+                            intentSender.sendIntent(
                                 HomeIntent.ClickButtonExportData { path ->
                                     val message = context.getString(R.string.data_exported, path)
                                     val action = SnackbarAction(context.getString(R.string.open)) {
-                                        sendIntent(HomeIntent.OpenExternalFolder(path))
+                                        intentSender.sendIntent(HomeIntent.OpenExternalFolder(path))
                                     }
-                                    sendIntent(HomeIntent.ShowMessage(message, action))
+                                    intentSender.sendIntent(HomeIntent.ShowMessage(message, action))
                                 }
                             )
                         },
@@ -288,9 +293,9 @@ private fun HomeScreen(
                         exitTransition = { exitScreenTransition(shrinkTowards = Alignment.Start) }
                     ) {
                         CategoriesRoot(
-                            openDrawer = { sendIntent(HomeIntent.ClickButtonOpenDrawer) },
-                            navigateToCategory = { sendIntent(HomeIntent.NavigateToCategory(it)) },
-                            navigateToCashback = { sendIntent(HomeIntent.NavigateToCashback(it)) },
+                            openDrawer = { intentSender.sendIntent(HomeIntent.ClickButtonOpenDrawer) },
+                            navigateToCategory = { intentSender.sendIntent(HomeIntent.NavigateToCategory(it)) },
+                            navigateToCashback = { intentSender.sendIntent(HomeIntent.NavigateToCashback(it)) },
                             navigateBack = { context.getActivity()?.finish() }
                         )
                     }
@@ -312,9 +317,9 @@ private fun HomeScreen(
                         },
                     ) {
                         ShopsRoot(
-                            openDrawer = { sendIntent(HomeIntent.ClickButtonOpenDrawer) },
-                            navigateToShop = { sendIntent(HomeIntent.NavigateToShop(it)) },
-                            navigateToCashback = { sendIntent(HomeIntent.NavigateToCashback(it)) },
+                            openDrawer = { intentSender.sendIntent(HomeIntent.ClickButtonOpenDrawer) },
+                            navigateToShop = { intentSender.sendIntent(HomeIntent.NavigateToShop(it)) },
+                            navigateToCashback = { intentSender.sendIntent(HomeIntent.NavigateToCashback(it)) },
                             navigateBack = navController::popBackStack,
                             )
                     }
@@ -336,8 +341,8 @@ private fun HomeScreen(
                         }
                     ) {
                         CashbacksRoot(
-                            openDrawer = { sendIntent(HomeIntent.ClickButtonOpenDrawer) },
-                            navigateToCashback = { sendIntent(HomeIntent.NavigateToCashback(it)) },
+                            openDrawer = { intentSender.sendIntent(HomeIntent.ClickButtonOpenDrawer) },
+                            navigateToCashback = { intentSender.sendIntent(HomeIntent.NavigateToCashback(it)) },
                             navigateBack = navController::popBackStack,
                         )
                     }
@@ -347,8 +352,8 @@ private fun HomeScreen(
                         exitTransition = { exitScreenTransition(shrinkTowards = Alignment.End) }
                     ) {
                         BankCardsRoot(
-                            openDrawer = { sendIntent(HomeIntent.ClickButtonOpenDrawer) },
-                            navigateToCard = { sendIntent(HomeIntent.NavigateToBankCard(it)) },
+                            openDrawer = { intentSender.sendIntent(HomeIntent.ClickButtonOpenDrawer) },
+                            navigateToCard = { intentSender.sendIntent(HomeIntent.NavigateToBankCard(it)) },
                         )
                     }
                 }
