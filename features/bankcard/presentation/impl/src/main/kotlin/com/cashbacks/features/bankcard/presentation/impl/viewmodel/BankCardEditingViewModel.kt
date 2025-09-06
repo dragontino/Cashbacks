@@ -50,7 +50,9 @@ internal class BankCardEditingViewModel(
     private val editingStore: Store<EditingIntent, EditingState, EditingLabel> by lazy {
         object : Store<EditingIntent, EditingState, EditingLabel> by storeFactory.create(
             name = "BankCardEditingStore",
-            initialState = EditingState(),
+            initialState = EditingState(
+                screenState = ScreenState.Loading
+            ),
             bootstrapper = coroutineBootstrapper<BankCardAction>(Dispatchers.Default) {
                 launch {
                     dispatchFromAnotherThread(BankCardAction.LoadStarted)

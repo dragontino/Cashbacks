@@ -26,6 +26,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -63,6 +64,7 @@ import com.cashbacks.features.cashback.presentation.api.utils.CashbackPresentati
 import kotlinx.datetime.LocalDate
 import java.util.Currency
 
+@Stable
 @Composable
 fun MaxCashbackOwnerComposable(
     maxCashback: Cashback?,
