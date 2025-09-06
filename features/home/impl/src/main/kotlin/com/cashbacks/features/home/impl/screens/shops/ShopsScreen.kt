@@ -69,7 +69,7 @@ import com.cashbacks.common.composables.utils.keyboardAsState
 import com.cashbacks.common.composables.utils.mix
 import com.cashbacks.common.composables.utils.reversed
 import com.cashbacks.common.resources.R
-import com.cashbacks.common.utils.IntentSender
+import com.cashbacks.common.utils.mvi.IntentSender
 import com.cashbacks.features.cashback.presentation.api.CashbackArgs
 import com.cashbacks.features.cashback.presentation.api.composables.MaxCashbackOwnerComposable
 import com.cashbacks.features.home.impl.composables.HomeAppBarDefaults
@@ -126,9 +126,7 @@ internal fun ShopsRoot(
     ShopsScreen(
         state = state,
         snackbarHostState = snackbarHostState,
-        intentSender = IntentSender { intent, withDelay ->
-            viewModel.sendIntent(intent, withDelay)
-        },
+        intentSender = IntentSender(viewModel::sendIntent),
         modifier = modifier
     )
 }
@@ -143,8 +141,8 @@ private fun ShopsScreen(
 ) {
     BackHandler {
         when (state.viewModelState) {
-            ViewModelState.Editing -> intentSender.sendIntent(ShopsIntent.FinishEdit)
-            ViewModelState.Viewing -> intentSender.sendIntent(ShopsIntent.ClickButtonBack)
+            ViewModelState.Editing -> intentSender.send(ShopsIntent.FinishEdit)
+            ViewModelState.Viewing -> intentSender.send(ShopsIntent.ClickButtonBack)
         }
     }
 
@@ -161,11 +159,11 @@ private fun ShopsScreen(
                 title = HomeDestination.Shops.screenTitle,
                 state = state.appBarState,
                 onStateChange = {
-                    intentSender.sendIntent(ShopsIntent.ChangeAppBarState(it))
+                    intentSender.send(ShopsIntent.ChangeAppBarState(it))
                 },
                 searchPlaceholder = stringResource(R.string.search_shops_placeholder),
                 onNavigationIconClick = {
-                    intentSender.sendIntentWithDelay(ShopsIntent.ClickNavigationButton)
+                    intentSender.sendWithDelay(ShopsIntent.ClickNavigationButton)
                 },
                 colors = HomeAppBarDefaults.colors(
                     topBarContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = .6f)
@@ -194,7 +192,7 @@ private fun ShopsScreen(
                 exit = floatingActionButtonExitAnimation()
             ) {
                 BasicFloatingActionButton(icon = Icons.Rounded.Add) {
-                    intentSender.sendIntentWithDelay(ShopsIntent.NavigateToShop(ShopArgs()))
+                    intentSender.sendWithDelay(ShopsIntent.NavigateToShop(ShopArgs()))
                 }
             }
 
@@ -205,7 +203,7 @@ private fun ShopsScreen(
                         ViewModelState.Viewing -> Icons.Rounded.Edit
                     },
                     onClick = {
-                        intentSender.sendIntentWithDelay(ShopsIntent.SwitchEdit)
+                        intentSender.sendWithDelay(ShopsIntent.SwitchEdit)
                     }
                 )
             }
@@ -319,25 +317,25 @@ private fun ShopsList(
                         maxCashback = maxCashback,
                         isEnabledToSwipe = state.swipedShopId in setOf(shopWithCashback.id, null),
                         onSwipeStatusChanged = { isOnSwipe ->
-                            intentSender.sendIntentWithDelay(
+                            intentSender.sendWithDelay(
                                 ShopsIntent.SwipeShop(shopWithCashback.id, isOnSwipe)
                             )
                         },
                         isExpanded = state.selectedShopId == shopWithCashback.id,
                         onExpandedStatusChanged = { isExpanded ->
-                            intentSender.sendIntentWithDelay(
+                            intentSender.sendWithDelay(
                                 ShopsIntent.SelectShop(shopWithCashback.id, isExpanded)
                             )
                         },
                         onClick = {
-                            intentSender.sendIntentWithDelay(
+                            intentSender.sendWithDelay(
                                 ShopsIntent.NavigateToShop(
                                     ShopArgs(shop.id, isEditing = false)
                                 )
                             )
                         },
                         onClickToCashback = {
-                            intentSender.sendIntentWithDelay(
+                            intentSender.sendWithDelay(
                                 ShopsIntent.NavigateToCashback(
                                     CashbackArgs.fromShop(
                                         cashbackId = maxCashback!!.id,
@@ -347,14 +345,14 @@ private fun ShopsList(
                             )
                         },
                         onEdit = {
-                            intentSender.sendIntentWithDelay(
+                            intentSender.sendWithDelay(
                                 ShopsIntent.NavigateToShop(
                                     ShopArgs(shop.id, isEditing = true)
                                 )
                             )
                         },
                         onDelete = {
-                            intentSender.sendIntentWithDelay(
+                            intentSender.sendWithDelay(
                                 ShopsIntent.OpenDialog(DialogType.ConfirmDeletion(shop))
                             )
                         },

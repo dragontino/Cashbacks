@@ -72,7 +72,7 @@ import com.cashbacks.common.composables.utils.mutableStateSaver
 import com.cashbacks.common.navigation.enterScreenTransition
 import com.cashbacks.common.navigation.exitScreenTransition
 import com.cashbacks.common.resources.R
-import com.cashbacks.common.utils.IntentSender
+import com.cashbacks.common.utils.mvi.IntentSender
 import com.cashbacks.features.bankcard.presentation.api.BankCardArgs
 import com.cashbacks.features.cashback.presentation.api.CashbackArgs
 import com.cashbacks.features.category.presentation.api.CategoryArgs
@@ -182,17 +182,17 @@ private fun HomeScreen(
         contract = ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         if (isGranted) {
-            intentSender.sendIntent(
+            intentSender.send(
                 HomeIntent.ClickButtonExportData { path ->
                     val message = context.getString(R.string.data_exported, path)
                     val action = SnackbarAction(context.getString(R.string.open)) {
-                        intentSender.sendIntent(HomeIntent.OpenExternalFolder(path))
+                        intentSender.send(HomeIntent.OpenExternalFolder(path))
                     }
-                    intentSender.sendIntent(HomeIntent.ShowMessage(message, action))
+                    intentSender.send(HomeIntent.ShowMessage(message, action))
                 }
             )
         } else {
-            intentSender.sendIntentWithDelay(
+            intentSender.sendWithDelay(
                 HomeIntent.ShowMessage(context.getString(R.string.permission_required))
             )
         }
@@ -225,7 +225,7 @@ private fun HomeScreen(
                     iconTintColor = MaterialTheme.colorScheme.primary.animate(),
                     selected = true,
                     onClick = {
-                        intentSender.sendIntentWithDelay(HomeIntent.ClickButtonCloseDrawer)
+                        intentSender.sendWithDelay(HomeIntent.ClickButtonCloseDrawer)
                     }
                 )
 
@@ -237,8 +237,10 @@ private fun HomeScreen(
                     iconTintColor = MaterialTheme.colorScheme.primary.animate(),
                     selected = false
                 ) {
-                    intentSender.sendIntent(HomeIntent.ClickButtonCloseDrawer)
-                    intentSender.sendIntentWithDelay(HomeIntent.ClickButtonOpenSettings)
+                    intentSender.sendWithDelay(
+                        HomeIntent.ClickButtonCloseDrawer,
+                        HomeIntent.ClickButtonOpenSettings
+                    )
                 }
 
                 IconTextItem(
@@ -246,22 +248,27 @@ private fun HomeScreen(
                     icon = Icons.Rounded.Download,
                     iconTintColor = MaterialTheme.colorScheme.primary.animate()
                 ) {
-                    intentSender.sendIntent(HomeIntent.ClickButtonCloseDrawer)
                     usePermissions(
                         Manifest.permission.WRITE_EXTERNAL_STORAGE,
                         context = context,
                         onGranted = {
-                            intentSender.sendIntent(
-                                HomeIntent.ClickButtonExportData { path ->
+                            intentSender.sendWithDelay {
+                                yield(HomeIntent.ClickButtonCloseDrawer)
+
+                                val intent = HomeIntent.ClickButtonExportData { path ->
                                     val message = context.getString(R.string.data_exported, path)
                                     val action = SnackbarAction(context.getString(R.string.open)) {
-                                        intentSender.sendIntent(HomeIntent.OpenExternalFolder(path))
+                                        intentSender.send(HomeIntent.OpenExternalFolder(path))
                                     }
-                                    intentSender.sendIntent(HomeIntent.ShowMessage(message, action))
+                                    intentSender.send(HomeIntent.ShowMessage(message, action))
                                 }
-                            )
+                                yield(intent)
+                            }
                         },
-                        onDenied = { permissionLauncher.launch(it) }
+                        onDenied = {
+                            intentSender.sendWithDelay(HomeIntent.ClickButtonCloseDrawer)
+                            permissionLauncher.launch(it)
+                        }
                     )
                 }
             }
@@ -293,9 +300,13 @@ private fun HomeScreen(
                         exitTransition = { exitScreenTransition(shrinkTowards = Alignment.Start) }
                     ) {
                         CategoriesRoot(
-                            openDrawer = { intentSender.sendIntent(HomeIntent.ClickButtonOpenDrawer) },
-                            navigateToCategory = { intentSender.sendIntent(HomeIntent.NavigateToCategory(it)) },
-                            navigateToCashback = { intentSender.sendIntent(HomeIntent.NavigateToCashback(it)) },
+                            openDrawer = { intentSender.send(HomeIntent.ClickButtonOpenDrawer) },
+                            navigateToCategory = {
+                                intentSender.send(HomeIntent.NavigateToCategory(it))
+                            },
+                            navigateToCashback = {
+                                intentSender.send(HomeIntent.NavigateToCashback(it))
+                            },
                             navigateBack = { context.getActivity()?.finish() }
                         )
                     }
@@ -317,11 +328,13 @@ private fun HomeScreen(
                         },
                     ) {
                         ShopsRoot(
-                            openDrawer = { intentSender.sendIntent(HomeIntent.ClickButtonOpenDrawer) },
-                            navigateToShop = { intentSender.sendIntent(HomeIntent.NavigateToShop(it)) },
-                            navigateToCashback = { intentSender.sendIntent(HomeIntent.NavigateToCashback(it)) },
+                            openDrawer = { intentSender.send(HomeIntent.ClickButtonOpenDrawer) },
+                            navigateToShop = { intentSender.send(HomeIntent.NavigateToShop(it)) },
+                            navigateToCashback = {
+                                intentSender.send(HomeIntent.NavigateToCashback(it))
+                            },
                             navigateBack = navController::popBackStack,
-                            )
+                        )
                     }
 
                     composable<HomeDestination.Cashbacks>(
@@ -341,8 +354,10 @@ private fun HomeScreen(
                         }
                     ) {
                         CashbacksRoot(
-                            openDrawer = { intentSender.sendIntent(HomeIntent.ClickButtonOpenDrawer) },
-                            navigateToCashback = { intentSender.sendIntent(HomeIntent.NavigateToCashback(it)) },
+                            openDrawer = { intentSender.send(HomeIntent.ClickButtonOpenDrawer) },
+                            navigateToCashback = {
+                                intentSender.send(HomeIntent.NavigateToCashback(it))
+                            },
                             navigateBack = navController::popBackStack,
                         )
                     }
@@ -352,8 +367,8 @@ private fun HomeScreen(
                         exitTransition = { exitScreenTransition(shrinkTowards = Alignment.End) }
                     ) {
                         BankCardsRoot(
-                            openDrawer = { intentSender.sendIntent(HomeIntent.ClickButtonOpenDrawer) },
-                            navigateToCard = { intentSender.sendIntent(HomeIntent.NavigateToBankCard(it)) },
+                            openDrawer = { intentSender.send(HomeIntent.ClickButtonOpenDrawer) },
+                            navigateToCard = { intentSender.send(HomeIntent.NavigateToBankCard(it)) },
                         )
                     }
                 }

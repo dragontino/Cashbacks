@@ -87,6 +87,7 @@ import com.cashbacks.common.composables.utils.animate
 import com.cashbacks.common.composables.utils.reversed
 import com.cashbacks.common.resources.R
 import com.cashbacks.common.utils.DateUtils.getDisplayableString
+import com.cashbacks.common.utils.mvi.IntentSender
 import com.cashbacks.common.utils.now
 import com.cashbacks.features.bankcard.domain.model.PaymentSystem
 import com.cashbacks.features.bankcard.presentation.api.utils.PaymentSystemUtils
@@ -105,7 +106,7 @@ import kotlinx.serialization.Serializable
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
-fun BankCardEditingRoot(
+internal fun BankCardEditingRoot(
     navigateBack: () -> Unit,
     viewModel: BankCardEditingViewModel = koinViewModel()
 ) {
@@ -181,7 +182,7 @@ fun BankCardEditingRoot(
     BankCardEditingScreen(
         state = editingState,
         snackbarHostState = snackbarState,
-        sendIntent = viewModel::sendIntent
+        intentSender = IntentSender(viewModel::sendIntent)
     )
 }
 
@@ -191,12 +192,12 @@ fun BankCardEditingRoot(
 internal fun BankCardEditingScreen(
     state: EditingState,
     snackbarHostState: SnackbarHostState,
-    sendIntent: (EditingIntent) -> Unit
+    intentSender: IntentSender<EditingIntent>
 ) {
     BackHandler {
         when {
-            state.isChanged() -> sendIntent(EditingIntent.ShowDialog(DialogType.Save))
-            else -> sendIntent(EditingIntent.ClickButtonBack)
+            state.isChanged() -> intentSender.sendWithDelay(EditingIntent.ShowDialog(DialogType.Save))
+            else -> intentSender.sendWithDelay(EditingIntent.ClickButtonBack)
         }
     }
 
@@ -218,9 +219,11 @@ internal fun BankCardEditingScreen(
                     ) { isChanged ->
                         IconButton(
                             onClick = {
-                                when {
-                                    isChanged -> sendIntent(EditingIntent.ShowDialog(DialogType.Save))
-                                    else -> sendIntent(EditingIntent.ClickButtonBack)
+                                intentSender.sendWithDelay {
+                                    when {
+                                        isChanged -> yield(EditingIntent.ShowDialog(DialogType.Save))
+                                        else -> yield(EditingIntent.ClickButtonBack)
+                                    }
                                 }
                             }
                         ) {
@@ -239,9 +242,9 @@ internal fun BankCardEditingScreen(
                     AnimatedVisibility(visible = state.screenState != ScreenState.Loading) {
                         IconButton(
                             onClick = {
-                                sendIntent(
+                                intentSender.sendWithDelay(
                                     EditingIntent.Save {
-                                        sendIntent(EditingIntent.ClickButtonBack)
+                                        intentSender.send(EditingIntent.ClickButtonBack)
                                     }
                                 )
                             },
@@ -283,7 +286,7 @@ internal fun BankCardEditingScreen(
                 ScreenState.Loading -> LoadingInBox()
                 ScreenState.Stable -> BankCardEditingContent(
                     state = state,
-                    pushIntent = sendIntent,
+                    intentSender = intentSender,
                     modifier = Modifier
                         .imePadding()
                         .padding(contentPadding)
@@ -299,7 +302,7 @@ internal fun BankCardEditingScreen(
 @Composable
 private fun BankCardEditingContent(
     state: EditingState,
-    pushIntent: (EditingIntent) -> Unit,
+    intentSender: IntentSender<EditingIntent>,
     modifier: Modifier = Modifier,
 ) {
     val interactionSource = remember(::MutableInteractionSource)
@@ -327,10 +330,12 @@ private fun BankCardEditingContent(
             EditableTextField(
                 value = state.card.number,
                 onValueChange = {
-                    pushIntent(
+                    intentSender.send(
                         EditingIntent.UpdateBankCard(state.card.updateNumber(it))
                     )
-                    pushIntent(EditingIntent.UpdateErrorMessage(BankCardError.Number))
+                    intentSender.sendWithDelay(
+                        EditingIntent.UpdateErrorMessage(BankCardError.Number)
+                    )
                 },
                 label = stringResource(R.string.card_number),
                 keyboardType = KeyboardType.Decimal,
@@ -350,7 +355,7 @@ private fun BankCardEditingContent(
                         isExpanded -> EditingIntent.ShowPaymentSystemSelection
                         else -> EditingIntent.HidePaymentSystemSelection
                     }
-                    pushIntent(intent)
+                    intentSender.sendWithDelay(intent)
                 }
             ) {
                 EditableTextField(
@@ -385,7 +390,7 @@ private fun BankCardEditingContent(
                         addAll(PaymentSystem.entries)
                     },
                     expanded = state.showPaymentSystemSelection,
-                    onClose = { pushIntent(EditingIntent.HidePaymentSystemSelection) }
+                    onClose = { intentSender.sendWithDelay(EditingIntent.HidePaymentSystemSelection) }
                 ) { paymentSystems ->
                     paymentSystems.forEach { paymentSystem ->
                         DropdownMenuItem(
@@ -413,12 +418,12 @@ private fun BankCardEditingContent(
                                 }
                             },
                             onClick = {
-                                pushIntent(
+                                intentSender.sendWithDelay(
                                     EditingIntent.UpdateBankCard(
                                         state.card.copy(paymentSystem = paymentSystem)
-                                    )
+                                    ),
+                                    EditingIntent.HidePaymentSystemSelection
                                 )
-                                pushIntent(EditingIntent.HidePaymentSystemSelection)
                             },
                             contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding,
                             colors = MenuDefaults.itemColors(
@@ -435,7 +440,7 @@ private fun BankCardEditingContent(
             EditableTextField(
                 text = state.card.holder,
                 onTextChange = {
-                    pushIntent(
+                    intentSender.send(
                         EditingIntent.UpdateBankCard(
                             state.card.copy(holder = it.uppercase())
                         )
@@ -463,7 +468,7 @@ private fun BankCardEditingContent(
                 modifier = Modifier
                     .padding(bottom = 16.dp)
                     .clickable(interactionSource, indication = null) {
-                        pushIntent(
+                        intentSender.sendWithDelay(
                             EditingIntent.ShowBottomSheet(
                                 ValidityPeriodSelectionBottomSheet(state.card.validityPeriod)
                             )
@@ -479,12 +484,12 @@ private fun BankCardEditingContent(
                 text = state.card.cvv,
                 onTextChange = {
                     if (it.length <= 3) {
-                        pushIntent(
+                        intentSender.send(
                             EditingIntent.UpdateBankCard(
                                 state.card.copy(cvv = it)
                             )
                         )
-                        pushIntent(EditingIntent.UpdateErrorMessage(BankCardError.Cvv))
+                        intentSender.sendWithDelay(EditingIntent.UpdateErrorMessage(BankCardError.Cvv))
                     }
                 },
                 label = stringResource(R.string.cvv),
@@ -516,12 +521,12 @@ private fun BankCardEditingContent(
                 text = state.card.pin,
                 onTextChange = {
                     if (it.length <= 4) {
-                        pushIntent(
+                        intentSender.send(
                             EditingIntent.UpdateBankCard(
                                 state.card.copy(pin = it)
                             )
                         )
-                        pushIntent(
+                        intentSender.sendWithDelay(
                             EditingIntent.UpdateErrorMessage(BankCardError.Pin)
                         )
                     }
@@ -564,7 +569,7 @@ private fun BankCardEditingContent(
             EditableTextField(
                 text = state.card.name,
                 onTextChange = {
-                    pushIntent(
+                    intentSender.send(
                         EditingIntent.UpdateBankCard(
                             state.card.copy(name = it)
                         )
@@ -588,7 +593,7 @@ private fun BankCardEditingContent(
                     if (state.card.maxCashbacksNumber != null) {
                         IconButton(
                             onClick = {
-                                pushIntent(
+                                intentSender.sendWithDelay(
                                     EditingIntent.UpdateBankCard(
                                         state.card.copy(maxCashbacksNumber = null)
                                     )
@@ -607,7 +612,7 @@ private fun BankCardEditingContent(
                 modifier = Modifier
                     .padding(bottom = 16.dp)
                     .clickable(interactionSource, indication = null) {
-                        pushIntent(
+                        intentSender.sendWithDelay(
                             EditingIntent.ShowBottomSheet(
                                 type = MaxCashbacksNumberSelectionBottomSheet(
                                     maxCashbacksNumber = state.card.maxCashbacksNumber
@@ -623,7 +628,7 @@ private fun BankCardEditingContent(
             EditableTextField(
                 text = state.card.comment,
                 onTextChange = {
-                    pushIntent(
+                    intentSender.send(
                         EditingIntent.UpdateBankCard(
                             state.card.copy(comment = it)
                         )

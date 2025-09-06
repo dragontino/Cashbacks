@@ -1,6 +1,5 @@
 package com.cashbacks.features.home.impl.screens.cards
 
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.arkivanov.mvikotlin.core.store.Store
 import com.arkivanov.mvikotlin.core.store.StoreFactory
@@ -11,6 +10,7 @@ import com.arkivanov.mvikotlin.extensions.coroutines.stateFlow
 import com.cashbacks.common.composables.management.ScreenState
 import com.cashbacks.common.utils.dispatchFromAnotherThread
 import com.cashbacks.common.utils.forwardFromAnotherThread
+import com.cashbacks.common.utils.mvi.IntentReceiverViewModel
 import com.cashbacks.features.bankcard.domain.usecase.DeleteBankCardUseCase
 import com.cashbacks.features.bankcard.domain.usecase.FetchBankCardsUseCase
 import com.cashbacks.features.bankcard.domain.usecase.SearchBankCardsUseCase
@@ -24,12 +24,11 @@ import com.cashbacks.features.home.impl.mvi.BankCardsMessage
 import com.cashbacks.features.home.impl.mvi.BankCardsState
 import com.cashbacks.features.home.impl.mvi.HomeAction
 import com.cashbacks.features.home.impl.utils.launchWithLoading
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
@@ -38,15 +37,14 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.sample
 
 @OptIn(FlowPreview::class)
-class CardsViewModel(
+internal class CardsViewModel(
     fetchBankCardsUseCase: FetchBankCardsUseCase,
     searchBankCardsUseCase: SearchBankCardsUseCase,
     deleteBankCardUseCase: DeleteBankCardUseCase,
     storeFactory: StoreFactory,
-) : ViewModel() {
+) : IntentReceiverViewModel<BankCardsIntent>() {
 
     private val store: Store<BankCardsIntent, BankCardsState, BankCardsLabel> by lazy {
         storeFactory.create(
@@ -156,34 +154,18 @@ class CardsViewModel(
     internal val labelFlow: Flow<BankCardsLabel> = store.labels
 
 
-    private val intentSharedFlow = MutableSharedFlow<BankCardsIntent>(
-        extraBufferCapacity = 1,
-        onBufferOverflow = BufferOverflow.DROP_OLDEST
-    )
-
-
     init {
         store.init()
-        intentSharedFlow
-            .sample(DELAY_MILLIS)
-            .onEach(store::accept)
-            .launchIn(viewModelScope)
     }
 
-    internal fun sendIntent(intent: BankCardsIntent, withDelay: Boolean = false) {
-        when {
-            withDelay -> intentSharedFlow.tryEmit(intent)
-            else -> store.accept(intent)
-        }
-    }
+
+    override val scope: CoroutineScope get() = viewModelScope
+
+    override fun acceptIntent(intent: BankCardsIntent) = store.accept(intent)
+
 
     override fun onCleared() {
         store.dispose()
         super.onCleared()
-    }
-
-
-    private companion object {
-        const val DELAY_MILLIS = 50L
     }
 }

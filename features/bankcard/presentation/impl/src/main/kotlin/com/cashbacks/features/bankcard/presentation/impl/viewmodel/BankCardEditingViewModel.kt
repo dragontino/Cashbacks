@@ -1,6 +1,5 @@
 package com.cashbacks.features.bankcard.presentation.impl.viewmodel
 
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.arkivanov.mvikotlin.core.store.Store
 import com.arkivanov.mvikotlin.core.store.StoreFactory
@@ -13,6 +12,7 @@ import com.cashbacks.common.resources.MessageHandler
 import com.cashbacks.common.utils.AnimationDefaults
 import com.cashbacks.common.utils.dispatchFromAnotherThread
 import com.cashbacks.common.utils.forwardFromAnotherThread
+import com.cashbacks.common.utils.mvi.IntentReceiverViewModel
 import com.cashbacks.common.utils.publishFromAnotherThread
 import com.cashbacks.features.bankcard.domain.usecase.AddBankCardUseCase
 import com.cashbacks.features.bankcard.domain.usecase.GetBankCardUseCase
@@ -29,6 +29,7 @@ import com.cashbacks.features.bankcard.presentation.impl.mvi.EditingLabel
 import com.cashbacks.features.bankcard.presentation.impl.mvi.EditingMessage
 import com.cashbacks.features.bankcard.presentation.impl.mvi.EditingState
 import com.cashbacks.features.bankcard.presentation.impl.mvi.model.EditableBankCard
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -37,14 +38,14 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-class BankCardEditingViewModel(
+internal class BankCardEditingViewModel(
     private val getBankCardUseCase: GetBankCardUseCase,
     private val addBankCardUseCase: AddBankCardUseCase,
     private val updateBankCardUseCase: UpdateBankCardUseCase,
     private val messageHandler: MessageHandler,
     private val storeFactory: StoreFactory,
     private val bankCardId: Long?,
-) : ViewModel() {
+) : IntentReceiverViewModel<EditingIntent>() {
 
     private val editingStore: Store<EditingIntent, EditingState, EditingLabel> by lazy {
         object : Store<EditingIntent, EditingState, EditingLabel> by storeFactory.create(
@@ -191,10 +192,9 @@ class BankCardEditingViewModel(
 
     internal val labelFlow: Flow<EditingLabel> by lazy { editingStore.labels }
 
+    override val scope: CoroutineScope get() = viewModelScope
 
-    internal fun sendIntent(intent: EditingIntent) {
-        editingStore.accept(intent)
-    }
+    override fun acceptIntent(intent: EditingIntent) = editingStore.accept(intent)
 
 
 

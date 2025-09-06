@@ -1,6 +1,5 @@
 package com.cashbacks.features.home.impl.screens.shops
 
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.arkivanov.mvikotlin.core.store.Store
 import com.arkivanov.mvikotlin.core.store.StoreFactory
@@ -12,6 +11,7 @@ import com.cashbacks.common.composables.management.ScreenState
 import com.cashbacks.common.composables.management.ViewModelState
 import com.cashbacks.common.utils.dispatchFromAnotherThread
 import com.cashbacks.common.utils.forwardFromAnotherThread
+import com.cashbacks.common.utils.mvi.IntentReceiverViewModel
 import com.cashbacks.features.cashback.domain.usecase.GetMaxCashbacksFromShopUseCase
 import com.cashbacks.features.home.impl.composables.HomeTopAppBarState
 import com.cashbacks.features.home.impl.mvi.HomeAction
@@ -27,32 +27,31 @@ import com.cashbacks.features.shop.domain.usecase.FetchAllShopsUseCase
 import com.cashbacks.features.shop.domain.usecase.FetchShopsWithCashbackUseCase
 import com.cashbacks.features.shop.domain.usecase.SearchShopsUseCase
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combineTransform
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.sample
 
-@OptIn(FlowPreview::class)
-class ShopsViewModel(
+internal class ShopsViewModel(
     private val fetchAllShops: FetchAllShopsUseCase,
     private val fetchShopsWithCashback: FetchShopsWithCashbackUseCase,
     private val searchShops: SearchShopsUseCase,
     private val getMaxCashbacksFromShop: GetMaxCashbacksFromShopUseCase,
     private val deleteShop: DeleteShopUseCase,
     private val storeFactory: StoreFactory,
-) : ViewModel() {
+) : IntentReceiverViewModel<ShopsIntent>() {
 
+    @OptIn(FlowPreview::class)
     private val shopsStore: Store<ShopsIntent, ShopsState, ShopsLabel> by lazy {
         storeFactory.create(
             name = "ShopsStore",
@@ -65,6 +64,7 @@ class ShopsViewModel(
                     flow3 = stateFlow.map { it.viewModelState }.distinctUntilChanged(),
                     flow4 = stateFlow.map { it.appBarState }.distinctUntilChanged()
                 ) { allShops, shopsWithCashback, viewModelState, appBarState ->
+                    emit(null)
                     dispatchFromAnotherThread(HomeAction.StartLoading)
                     delay(200)
 
@@ -189,35 +189,18 @@ class ShopsViewModel(
 
     internal val labelFlow: Flow<ShopsLabel> = shopsStore.labels
 
-    private val intentSharedFlow = MutableSharedFlow<ShopsIntent>(
-        extraBufferCapacity = 1,
-        onBufferOverflow = BufferOverflow.DROP_OLDEST
-    )
-
-
     init {
         shopsStore.init()
-        intentSharedFlow
-            .sample(DELAY_MILLIS)
-            .onEach { shopsStore.accept(it) }
-            .launchIn(viewModelScope)
     }
 
 
-    internal fun sendIntent(intent: ShopsIntent, withDelay: Boolean = false) {
-        when {
-            withDelay -> intentSharedFlow.tryEmit(intent)
-            else -> shopsStore.accept(intent)
-        }
-    }
+    override val scope: CoroutineScope get() = viewModelScope
+
+    override fun acceptIntent(intent: ShopsIntent) = shopsStore.accept(intent)
 
 
     override fun onCleared() {
         shopsStore.dispose()
         super.onCleared()
-    }
-
-    private companion object {
-        const val DELAY_MILLIS = 50L
     }
 }

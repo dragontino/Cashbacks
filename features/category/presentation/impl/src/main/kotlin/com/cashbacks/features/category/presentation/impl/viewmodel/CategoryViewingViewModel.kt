@@ -1,6 +1,5 @@
 package com.cashbacks.features.category.presentation.impl.viewmodel
 
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.arkivanov.mvikotlin.core.store.Store
 import com.arkivanov.mvikotlin.core.store.StoreFactory
@@ -11,6 +10,7 @@ import com.arkivanov.mvikotlin.extensions.coroutines.stateFlow
 import com.cashbacks.common.utils.AnimationDefaults
 import com.cashbacks.common.utils.dispatchFromAnotherThread
 import com.cashbacks.common.utils.forwardFromAnotherThread
+import com.cashbacks.common.utils.mvi.IntentReceiverViewModel
 import com.cashbacks.features.cashback.domain.usecase.DeleteCashbackUseCase
 import com.cashbacks.features.cashback.domain.usecase.FetchCashbacksFromCategoryUseCase
 import com.cashbacks.features.cashback.domain.usecase.GetMaxCashbacksFromShopUseCase
@@ -32,23 +32,21 @@ import com.cashbacks.features.category.presentation.impl.utils.launchWithLoading
 import com.cashbacks.features.shop.domain.usecase.DeleteShopUseCase
 import com.cashbacks.features.shop.domain.usecase.FetchShopsFromCategoryUseCase
 import com.cashbacks.features.shop.presentation.api.ShopArgs
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.sample
 import kotlinx.coroutines.launch
 
 @OptIn(FlowPreview::class)
-class CategoryViewingViewModel(
+internal class CategoryViewingViewModel(
     private val fetchCategory: FetchCategoryUseCase,
     private val fetchShopsFromCategory: FetchShopsFromCategoryUseCase,
     private val fetchCashbacksFromCategory: FetchCashbacksFromCategoryUseCase,
@@ -58,7 +56,7 @@ class CategoryViewingViewModel(
     private val storeFactory: StoreFactory,
     private val categoryId: Long,
     val startTab: CategoryTabItemType,
-) : ViewModel() {
+) : IntentReceiverViewModel<ViewingIntent>() {
     private val viewingStore: Store<ViewingIntent, CategoryViewingState, ViewingLabel> by lazy {
         storeFactory.create(
             name = "CategoryViewingStore",
@@ -178,29 +176,7 @@ class CategoryViewingViewModel(
         viewingStore.labels
     }
 
+    override val scope: CoroutineScope get() = viewModelScope
 
-    private val intentSharedFlow = MutableSharedFlow<ViewingIntent>(
-        extraBufferCapacity = 1,
-        onBufferOverflow = BufferOverflow.DROP_OLDEST
-    )
-
-    init {
-        viewingStore.init()
-        intentSharedFlow
-            .sample(DELAY_MILLIS)
-            .onEach { viewingStore.accept(it) }
-            .launchIn(viewModelScope)
-    }
-
-    internal fun sendIntent(intent: ViewingIntent, withDelay: Boolean = false) {
-        when {
-            withDelay -> intentSharedFlow.tryEmit(intent)
-            else -> viewingStore.accept(intent)
-        }
-    }
-
-
-    private companion object {
-        const val DELAY_MILLIS = 50L
-    }
+    override fun acceptIntent(intent: ViewingIntent) = viewingStore.accept(intent)
 }

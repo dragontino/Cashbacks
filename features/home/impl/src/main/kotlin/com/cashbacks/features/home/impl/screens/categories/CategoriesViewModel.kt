@@ -1,7 +1,6 @@
 package com.cashbacks.features.home.impl.screens.categories
 
 import androidx.compose.runtime.Stable
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.arkivanov.mvikotlin.core.store.Store
 import com.arkivanov.mvikotlin.core.store.StoreFactory
@@ -13,6 +12,7 @@ import com.cashbacks.common.composables.management.ScreenState
 import com.cashbacks.common.composables.management.ViewModelState
 import com.cashbacks.common.utils.dispatchFromAnotherThread
 import com.cashbacks.common.utils.forwardFromAnotherThread
+import com.cashbacks.common.utils.mvi.IntentReceiverViewModel
 import com.cashbacks.features.cashback.domain.usecase.GetMaxCashbacksFromCategoryUseCase
 import com.cashbacks.features.category.domain.model.Category
 import com.cashbacks.features.category.domain.usecase.AddCategoryUseCase
@@ -30,12 +30,11 @@ import com.cashbacks.features.home.impl.mvi.CategoryWithCashback
 import com.cashbacks.features.home.impl.mvi.HomeAction
 import com.cashbacks.features.home.impl.utils.launchWithLoading
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
@@ -45,11 +44,10 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.sample
 
 @OptIn(FlowPreview::class)
 @Stable
-class CategoriesViewModel(
+internal class CategoriesViewModel(
     addCategory: AddCategoryUseCase,
     fetchAllCategories: FetchAllCategoriesUseCase,
     fetchCategoriesWithCashback: FetchCategoriesWithCashbackUseCase,
@@ -57,9 +55,8 @@ class CategoriesViewModel(
     searchCategories: SearchCategoriesUseCase,
     deleteCategory: DeleteCategoryUseCase,
     storeFactory: StoreFactory,
-) : ViewModel() {
+) : IntentReceiverViewModel<CategoriesIntent>() {
 
-    @OptIn(FlowPreview::class)
     private val store: Store<CategoriesIntent, CategoriesState, CategoriesLabel> by lazy {
         storeFactory.create(
             name = "CategoriesStore",
@@ -228,36 +225,18 @@ class CategoriesViewModel(
     internal val labelFlow: Flow<CategoriesLabel> = store.labels
 
 
-    private val intentSharedFlow = MutableSharedFlow<CategoriesIntent>(
-        extraBufferCapacity = 1,
-        onBufferOverflow = BufferOverflow.DROP_LATEST
-    )
-
-
     init {
         store.init()
-        intentSharedFlow
-            .sample(DELAY_MILLIS)
-            .onEach { store.accept(it) }
-            .launchIn(viewModelScope)
     }
+
+
+    override val scope: CoroutineScope get() = viewModelScope
+
+    override fun acceptIntent(intent: CategoriesIntent) = store.accept(intent)
 
 
     override fun onCleared() {
         store.dispose()
         super.onCleared()
-    }
-
-
-    internal fun sendIntent(intent: CategoriesIntent, withDelay: Boolean = false) {
-        when {
-            withDelay -> intentSharedFlow.tryEmit(intent)
-            else -> store.accept(intent)
-        }
-    }
-
-
-    private companion object {
-        const val DELAY_MILLIS = 50L
     }
 }

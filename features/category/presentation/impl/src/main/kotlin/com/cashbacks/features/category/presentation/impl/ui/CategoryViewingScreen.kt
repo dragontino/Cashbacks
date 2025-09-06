@@ -60,7 +60,7 @@ import com.cashbacks.common.composables.management.ScreenState
 import com.cashbacks.common.composables.management.toListState
 import com.cashbacks.common.composables.utils.animate
 import com.cashbacks.common.resources.R
-import com.cashbacks.common.utils.IntentSender
+import com.cashbacks.common.utils.mvi.IntentSender
 import com.cashbacks.features.cashback.domain.model.BasicCashback
 import com.cashbacks.features.cashback.domain.model.Cashback
 import com.cashbacks.features.cashback.presentation.api.CashbackArgs
@@ -151,7 +151,7 @@ private fun CategoryViewingScreen(
     intentSender: IntentSender<ViewingIntent>
 ) {
     BackHandler {
-        intentSender.sendIntentWithDelay(CategoryIntent.ClickButtonBack)
+        intentSender.sendWithDelay(CategoryIntent.ClickButtonBack)
     }
 
     val currentScreen = remember(pagerState.currentPage) {
@@ -178,7 +178,7 @@ private fun CategoryViewingScreen(
                 navigationIcon = {
                     IconButton(
                         onClick = {
-                            intentSender.sendIntentWithDelay(CategoryIntent.ClickButtonBack)
+                            intentSender.sendWithDelay(CategoryIntent.ClickButtonBack)
                         }
                     ) {
                         Icon(
@@ -202,7 +202,7 @@ private fun CategoryViewingScreen(
             BasicFloatingActionButton(
                 icon = Icons.Rounded.Edit,
                 onClick = {
-                    intentSender.sendIntentWithDelay(
+                    intentSender.sendWithDelay(
                         ViewingIntent.NavigateToCategoryEditing(currentScreen.value.type)
                     )
                 }
@@ -289,26 +289,26 @@ private fun CategoryViewingContent(
                         isEnabledToSwipe = state.selectedShopIndex == index || state.selectedShopIndex == null,
                         onSwipeStatusChanged = { isOnSwipe ->
                             intentSender.sendIntentWithDelay(
-                                CategoryIntent.SwipeShop(index, isOnSwipe)
+                            intentSender.sendWithDelay(
                             )
                         },
                         onClick = {
-                            intentSender.sendIntentWithDelay(
+                            intentSender.sendWithDelay(
                                 ViewingIntent.NavigateToShop(item.shop.id)
                             )
                         },
                         onClickToCashback = {
-                            intentSender.sendIntentWithDelay(
+                            intentSender.sendWithDelay(
                                 ViewingIntent.NavigateToCashback(item.maxCashback!!.id)
                             )
                         },
                         onEdit = {
-                            intentSender.sendIntentWithDelay(
+                            intentSender.sendWithDelay(
                                 ViewingIntent.NavigateToShop(item.shop.id)
                             )
                         },
                         onDelete = {
-                            intentSender.sendIntentWithDelay(
+                            intentSender.sendWithDelay(
                                 CategoryIntent.OpenDialog(DialogType.ConfirmDeletion(item))
                             )
                         }
@@ -320,15 +320,14 @@ private fun CategoryViewingContent(
                         onSwipeStatusChanged = { isOnSwipe ->
                             intentSender.sendIntentWithDelay(
                                 CategoryIntent.SwipeCashback(index, isOnSwipe)
+                            intentSender.sendWithDelay(
                             )
                         },
                         onClick = {
-                            intentSender.sendIntentWithDelay(
-                                ViewingIntent.NavigateToCashback(item.id)
-                            )
+                            intentSender.sendWithDelay(ViewingIntent.NavigateToCashback(item.id))
                         },
                         onDelete = {
-                            intentSender.sendIntentWithDelay(
+                            intentSender.sendWithDelay(
                                 CategoryIntent.OpenDialog(DialogType.ConfirmDeletion(item))
                             )
                         }

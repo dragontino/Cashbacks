@@ -95,7 +95,7 @@ import com.cashbacks.common.composables.utils.floatingActionButtonExitAnimation
 import com.cashbacks.common.composables.utils.keyboardAsState
 import com.cashbacks.common.composables.utils.mix
 import com.cashbacks.common.resources.R
-import com.cashbacks.common.utils.IntentSender
+import com.cashbacks.common.utils.mvi.IntentSender
 import com.cashbacks.features.cashback.domain.model.Cashback
 import com.cashbacks.features.cashback.presentation.api.CashbackArgs
 import com.cashbacks.features.cashback.presentation.api.composables.CashbackComposable
@@ -192,26 +192,26 @@ private fun ShopScreen(
     BackHandler(
         enabled = state.viewModelState == ViewModelState.Editing && state.isShopChanged()
     ) {
-        intentSender.sendIntentWithDelay(ShopIntent.OpenDialog(DialogType.Save))
+        intentSender.sendWithDelay(ShopIntent.OpenDialog(DialogType.Save))
     }
 
 
     LaunchedEffect(state.isCreatingCategory) {
         if (state.isCreatingCategory) {
-            intentSender.sendIntent(ShopIntent.HideCategoriesSelection)
+            intentSender.send(ShopIntent.HideCategoriesSelection)
         }
     }
 
     LaunchedEffect(state.showCategoriesSelection) {
         if (state.showCategoriesSelection) {
-            intentSender.sendIntent(ShopIntent.CancelCreatingCategory)
+            intentSender.send(ShopIntent.CancelCreatingCategory)
         }
     }
 
     LaunchedEffect(Unit) {
         snapshotFlow { keyboardState.value }.collect { isKeyboardOpen ->
             if (!isKeyboardOpen) {
-                intentSender.sendIntent(ShopIntent.CancelCreatingCategory)
+                intentSender.send(ShopIntent.CancelCreatingCategory)
             }
         }
     }
@@ -243,7 +243,7 @@ private fun ShopScreen(
             modifier = Modifier.align(Alignment.BottomCenter)
         ) {
             NewNameTextField(placeholder = stringResource(R.string.category_placeholder)) { name ->
-                intentSender.sendIntent(ShopIntent.AddCategory(name))
+                intentSender.send(ShopIntent.AddCategory(name))
             }
         }
     }
@@ -287,12 +287,11 @@ private fun ShopScreenScaffold(
                         IconButton(
                             onClick = {
                                 when {
-                                    isChanged -> intentSender.sendIntentWithDelay(
+                                    isChanged -> intentSender.sendWithDelay(
                                         ShopIntent.OpenDialog(DialogType.Save)
                                     )
-                                    else -> intentSender.sendIntentWithDelay(
-                                        ShopIntent.ClickButtonBack
-                                    )
+
+                                    else -> intentSender.sendWithDelay(ShopIntent.ClickButtonBack)
                                 }
                             }
                         ) {
@@ -314,7 +313,7 @@ private fun ShopScreenScaffold(
                     ) {
                         IconButton(
                             onClick = {
-                                intentSender.sendIntentWithDelay(
+                                intentSender.sendWithDelay(
                                     ShopIntent.OpenDialog(
                                         DialogType.ConfirmDeletion(state.shop.mapToShop())
                                     )
@@ -359,7 +358,7 @@ private fun ShopScreenScaffold(
                 exit = floatingActionButtonExitAnimation()
             ) {
                 BasicFloatingActionButton(icon = Icons.Rounded.Add) {
-                    intentSender.sendIntentWithDelay(ShopIntent.CreateCashback)
+                    intentSender.sendWithDelay(ShopIntent.CreateCashback)
                 }
             }
 
@@ -374,7 +373,7 @@ private fun ShopScreenScaffold(
                         ViewModelState.Editing -> ShopIntent.Save()
                         ViewModelState.Viewing -> ShopIntent.ClickEditButton
                     }
-                    intentSender.sendIntentWithDelay(action)
+                    intentSender.sendWithDelay(action)
                 }
             }
 
@@ -435,7 +434,7 @@ private fun ShopScreenContent(
                                 isExpanded -> ShopIntent.ShowCategoriesSelection
                                 else -> ShopIntent.HideCategoriesSelection
                             }
-                            intentSender.sendIntent(action)
+                            intentSender.sendWithDelay(action)
                         },
                         modifier = Modifier.padding(horizontal = 16.dp)
                     ) {
@@ -463,21 +462,23 @@ private fun ShopScreenContent(
                         ListDropdownMenu(
                             state = state.selectionCategories.toListState(),
                             expanded = state.showCategoriesSelection,
-                            onClose = { intentSender.sendIntent(ShopIntent.HideCategoriesSelection) }
+                            onClose = { intentSender.send(ShopIntent.HideCategoriesSelection) }
                         ) { categories ->
                             DropdownMenuListContent(
                                 list = categories,
                                 selected = { state.shop.parentCategory?.id == it.id },
                                 title = { it.name },
                                 onClick = {
-                                    intentSender.sendIntentWithDelay(ShopIntent.UpdateShopParent(it))
-                                    intentSender.sendIntent(ShopIntent.UpdateErrorMessage(ShopError.Parent))
-                                    intentSender.sendIntent(ShopIntent.HideCategoriesSelection)
+                                    intentSender.sendWithDelay(
+                                        ShopIntent.UpdateShopParent(it),
+                                        ShopIntent.UpdateErrorMessage(ShopError.Parent),
+                                        ShopIntent.HideCategoriesSelection
+                                    )
                                 },
                                 addButton = {
                                     TextButton(
                                         onClick = {
-                                            intentSender.sendIntentWithDelay(
+                                            intentSender.sendWithDelay(
                                                 ShopIntent.StartCreatingCategory
                                             )
                                         },
@@ -497,8 +498,8 @@ private fun ShopScreenContent(
                     EditableTextField(
                         text = state.shop.name,
                         onTextChange = {
-                            intentSender.sendIntent(ShopIntent.UpdateShopName(it))
-                            intentSender.sendIntentWithDelay(
+                            intentSender.send(ShopIntent.UpdateShopName(it))
+                            intentSender.sendWithDelay(
                                 ShopIntent.UpdateErrorMessage(ShopError.Name)
                             )
                         },
@@ -538,13 +539,15 @@ private fun ShopScreenContent(
                     cashback = cashback,
                     isEnabledToSwipe = state.selectedCashbackIndex == index || state.selectedCashbackIndex == null,
                     onSwipeStatusChanged = { isOnSwipe ->
-                        intentSender.sendIntentWithDelay(ShopIntent.SwipeCashback(index, isOnSwipe))
+                        intentSender.sendWithDelay(ShopIntent.SwipeCashback(index, isOnSwipe))
                     },
                     onClick = {
-                        intentSender.sendIntentWithDelay(ShopIntent.NavigateToCashback(cashback.id))
+                        intentSender.sendWithDelay(ShopIntent.NavigateToCashback(cashback.id))
                     },
                     onDelete = {
-                        intentSender.sendIntentWithDelay(ShopIntent.OpenDialog(DialogType.ConfirmDeletion(cashback)))
+                        intentSender.sendWithDelay(
+                            ShopIntent.OpenDialog(DialogType.ConfirmDeletion(cashback))
+                        )
                     },
                     modifier = Modifier.padding(horizontal = 16.dp)
                 )

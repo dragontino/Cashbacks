@@ -80,8 +80,8 @@ import com.cashbacks.common.composables.utils.mix
 import com.cashbacks.common.composables.utils.reversed
 import com.cashbacks.common.composables.utils.smoothScrollToItem
 import com.cashbacks.common.resources.R
-import com.cashbacks.common.utils.IntentSender
 import com.cashbacks.common.utils.OnClick
+import com.cashbacks.common.utils.mvi.IntentSender
 import com.cashbacks.features.cashback.domain.model.Cashback
 import com.cashbacks.features.cashback.presentation.api.CashbackArgs
 import com.cashbacks.features.cashback.presentation.api.composables.MaxCashbackOwnerComposable
@@ -172,7 +172,7 @@ private fun CategoriesScreen(
             ViewModelState.Editing -> CategoriesIntent.FinishEdit
             ViewModelState.Viewing -> CategoriesIntent.ClickButtonBack
         }
-        intentSender.sendIntent(intent)
+        intentSender.send(intent)
     }
 
 
@@ -181,7 +181,7 @@ private fun CategoriesScreen(
 
     LaunchedEffect(isImeVisible) {
         if (isImeVisible.not()) {
-            intentSender.sendIntent(CategoriesIntent.FinishCreatingCategory)
+            intentSender.send(CategoriesIntent.FinishCreatingCategory)
         }
     }
 
@@ -195,11 +195,11 @@ private fun CategoriesScreen(
                     title = HomeDestination.Categories.screenTitle,
                     state = state.appBarState,
                     onStateChange = {
-                         intentSender.sendIntent(CategoriesIntent.ChangeAppBarState(it))
+                        intentSender.send(CategoriesIntent.ChangeAppBarState(it))
                     },
                     searchPlaceholder = stringResource(R.string.search_categories_placeholder),
                     onNavigationIconClick = {
-                        intentSender.sendIntentWithDelay(CategoriesIntent.ClickNavigationButton)
+                        intentSender.sendWithDelay(CategoriesIntent.ClickNavigationButton)
                     },
                     colors = HomeAppBarDefaults.colors(
                         topBarContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = .6f)
@@ -230,8 +230,10 @@ private fun CategoriesScreen(
                     exit = floatingActionButtonExitAnimation(),
                 ) {
                     BasicFloatingActionButton(icon = Icons.Rounded.Add) {
-                        intentSender.sendIntent(CategoriesIntent.ScrollToEnd)
-                        intentSender.sendIntent(CategoriesIntent.StartCreatingCategory)
+                        intentSender.sendWithDelay(
+                            CategoriesIntent.ScrollToEnd,
+                            CategoriesIntent.StartCreatingCategory
+                        )
                     }
                 }
                 AnimatedVisibility(visible = !state.isCreatingCategory && !isImeVisible) {
@@ -240,7 +242,7 @@ private fun CategoriesScreen(
                             ViewModelState.Editing -> Icons.Rounded.EditOff
                             ViewModelState.Viewing -> Icons.Rounded.Edit
                         },
-                        onClick = { intentSender.sendIntentWithDelay(CategoriesIntent.SwitchEdit) },
+                        onClick = { intentSender.sendWithDelay(CategoriesIntent.SwitchEdit) },
                     )
                 }
             },
@@ -286,7 +288,7 @@ private fun CategoriesScreen(
                     bottom = imePadding.calculateBottomPadding().coerceAtLeast(bottomBarHeight)
                 )
             ) { name ->
-                intentSender.sendIntent(CategoriesIntent.AddCategory(name))
+                intentSender.send(CategoriesIntent.AddCategory(name))
             }
         }
     }
@@ -374,7 +376,7 @@ private fun CategoriesList(
                                 swipedCategoryId in setOf(categoryWithCashback.id, null)
                             },
                             onSwipeStatusChanged = { isOnSwipe ->
-                                intentSender.sendIntentWithDelay(
+                                intentSender.sendWithDelay(
                                     CategoriesIntent.SwipeCategory(
                                         id = categoryWithCashback.id,
                                         isSwiped = isOnSwipe
@@ -383,22 +385,22 @@ private fun CategoriesList(
                             },
                             isExpanded = state.selectedCategoryId == categoryWithCashback.id,
                             onExpandedChanged = { isExpanded ->
-                                intentSender.sendIntentWithDelay(
+                                intentSender.sendWithDelay(
                                     CategoriesIntent.SelectCategory(
-                                        categoryWithCashback.id,
-                                        isExpanded
+                                        id = categoryWithCashback.id,
+                                        isSelected = isExpanded
                                     )
                                 )
                             },
                             onClick = {
-                                intentSender.sendIntentWithDelay(
+                                intentSender.sendWithDelay(
                                     CategoriesIntent.NavigateToCategory(
                                         CategoryArgs.Viewing(id = categoryWithCashback.category.id)
                                     )
                                 )
                             },
                             onClickToCashback = {
-                                intentSender.sendIntentWithDelay(
+                                intentSender.sendWithDelay(
                                     CategoriesIntent.NavigateToCashback(
                                         CashbackArgs.fromCategory(
                                             cashbackId = categoryWithCashback.maxCashback!!.id,
@@ -408,14 +410,14 @@ private fun CategoriesList(
                                 )
                             },
                             onEdit = {
-                                intentSender.sendIntentWithDelay(
+                                intentSender.sendWithDelay(
                                     CategoriesIntent.NavigateToCategory(
                                         args = CategoryArgs.Editing(id = categoryWithCashback.category.id),
                                     )
                                 )
                             },
                             onDelete = {
-                                intentSender.sendIntentWithDelay(
+                                intentSender.sendWithDelay(
                                     CategoriesIntent.OpenDialog(
                                         DialogType.ConfirmDeletion(categoryWithCashback.category)
                                     )
