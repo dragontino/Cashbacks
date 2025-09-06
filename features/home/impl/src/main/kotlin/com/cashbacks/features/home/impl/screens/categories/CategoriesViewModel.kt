@@ -66,9 +66,10 @@ internal class CategoriesViewModel(
                 val categoriesFlow = combineTransform(
                     flow = fetchAllCategories(),
                     flow2 = fetchCategoriesWithCashback(),
-                    flow3 = stateFlow.map { it.appBarState }.debounce(50L).distinctUntilChanged(),
-                    flow4 = stateFlow.map { it.viewModelState }.distinctUntilChanged()
+                    flow3 = stateFlow.map { it.appBarState }.distinctUntilChanged().debounce(50L),
+                    flow4 = stateFlow.map { it.viewModelState }.distinctUntilChanged().debounce(50L)
                 ) { allCategories, categoriesWithCashback, appBarState, viewModelState ->
+                    emit(null)
                     dispatchFromAnotherThread(HomeAction.StartLoading)
                     delay(200)
 

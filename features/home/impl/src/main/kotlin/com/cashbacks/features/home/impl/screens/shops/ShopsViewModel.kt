@@ -61,8 +61,8 @@ internal class ShopsViewModel(
                 val shopsFlow = combineTransform(
                     flow = fetchAllShops(),
                     flow2 = fetchShopsWithCashback(),
-                    flow3 = stateFlow.map { it.viewModelState }.distinctUntilChanged(),
-                    flow4 = stateFlow.map { it.appBarState }.distinctUntilChanged()
+                    flow3 = stateFlow.map { it.viewModelState }.distinctUntilChanged().debounce(50L),
+                    flow4 = stateFlow.map { it.appBarState }.distinctUntilChanged().debounce(50L)
                 ) { allShops, shopsWithCashback, viewModelState, appBarState ->
                     emit(null)
                     dispatchFromAnotherThread(HomeAction.StartLoading)
