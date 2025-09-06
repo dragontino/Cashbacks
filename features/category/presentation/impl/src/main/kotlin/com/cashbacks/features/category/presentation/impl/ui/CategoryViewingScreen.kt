@@ -288,8 +288,8 @@ private fun CategoryViewingContent(
                         maxCashback = item.maxCashback,
                         isEnabledToSwipe = state.selectedShopIndex == index || state.selectedShopIndex == null,
                         onSwipeStatusChanged = { isOnSwipe ->
-                            intentSender.sendIntentWithDelay(
                             intentSender.sendWithDelay(
+                                CategoryIntent.SwipeShop(item.id, isOnSwipe)
                             )
                         },
                         onClick = {
@@ -318,9 +318,8 @@ private fun CategoryViewingContent(
                         cashback = item,
                         isEnabledToSwipe = state.selectedCashbackIndex == index || state.selectedCashbackIndex == null,
                         onSwipeStatusChanged = { isOnSwipe ->
-                            intentSender.sendIntentWithDelay(
-                                CategoryIntent.SwipeCashback(index, isOnSwipe)
                             intentSender.sendWithDelay(
+                                CategoryIntent.SwipeCashback(item.id, isOnSwipe)
                             )
                         },
                         onClick = {
