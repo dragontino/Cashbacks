@@ -67,10 +67,6 @@ fun CollapsingToolbarScaffold(
                 val delta = available.y
                 val previousContentOffset = topBarState.contentOffset
 
-                if (source == NestedScrollSource.SideEffect) {
-                    println("delta = $delta, can scroll backward? ${contentState.canScrollBackward}")
-                }
-
                 if (topBarScrollEnabled) {
                     topBarState.heightOffset += delta
                 }
