@@ -356,10 +356,17 @@ private fun ShopsList(
                                 ShopsIntent.OpenDialog(DialogType.ConfirmDeletion(shop))
                             )
                         },
-                        modifier = Modifier.padding(
-                            start = contentPadding.calculateStartPadding(LocalLayoutDirection.current),
-                            end = contentPadding.calculateEndPadding(LocalLayoutDirection.current)
-                        )
+                        modifier = Modifier
+                            .padding(
+                                vertical = when (state.selectedShopId) {
+                                    shopWithCashback.id -> 8.dp
+                                    else -> 0.dp
+                                }.animate()
+                            )
+                            .padding(
+                                start = contentPadding.calculateStartPadding(LocalLayoutDirection.current),
+                                end = contentPadding.calculateEndPadding(LocalLayoutDirection.current)
+                            )
                     )
                 }
 
