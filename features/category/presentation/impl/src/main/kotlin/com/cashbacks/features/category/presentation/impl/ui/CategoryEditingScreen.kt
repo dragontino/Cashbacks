@@ -413,7 +413,7 @@ private fun CategoryEditingScreenContent(
                         imeAction = ImeAction.Done,
                         error = state.showErrors && CategoryError.Name in state.errors,
                         errorMessage = state.errors[CategoryError.Name],
-                        modifier = Modifier.padding(horizontal = 16.dp).fillMaxWidth()
+                        modifier = Modifier.padding(16.dp).fillMaxWidth()
                     )
 
                     SecondaryTabsLayout(
