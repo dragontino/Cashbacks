@@ -456,6 +456,12 @@ private fun CategoryEditingScreenContent(
                                             CategoryIntent.SwipeShop(item.id, isOnSwipe)
                                         )
                                     },
+                                    isExpanded = state.selectedShopId == item.id,
+                                    onExpandedStatusChanged = { expanded ->
+                                        intentSender.sendWithDelay(
+                                            CategoryIntent.SelectShop(item.id, expanded)
+                                        )
+                                    },
                                     onClick = {
                                         intentSender.sendWithDelay(
                                             EditingIntent.ClickToShop(item.shop.id)
@@ -482,7 +488,7 @@ private fun CategoryEditingScreenContent(
 
                                 is Cashback -> CashbackComposable(
                                     cashback = item,
-                                    isEnabledToSwipe = state.selectedCashbackIndex == index || state.selectedCashbackIndex == null,
+                                    isEnabledToSwipe = state.swipedCashbackId in setOf(item.id, null),
                                     onSwipeStatusChanged = { isOnSwipe ->
                                         intentSender.sendWithDelay(
                                             CategoryIntent.SwipeCashback(item.id, isOnSwipe)

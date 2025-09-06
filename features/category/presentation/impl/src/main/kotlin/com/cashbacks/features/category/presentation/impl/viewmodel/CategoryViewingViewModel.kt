@@ -156,8 +156,9 @@ internal class CategoryViewingViewModel(
             },
             reducer = { message: ViewingMessage ->
                 when (message) {
-                    is CategoryMessage.ChangeSelectedCashbackIndex -> copy(selectedCashbackIndex = message.index)
-                    is CategoryMessage.ChangeSelectedShopIndex -> copy(selectedShopIndex = message.index)
+                    is CategoryMessage.ChangeSelectedShopId -> copy(selectedShopId = message.id)
+                    is CategoryMessage.ChangeSwipedShopId -> copy(swipedShopId = message.id)
+                    is CategoryMessage.ChangeSwipedCashbackId -> copy(swipedCashbackId = message.id)
                     is CategoryMessage.UpdateCashbacks -> copy(cashbacks = message.cashbacks)
                     is CategoryMessage.UpdateCategory -> copy(category = message.category)
                     is CategoryMessage.UpdateScreenState -> copy(screenState = message.state)

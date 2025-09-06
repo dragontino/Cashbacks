@@ -12,6 +12,7 @@ import com.cashbacks.features.shop.domain.model.Shop
 import com.cashbacks.features.shop.presentation.api.ShopArgs
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.serialization.Serializable
 
 // Actions
 internal sealed interface EditingAction {
@@ -80,12 +81,16 @@ internal sealed interface CategoryIntent : ViewingIntent, EditingIntent {
 
     data object CloseDialog : CategoryIntent
 
-    data class SwipeShop(val position: Int?) : CategoryIntent {
-        constructor(position: Int, isSwiped: Boolean) : this(position.takeIf { isSwiped })
+    data class SelectShop(val id: String?) : CategoryIntent {
+        constructor(id: String, isSelected: Boolean) : this(id.takeIf { isSelected })
     }
 
-    data class SwipeCashback(val position: Int?) : CategoryIntent {
-        constructor(position: Int, isSwiped: Boolean) : this(position.takeIf { isSwiped })
+    data class SwipeShop(val id: String?) : CategoryIntent {
+        constructor(id: String, isSwiped: Boolean) : this(id.takeIf { isSwiped })
+    }
+
+    data class SwipeCashback(val id: Long?) : CategoryIntent {
+        constructor(id: Long, isSwiped: Boolean) : this(id.takeIf { isSwiped })
     }
 }
 
@@ -107,8 +112,9 @@ internal sealed interface CategoryMessage : ViewingMessage, EditingMessage {
     data class UpdateCategory(val category: Category) : CategoryMessage
     data class UpdateShops(val shops: ImmutableList<ShopWithCashback>) : CategoryMessage
     data class UpdateCashbacks(val cashbacks: ImmutableList<Cashback>) : CategoryMessage
-    data class ChangeSelectedShopIndex(val index: Int?) : CategoryMessage
-    data class ChangeSelectedCashbackIndex(val index: Int?) : CategoryMessage
+    data class ChangeSelectedShopId(val id: String?) : CategoryMessage
+    data class ChangeSwipedShopId(val id: String?) : CategoryMessage
+    data class ChangeSwipedCashbackId(val id: Long?) : CategoryMessage
 }
 
 
@@ -118,20 +124,24 @@ internal interface CategoryState {
     val category: Category
     val shops: ImmutableList<ShopWithCashback>
     val cashbacks: ImmutableList<Cashback>
-    val selectedShopIndex: Int?
-    val selectedCashbackIndex: Int?
+    val selectedShopId: String?
+    val swipedShopId: String?
+    val swipedCashbackId: Long?
 }
 
+@Serializable
 @Immutable
 internal data class CategoryViewingState(
     override val screenState: ScreenState = ScreenState.Stable,
     override val category: Category = Category(),
     override val shops: ImmutableList<ShopWithCashback> = persistentListOf(),
     override val cashbacks: ImmutableList<Cashback> = persistentListOf(),
-    override val selectedShopIndex: Int? = null,
-    override val selectedCashbackIndex: Int? = null
+    override val selectedShopId: String? = null,
+    override val swipedShopId: String? = null,
+    override val swipedCashbackId: Long? = null
 ) : CategoryState
 
+@Serializable
 @Immutable
 internal data class CategoryEditingState(
     override val screenState: ScreenState = ScreenState.Stable,
@@ -140,8 +150,9 @@ internal data class CategoryEditingState(
     override val shops: ImmutableList<ShopWithCashback> = persistentListOf(),
     override val cashbacks: ImmutableList<Cashback> = persistentListOf(),
     val isCreatingShop: Boolean = false,
-    override val selectedShopIndex: Int? = null,
-    override val selectedCashbackIndex: Int? = null,
+    override val selectedShopId: String? = null,
+    override val swipedShopId: String? = null,
+    override val swipedCashbackId: Long? = null,
     val errors: Map<CategoryError, String> = emptyMap(),
     val showErrors: Boolean = false
 ) : CategoryState {
@@ -149,8 +160,15 @@ internal data class CategoryEditingState(
 }
 
 
+@Serializable
 @Immutable
-internal data class ShopWithCashback(val shop: Shop, val maxCashback: Cashback?)
+internal data class ShopWithCashback(val shop: Shop, val maxCashback: Cashback?) {
+    val id: String
+        get() = when (maxCashback) {
+            null -> shop.id.toString()
+            else -> "${shop.id}-${maxCashback.id}"
+        }
+}
 
 
 internal enum class CategoryError {

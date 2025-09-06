@@ -286,11 +286,15 @@ private fun CategoryViewingContent(
                             )
                         },
                         maxCashback = item.maxCashback,
-                        isEnabledToSwipe = state.selectedShopIndex == index || state.selectedShopIndex == null,
+                        isEnabledToSwipe = state.swipedShopId in setOf(item.id, null),
                         onSwipeStatusChanged = { isOnSwipe ->
                             intentSender.sendWithDelay(
                                 CategoryIntent.SwipeShop(item.id, isOnSwipe)
                             )
+                        },
+                        isExpanded = state.selectedShopId == item.id,
+                        onExpandedStatusChanged = { expanded ->
+                            intentSender.sendWithDelay(CategoryIntent.SelectShop(item.id, expanded))
                         },
                         onClick = {
                             intentSender.sendWithDelay(
@@ -316,7 +320,7 @@ private fun CategoryViewingContent(
 
                     is BasicCashback -> CashbackComposable(
                         cashback = item,
-                        isEnabledToSwipe = state.selectedCashbackIndex == index || state.selectedCashbackIndex == null,
+                        isEnabledToSwipe = state.swipedCashbackId in setOf(item.id, null),
                         onSwipeStatusChanged = { isOnSwipe ->
                             intentSender.sendWithDelay(
                                 CategoryIntent.SwipeCashback(item.id, isOnSwipe)
