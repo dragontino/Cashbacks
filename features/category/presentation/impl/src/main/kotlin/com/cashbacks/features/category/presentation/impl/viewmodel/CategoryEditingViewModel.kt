@@ -112,19 +112,15 @@ internal class CategoryEditingViewModel(
                     .onEach { dispatchFromAnotherThread(CategoryAction.LoadCashbacks(it)) }
                     .launchIn(this)
 
-                stateHandle.getStateFlow(CATEGORY_NAME_SAVED_KEY, "")
-                    .onEach {
-                        val category = Category(categoryId, name = it)
-                        dispatchFromAnotherThread(CategoryAction.LoadCategory(category))
-                    }
-                    .launchIn(this)
-
                 launchWithLoading {
                     delay(AnimationDefaults.SCREEN_DELAY_MILLIS + 40L)
                     getCategory(categoryId)
                         .onSuccess {
-                            dispatchFromAnotherThread(EditingAction.LoadInitialCategory(it))
-                            dispatchFromAnotherThread(CategoryAction.LoadCategory(it))
+                            val category = it.copy(
+                                name = stateHandle[CATEGORY_NAME_SAVED_KEY] ?: it.name
+                            )
+                            dispatchFromAnotherThread(EditingAction.LoadInitialCategory(category))
+                            dispatchFromAnotherThread(CategoryAction.LoadCategory(category))
                         }
                         .onFailure { throwable ->
                             throwable.message?.takeIf { it.isNotBlank() }?.let {
@@ -144,6 +140,8 @@ internal class CategoryEditingViewModel(
 
                 onIntent<EditingIntent.UpdateCategoryName> {
                     stateHandle[CATEGORY_NAME_SAVED_KEY] = it.name
+                    val category = state().category.copy(name = it.name)
+                    dispatch(CategoryMessage.UpdateCategory(category))
                 }
                 onIntent<EditingIntent.NavigateToCategoryViewing> {
                     val args = CategoryArgs.Viewing(categoryId, it.startTab)
