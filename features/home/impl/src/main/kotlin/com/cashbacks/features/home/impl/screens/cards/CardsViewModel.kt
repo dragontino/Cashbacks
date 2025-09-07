@@ -24,6 +24,7 @@ import com.cashbacks.features.home.impl.mvi.BankCardsMessage
 import com.cashbacks.features.home.impl.mvi.BankCardsState
 import com.cashbacks.features.home.impl.mvi.HomeAction
 import com.cashbacks.features.home.impl.utils.launchWithLoading
+import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
@@ -87,7 +88,7 @@ internal class CardsViewModel(
                     dispatch(BankCardsMessage.UpdateScreenState(ScreenState.Stable))
                 }
                 onAction<BankCardsAction.LoadBankCards> {
-                    dispatch(BankCardsMessage.UpdateBankCards(it.cards))
+                    dispatch(BankCardsMessage.UpdateBankCards(it.cards?.toImmutableList()))
                 }
                 onAction<HomeAction.DisplayMessage> {
                     publish(BankCardsLabel.DisplayMessage(it.message))
@@ -118,10 +119,10 @@ internal class CardsViewModel(
                     }
                 }
                 onIntent<BankCardsIntent.SwipeCard> {
-                    dispatch(BankCardsMessage.UpdateSwipedCardIndex(it.position))
+                    dispatch(BankCardsMessage.UpdateSwipedCardId(it.id))
                 }
                 onIntent<BankCardsIntent.ExpandCard> {
-                    dispatch(BankCardsMessage.UpdateExpandedCardIndex(it.position))
+                    dispatch(BankCardsMessage.UpdateExpandedCardId(it.id))
                 }
                 onIntent<BankCardsIntent.OpenDialog> {
                     publish(BankCardsLabel.ChangeOpenedDialog(it.type))
@@ -138,8 +139,8 @@ internal class CardsViewModel(
                     is BankCardsMessage.UpdateScreenState -> copy(screenState = msg.state)
                     is BankCardsMessage.UpdateAppBarState -> copy(appBarState = msg.state)
                     is BankCardsMessage.UpdateBankCards -> copy(cards = msg.cards)
-                    is BankCardsMessage.UpdateExpandedCardIndex -> copy(expandedCardIndex = msg.index)
-                    is BankCardsMessage.UpdateSwipedCardIndex -> copy(swipedCardIndex = msg.index)
+                    is BankCardsMessage.UpdateExpandedCardId -> copy(expandedCardId = msg.id)
+                    is BankCardsMessage.UpdateSwipedCardId -> copy(swipedCardId = msg.id)
                 }
             }
         )

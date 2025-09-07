@@ -7,6 +7,8 @@ import com.cashbacks.features.bankcard.domain.model.BankCard
 import com.cashbacks.features.bankcard.domain.model.BasicBankCard
 import com.cashbacks.features.bankcard.presentation.api.BankCardArgs
 import com.cashbacks.features.home.impl.composables.HomeTopAppBarState
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
 import kotlinx.serialization.Serializable
 
 internal sealed interface BankCardsAction {
@@ -37,11 +39,11 @@ internal sealed interface BankCardsIntent {
 
     data class ChangeAppBarState(val state: HomeTopAppBarState) : BankCardsIntent
 
-    data class SwipeCard(val position: Int? = null) : BankCardsIntent {
-        constructor(position: Int, isSwiped: Boolean) : this(position.takeIf { isSwiped })
+    data class SwipeCard(val id: Long? = null) : BankCardsIntent {
+        constructor(id: Long, isSwiped: Boolean) : this(id.takeIf { isSwiped })
     }
-    data class ExpandCard(val position: Int? = null) : BankCardsIntent {
-        constructor(position: Int, isExpanded: Boolean) : this(position.takeIf { isExpanded })
+    data class ExpandCard(val id: Long? = null) : BankCardsIntent {
+        constructor(id: Long, isExpanded: Boolean) : this(id.takeIf { isExpanded })
     }
 }
 
@@ -49,9 +51,9 @@ internal sealed interface BankCardsIntent {
 internal sealed interface BankCardsMessage {
     data class UpdateScreenState(val state: ScreenState) : BankCardsMessage
     data class UpdateAppBarState(val state: HomeTopAppBarState) : BankCardsMessage
-    data class UpdateBankCards(val cards: List<BankCard>?) : BankCardsMessage
-    data class UpdateSwipedCardIndex(val index: Int?) : BankCardsMessage
-    data class UpdateExpandedCardIndex(val index: Int?) : BankCardsMessage
+    data class UpdateBankCards(val cards: ImmutableList<BankCard>?) : BankCardsMessage
+    data class UpdateSwipedCardId(val id: Long?) : BankCardsMessage
+    data class UpdateExpandedCardId(val id: Long?) : BankCardsMessage
 }
 
 
@@ -60,7 +62,7 @@ internal sealed interface BankCardsMessage {
 internal data class BankCardsState(
     val screenState: ScreenState = ScreenState.Stable,
     val appBarState: HomeTopAppBarState = HomeTopAppBarState.TopBar,
-    val cards: List<BankCard>? = emptyList(),
-    val swipedCardIndex: Int? = null,
-    val expandedCardIndex: Int? = null
+    val cards: ImmutableList<BankCard>? = persistentListOf(),
+    val swipedCardId: Long? = null,
+    val expandedCardId: Long? = null
 )

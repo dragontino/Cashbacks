@@ -126,7 +126,7 @@ private object CardMeasurePolicy : MeasurePolicy {
 }
 
 @Composable
-fun BankCard(
+fun PlasticBankCard(
     bankCard: BankCard,
     onCopy: (CopyableBankCardPart, String) -> Unit,
     modifier: Modifier = Modifier,
@@ -646,7 +646,7 @@ private data class FontSizeRange(
 @PreviewFontScale
 @Composable
 private fun BankCardComposablePreview() {
-    BankCard(
+    PlasticBankCard(
         bankCard = FullBankCard(
             id = 0,
             number = "2225123423453456",

@@ -73,7 +73,7 @@ import com.cashbacks.common.utils.mvi.IntentSender
 import com.cashbacks.features.bankcard.domain.model.BasicBankCard
 import com.cashbacks.features.bankcard.domain.model.FullBankCard
 import com.cashbacks.features.bankcard.presentation.api.BankCardArgs
-import com.cashbacks.features.bankcard.presentation.api.composables.BankCard
+import com.cashbacks.features.bankcard.presentation.api.composables.PlasticBankCard
 import com.cashbacks.features.bankcard.presentation.api.utils.BankCardPresentationUtils.getDisplayableString
 import com.cashbacks.features.bankcard.presentation.impl.mvi.ViewingIntent
 import com.cashbacks.features.bankcard.presentation.impl.mvi.ViewingLabel
@@ -270,7 +270,7 @@ private fun ScreenContent(
         modifier = modifier.fillMaxSize()
     ) {
         item {
-            BankCard(
+            PlasticBankCard(
                 bankCard = state.card,
                 onCopy = { part, text ->
                     intentSender.sendWithDelay {
