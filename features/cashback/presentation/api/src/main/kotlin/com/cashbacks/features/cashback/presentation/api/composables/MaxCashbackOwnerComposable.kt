@@ -124,14 +124,14 @@ fun MaxCashbackOwnerComposable(
         leftActionIcon = {
             Icon(
                 imageVector = Icons.Rounded.Edit,
-                contentDescription = "edit",
+                contentDescription = "pencil",
                 modifier = Modifier.padding(16.dp)
             )
         },
         rightActionIcon = {
             Icon(
                 imageVector = Icons.Rounded.DeleteForever,
-                contentDescription = "delete",
+                contentDescription = "trash can",
                 modifier = Modifier.padding(16.dp)
             )
         },
@@ -139,8 +139,8 @@ fun MaxCashbackOwnerComposable(
         shape = MaterialTheme.shapes.small,
         colors = SwipeableListItemDefaults.colors(
             containerColor = MaterialTheme.colorScheme.surface
-                    .mix(Color.Transparent)
-                    .ratio((listItemState.swipeOffsetRatio.value + expandAnimation.value).coerceAtMost(1f)),
+                    .mix(MaterialTheme.colorScheme.background)
+                    .ratio((listItemState.swipeOffsetRatio.value * 2 + expandAnimation.value).coerceAtMost(1f)),
             leftActionColors = SwipeableListItemDefaults.actionColors(
                 containerColor = MaterialTheme.colorScheme.background,
                 clickedContainerColor = Color.Blue,
