@@ -155,10 +155,7 @@ fun MaxCashbackOwnerComposable(
             )
         ),
         tonalElevation = elevation.value,
-        shadowElevation = when (expandAnimation.value) {
-            1f -> 4.dp
-            else -> 0.dp
-        },
+        shadow = null,
         modifier = modifier
     ) {
         Column(
