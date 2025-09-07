@@ -26,7 +26,9 @@ value class IntentSender<Intent : Any>(
 
 
     operator fun invoke(intents: Sequence<Intent>, withDelay: Boolean) {
-        lambda(intents, withDelay)
+        if (intents.iterator().hasNext()) {
+            lambda(intents, withDelay)
+        }
     }
 }
 

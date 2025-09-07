@@ -85,6 +85,7 @@ val Color.reversed get() = copy(red = 1 - red, green = 1 - green, blue = 1 - blu
 data class ColorPair(val firstColor: Color, val secondColor: Color) {
     @Stable
     infix fun ratio(ratio: Float): Color {
+        val ratio = ratio.coerceIn(0f..1f)
         val secondColorRatio = 1 - ratio
 
         fun calculateComponent(getComponent: Color.() -> Float): Float {
