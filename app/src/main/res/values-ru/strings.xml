@@ -3,4 +3,5 @@
     <string name="app_name">Cashbook — книга твоих кешбэков</string>
     <string name="activity_name">Мои Кешбэки</string>
     <string name="app_version_pattern">Версия %1$s от %2$s</string>
+    <string name="default_notification_channel_name">Общие</string>
 </resources>

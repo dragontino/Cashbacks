@@ -3,4 +3,9 @@
     <string name="app_name">Cashbook — The book of your cashbacks</string>
     <string name="activity_name">My Cashbacks</string>
     <string name="app_version_pattern">Version %1$s dated %2$s</string>
+
+    <string name="default_notification_channel_id" translatable="false">
+        dragontino://cashbacks/CashbacksNotificationChannel
+    </string>
+    <string name="default_notification_channel_name">General</string>
 </resources>
