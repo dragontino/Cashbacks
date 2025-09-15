@@ -14,13 +14,7 @@ class App : Application() {
     private val deleteExpiredCashbacksWork = PeriodicWorkRequestBuilder<DeleteExpiredCashbacksWorker>(
         repeatInterval = Duration.ofDays(1),
         flexTimeInterval = Duration.ofMinutes(15)
-    )
-        .build()
-
-    var checkExpiredCashbacks: Boolean = false
-        set(value) {
-            field = false
-        }
+    ).build()
 
 
     override fun onCreate() {
