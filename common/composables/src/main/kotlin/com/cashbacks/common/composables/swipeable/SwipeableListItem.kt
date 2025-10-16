@@ -243,7 +243,7 @@ fun SwipeableListItem(
 
 
 private fun Context.vibrate() {
-    val vibrateTimeMillis = 20L
+    val vibrateTimeMillis = 60L
 
     val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         val vibratorManager = getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
