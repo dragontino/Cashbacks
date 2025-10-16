@@ -140,6 +140,7 @@ dependencies {
     androidTestImplementation(libs.room.testing)
     debugImplementation(libs.compose.ui.tooling)
     debugImplementation(libs.compose.ui.test.manifest)
+    debugImplementation(libs.squareup.leakcanary)
 
     // DI
     implementation(libs.koin.compose)

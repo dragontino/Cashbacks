@@ -30,6 +30,7 @@ csv = "5.12.0"
 appcompat = "1.7.1"
 material = "1.12.0"
 kotlinx-immutable-collections = "0.4.0"
+leakcanary = "2.14"
 
 [libraries]
 kotlinx-coroutines = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "kotlinx-coroutines" }
@@ -88,6 +89,7 @@ junit-ext = { module = "androidx.test.ext:junit", version.ref = "junit-ext" }
 espresso = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espresso" }
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
+squareup-leakcanary = { group = "com.squareup.leakcanary", name = "leakcanary-android", version.ref = "leakcanary" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
