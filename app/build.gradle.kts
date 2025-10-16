@@ -57,9 +57,6 @@ android {
     kotlin {
         compilerOptions {
             jvmTarget = JvmTarget.JVM_17
-
-            freeCompilerArgs.addAll(listOf("-P", "plugin:androidx.compose.compiler.plugins.kotlin:reportsDestination=" + rootProject.projectDir.absolutePath + "/compose_metrics/"))
-            freeCompilerArgs.addAll(listOf("-P", "plugin:androidx.compose.compiler.plugins.kotlin:metricsDestination=" + rootProject.projectDir.absolutePath + "/compose_metrics/"))
         }
     }
     
@@ -72,6 +69,13 @@ android {
         }
     }
 }
+
+
+composeCompiler {
+    reportsDestination = layout.buildDirectory.dir("compose_compiler")
+    metricsDestination = layout.buildDirectory.dir("compose_compiler")
+}
+
 
 dependencies {
     api(project(":common:composables"))
