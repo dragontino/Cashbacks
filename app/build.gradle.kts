@@ -120,7 +120,10 @@ dependencies {
     implementation(libs.androidx.core)
     implementation(libs.androidx.lifecycle.runtime)
     implementation(libs.kotlinx.datetime)
+
+    // WorkManager
     implementation(libs.androidx.work.runtime)
+    androidTestImplementation(libs.androidx.work.testing)
 
     // Compose
     implementation(platform(libs.compose.bom))
@@ -134,20 +137,24 @@ dependencies {
     implementation(libs.compose.icons.core)
     implementation(libs.compose.icons.extended)
     implementation(libs.compose.material3)
-
-    // Tests
-    testImplementation(libs.junit)
-    androidTestImplementation(libs.junit.ext)
-    androidTestImplementation(libs.espresso)
     androidTestImplementation(platform(libs.compose.bom))
     androidTestImplementation(libs.compose.junit4)
-    androidTestImplementation(libs.room.testing)
     debugImplementation(libs.compose.ui.tooling)
     debugImplementation(libs.compose.ui.test.manifest)
     debugImplementation(libs.squareup.leakcanary)
 
-    // DI
+
+    // Tests
+    testImplementation(libs.junit)
+    androidTestImplementation(libs.espresso)
+    androidTestImplementation(libs.junit.ext)
+    androidTestImplementation(libs.room.testing)
+
+
+    // Koin
     implementation(libs.koin.compose)
+    androidTestImplementation(libs.koin.test)
+    androidTestImplementation(libs.koin.test.junit4)
 
     // MVI
     implementation(libs.mvikotlin.main)

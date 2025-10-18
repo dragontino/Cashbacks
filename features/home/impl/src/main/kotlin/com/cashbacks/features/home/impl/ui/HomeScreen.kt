@@ -3,8 +3,6 @@ package com.cashbacks.features.home.impl.ui
 import android.Manifest
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
-import android.provider.DocumentsContract
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.Crossfade
@@ -53,7 +51,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
-import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavDestination.Companion.hasRoute
@@ -72,6 +69,7 @@ import com.cashbacks.common.composables.utils.mutableStateSaver
 import com.cashbacks.common.navigation.enterScreenTransition
 import com.cashbacks.common.navigation.exitScreenTransition
 import com.cashbacks.common.resources.R
+import com.cashbacks.common.utils.usePermissions
 import com.cashbacks.common.utils.mvi.IntentSender
 import com.cashbacks.features.bankcard.presentation.api.BankCardArgs
 import com.cashbacks.features.cashback.presentation.api.CashbackArgs
@@ -177,6 +175,17 @@ private fun HomeScreen(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+
+
+    val makeExportDataIntent = remember(context, sendIntent) {
+        fun (): HomeIntent = HomeIntent.ClickButtonExportData { path ->
+            val message = context.getString(R.string.data_exported, path)
+            val action = SnackbarAction(context.getString(R.string.open)) {
+                sendIntent(HomeIntent.OpenExternalFolder(path))
+            }
+            sendIntent(HomeIntent.ShowMessage(message, action))
+        }
+    }
 
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
@@ -412,29 +421,6 @@ private fun HomeScreen(
         }
     }
 }
-
-
-
-@Suppress("SameParameterValue")
-private inline fun usePermissions(
-    vararg permissions: String,
-    context: Context,
-    onGranted: () -> Unit,
-    onDenied: (permission: String) -> Unit
-) {
-    val isAllPermissionsGranted = permissions.all { permission ->
-        val checkPermission = ContextCompat.checkSelfPermission(context, permission)
-        if (checkPermission == PackageManager.PERMISSION_DENIED) {
-            onDenied(permission)
-        }
-        return@all checkPermission == PackageManager.PERMISSION_GRANTED
-    }
-
-    if (isAllPermissionsGranted) {
-        onGranted()
-    }
-}
-
 
 
 @Composable

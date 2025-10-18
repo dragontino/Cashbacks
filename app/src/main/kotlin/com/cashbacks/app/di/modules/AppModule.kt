@@ -6,7 +6,7 @@ import com.arkivanov.mvikotlin.main.store.DefaultStoreFactory
 import com.arkivanov.mvikotlin.timetravel.store.TimeTravelStoreFactory
 import com.cashbacks.app.BuildConfig
 import com.cashbacks.app.R
-import com.cashbacks.app.ui.MainViewModel
+import com.cashbacks.app.viewmodel.MainViewModel
 import com.cashbacks.common.resources.AppInfo
 import com.cashbacks.common.resources.MessageHandler
 import com.cashbacks.common.utils.DateTimeFormats

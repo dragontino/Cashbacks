@@ -1,6 +1,7 @@
 package com.cashbacks.app.app
 
 import android.app.Application
+import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.cashbacks.app.di.ApplicationModules
@@ -14,13 +15,7 @@ class App : Application() {
     private val deleteExpiredCashbacksWork = PeriodicWorkRequestBuilder<DeleteExpiredCashbacksWorker>(
         repeatInterval = Duration.ofDays(1),
         flexTimeInterval = Duration.ofMinutes(15)
-    )
-        .build()
-
-    var checkExpiredCashbacks: Boolean = false
-        set(value) {
-            field = false
-        }
+    ).build()
 
 
     override fun onCreate() {
@@ -33,6 +28,10 @@ class App : Application() {
             modules(ApplicationModules)
         }
 
-        WorkManager.getInstance(this).enqueue(deleteExpiredCashbacksWork)
+        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+            uniqueWorkName = DeleteExpiredCashbacksWorker.NAME,
+            existingPeriodicWorkPolicy = ExistingPeriodicWorkPolicy.UPDATE,
+            request = deleteExpiredCashbacksWork
+        )
     }
 }
