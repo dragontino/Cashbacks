@@ -69,10 +69,11 @@ import com.cashbacks.common.composables.theme.CashbacksTheme
 import com.cashbacks.common.composables.utils.animate
 import com.cashbacks.common.composables.utils.mix
 import com.cashbacks.common.resources.R
+import com.cashbacks.common.utils.mvi.IntentSender
 import com.cashbacks.features.bankcard.domain.model.BasicBankCard
 import com.cashbacks.features.bankcard.domain.model.FullBankCard
 import com.cashbacks.features.bankcard.presentation.api.BankCardArgs
-import com.cashbacks.features.bankcard.presentation.api.composables.BankCard
+import com.cashbacks.features.bankcard.presentation.api.composables.PlasticBankCard
 import com.cashbacks.features.bankcard.presentation.api.utils.BankCardPresentationUtils.getDisplayableString
 import com.cashbacks.features.bankcard.presentation.impl.mvi.ViewingIntent
 import com.cashbacks.features.bankcard.presentation.impl.mvi.ViewingLabel
@@ -128,7 +129,7 @@ internal fun BankCardViewingRoot(
     BankCardViewingScreen(
         state = viewingState,
         snackbarHostState = snackbarState,
-        sendIntent = viewModel::sendIntent
+        intentSender = IntentSender(viewModel::sendIntent)
     )
 }
 
@@ -138,7 +139,7 @@ internal fun BankCardViewingRoot(
 internal fun BankCardViewingScreen(
     state: ViewingState,
     snackbarHostState: SnackbarHostState,
-    sendIntent: (ViewingIntent) -> Unit
+    intentSender: IntentSender<ViewingIntent>
 ) {
     val topBarState = rememberTopAppBarState()
     val contentState = rememberLazyListState()
@@ -162,7 +163,7 @@ internal fun BankCardViewingScreen(
                 },
                 navigationIcon = {
                     IconButton(
-                        onClick = { sendIntent(ViewingIntent.ClickButtonBack) }
+                        onClick = { intentSender.sendWithDelay(ViewingIntent.ClickButtonBack) }
                     ) {
                         Icon(
                             imageVector = Icons.Rounded.ArrowBackIosNew,
@@ -179,7 +180,7 @@ internal fun BankCardViewingScreen(
                     ) {
                         IconButton(
                             onClick = {
-                                sendIntent(
+                                intentSender.sendWithDelay(
                                     ViewingIntent.OpenDialog(
                                         DialogType.ConfirmDeletion(state.card)
                                     )
@@ -200,7 +201,7 @@ internal fun BankCardViewingScreen(
                         exit = fadeOut()
                     ) {
                         IconButton(
-                            onClick = { sendIntent(ViewingIntent.Edit) }
+                            onClick = { intentSender.sendWithDelay(ViewingIntent.Edit) }
                         ) {
                             Icon(
                                 imageVector = Icons.Outlined.Edit,
@@ -240,7 +241,7 @@ internal fun BankCardViewingScreen(
                 ScreenState.Loading -> LoadingInBox()
                 ScreenState.Stable -> ScreenContent(
                     state = state,
-                    sendIntent = sendIntent,
+                    intentSender = intentSender,
                     lazyListState = contentState,
                     modifier = Modifier.fillMaxSize()
                 )
@@ -254,7 +255,7 @@ internal fun BankCardViewingScreen(
 @Composable
 private fun ScreenContent(
     state: ViewingState,
-    sendIntent: (ViewingIntent) -> Unit,
+    intentSender: IntentSender<ViewingIntent>,
     modifier: Modifier = Modifier,
     lazyListState: LazyListState = rememberLazyListState()
 ) {
@@ -269,15 +270,17 @@ private fun ScreenContent(
         modifier = modifier.fillMaxSize()
     ) {
         item {
-            BankCard(
+            PlasticBankCard(
                 bankCard = state.card,
                 onCopy = { part, text ->
-                    sendIntent(ViewingIntent.CopyText(AnnotatedString(text)))
-                    val snackbarText = context.getString(
-                        R.string.card_part_text_is_copied,
-                        part.getDescription(context)
-                    )
-                    sendIntent(ViewingIntent.DisplayMessage(snackbarText))
+                    intentSender.sendWithDelay {
+                        yield(ViewingIntent.CopyText(AnnotatedString(text)))
+                        val snackbarText = context.getString(
+                            R.string.card_part_text_is_copied,
+                            part.getDescription(context)
+                        )
+                        yield(ViewingIntent.DisplayMessage(snackbarText))
+                    }
                 },
                 modifier = Modifier
                     .padding(bottom = 16.dp)
@@ -301,15 +304,17 @@ private fun ScreenContent(
                     trailingActions = {
                         IconButton(
                             onClick = {
-                                sendIntent(ViewingIntent.CopyText(AnnotatedString(state.card.name)))
-                                sendIntent(
-                                    ViewingIntent.DisplayMessage(
-                                        context.getString(
+                                intentSender.sendWithDelay {
+                                    yield(ViewingIntent.CopyText(AnnotatedString(state.card.name)))
+
+                                    context
+                                        .getString(
                                             R.string.card_part_text_is_copied,
                                             context.getString(R.string.card_name_for_copy)
                                         )
-                                    )
-                                )
+                                        .let(ViewingIntent::DisplayMessage)
+                                        .let { yield(it) }
+                                }
                             }
                         ) {
                             Icon(
@@ -345,8 +350,8 @@ private fun ScreenContent(
 
                     IconButton(
                         onClick = {
-                            sendIntent(ViewingIntent.CopyText(AnnotatedString(state.card.pin)))
-                            sendIntent(
+                            intentSender.sendWithDelay(
+                                ViewingIntent.CopyText(AnnotatedString(state.card.pin)),
                                 ViewingIntent.DisplayMessage(
                                     context.getString(
                                         R.string.card_part_text_is_copied,
@@ -378,8 +383,8 @@ private fun ScreenContent(
                     trailingActions = {
                         IconButton(
                             onClick = {
-                                sendIntent(ViewingIntent.CopyText(AnnotatedString(maxCashbacksNumber)))
-                                sendIntent(
+                                intentSender.sendWithDelay(
+                                    ViewingIntent.CopyText(AnnotatedString(maxCashbacksNumber)),
                                     ViewingIntent.DisplayMessage(
                                         context.getString(
                                             R.string.card_part_text_is_copied,
@@ -412,15 +417,19 @@ private fun ScreenContent(
                     trailingActions = {
                         IconButton(
                             onClick = {
-                                sendIntent(ViewingIntent.CopyText(AnnotatedString(state.card.comment)))
-                                sendIntent(
-                                    ViewingIntent.DisplayMessage(
-                                        context.getString(
-                                            R.string.card_part_text_is_copied,
-                                            context.getString(R.string.comment_for_copy)
+                                intentSender.sendWithDelay {
+                                    yield(
+                                        ViewingIntent.CopyText(AnnotatedString(state.card.comment))
+                                    )
+                                    yield(
+                                        ViewingIntent.DisplayMessage(
+                                            context.getString(
+                                                R.string.card_part_text_is_copied,
+                                                context.getString(R.string.comment_for_copy)
+                                            )
                                         )
                                     )
-                                )
+                                }
                             }
                         ) {
                             Icon(
@@ -447,7 +456,7 @@ private fun ScreenContentPreview() {
                 state = ViewingState(
                     card = FullBankCard(number = "4444555566667777")
                 ),
-                sendIntent = {}
+                intentSender = IntentSender()
             )
         }
     }

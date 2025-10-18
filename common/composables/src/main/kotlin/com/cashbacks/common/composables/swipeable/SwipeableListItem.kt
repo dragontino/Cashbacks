@@ -64,10 +64,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.shadow.Shadow
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -99,7 +102,9 @@ fun SwipeableListItem(
     isEnabledToSwipe: Boolean = true,
     colors: SwipeableListItemColors = SwipeableListItemDefaults.colors(),
     tonalElevation: Dp = 0.dp,
-    shadowElevation: Dp = 0.dp,
+    shadow: Shadow? = SwipeableListItemDefaults.shadow(
+        alpha = 1 - (state.swipeOffsetRatio.value / .1f)
+    ),
     border: BorderStroke? = null,
     contentWindowInsets: WindowInsets = SwipeableListItemDefaults.contentWindowInsets,
     content: @Composable () -> Unit
@@ -170,12 +175,17 @@ fun SwipeableListItem(
             }
         }
 
+        val shadowModifier = when (shadow) {
+            null -> Modifier
+            else -> Modifier.dropShadow(shape, shadow)
+        }
         Surface(
             onClick = onClick,
             modifier = Modifier
                 .offset {
                     IntOffset(x = state.contentOffset.floatValue.roundToInt(), y = 0)
                 }
+                .then(shadowModifier)
                 .scrollable(
                     state = scrollableState,
                     orientation = Orientation.Horizontal,
@@ -190,7 +200,6 @@ fun SwipeableListItem(
             color = colors.containerColor(enabled),
             contentColor = colors.contentColor(enabled),
             tonalElevation = tonalElevation,
-            shadowElevation = shadowElevation,
             border = border,
             content = content
         )
@@ -234,7 +243,7 @@ fun SwipeableListItem(
 
 
 private fun Context.vibrate() {
-    val vibrateTimeMillis = 20L
+    val vibrateTimeMillis = 60L
 
     val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         val vibratorManager = getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
@@ -442,6 +451,47 @@ object SwipeableListItemDefaults {
     )
 
 
+    @Stable
+    @Composable
+    fun shadow(
+        colors: List<Color> = borderColors,
+        radius: Dp = 11.dp,
+        alpha: Float = 1f
+    ) = shadow(
+        radius = radius,
+        brush = borderBrush(colors),
+        alpha = alpha
+    )
+
+
+    @Stable
+    @Composable
+    fun shadow(
+        color: Color,
+        radius: Dp = 11.dp,
+        alpha: Float = 1f
+    ) = shadow(
+        radius = radius,
+        brush = SolidColor(color),
+        alpha = alpha
+    )
+
+
+    @Stable
+    @Composable
+    fun shadow(
+        radius: Dp = 10.dp,
+        brush: Brush = borderBrush(),
+        spread: Dp = 1.dp,
+        alpha: Float = 1f
+    ) = Shadow(
+        radius = radius,
+        brush = brush,
+        spread = spread,
+        alpha = alpha.coerceIn(0f..1f)
+    )
+
+
     val shape
         @Composable
         get() = MaterialTheme.shapes.small
@@ -509,7 +559,6 @@ private fun ScrollableListItemPreview() {
                 )
             },
             shape = RoundedCornerShape(11.dp * selectedAnimatable.value),
-            shadowElevation = 4.dp * selectedAnimatable.value,
             colors = SwipeableListItemDefaults.colors(
                 containerColor = color,
                 leftActionColors = SwipeableListItemDefaults.actionColors(

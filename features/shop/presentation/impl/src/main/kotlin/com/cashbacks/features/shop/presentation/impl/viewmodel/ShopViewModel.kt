@@ -1,6 +1,5 @@
 package com.cashbacks.features.shop.presentation.impl.viewmodel
 
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.arkivanov.mvikotlin.core.store.Store
 import com.arkivanov.mvikotlin.core.store.StoreFactory
@@ -13,6 +12,7 @@ import com.cashbacks.common.composables.management.ViewModelState
 import com.cashbacks.common.resources.MessageHandler
 import com.cashbacks.common.utils.dispatchFromAnotherThread
 import com.cashbacks.common.utils.forwardFromAnotherThread
+import com.cashbacks.common.utils.mvi.IntentReceiverViewModel
 import com.cashbacks.features.cashback.domain.usecase.DeleteCashbackUseCase
 import com.cashbacks.features.cashback.domain.usecase.FetchCashbacksFromShopUseCase
 import com.cashbacks.features.cashback.presentation.api.CashbackArgs
@@ -33,26 +33,22 @@ import com.cashbacks.features.shop.presentation.impl.mvi.ShopMessage
 import com.cashbacks.features.shop.presentation.impl.mvi.ShopState
 import com.cashbacks.features.shop.presentation.impl.mvi.model.EditableShop
 import com.cashbacks.features.shop.presentation.impl.utils.launchWithLoading
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
-import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.sample
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-@OptIn(FlowPreview::class)
-class ShopViewModel(
+internal class ShopViewModel(
     private val fetchCashbacksFromShop: FetchCashbacksFromShopUseCase,
     private val fetchAllCategories: FetchAllCategoriesUseCase,
     private val addCategory: AddCategoryUseCase,
@@ -65,7 +61,7 @@ class ShopViewModel(
     private val storeFactory: StoreFactory,
     private val initialShopId: Long?,
     private val initialIsEditing: Boolean
-) : ViewModel() {
+) : IntentReceiverViewModel<ShopIntent>() {
 
     private val shopStore : Store<ShopIntent, ShopState, ShopLabel> by lazy {
         storeFactory.create(
@@ -344,28 +340,9 @@ class ShopViewModel(
 
     internal val labelsFlow: Flow<ShopLabel> by lazy { shopStore.labels }
 
+    override val scope: CoroutineScope get() = viewModelScope
 
-    private val intentSharedFlow = MutableSharedFlow<ShopIntent>(
-        extraBufferCapacity = 1,
-        onBufferOverflow = BufferOverflow.DROP_OLDEST
-    )
-
-    init {
-        intentSharedFlow
-            .sample(DELAY_MILLIS)
-            .onEach { shopStore.accept(it) }
-            .launchIn(viewModelScope)
-    }
-
-
-    internal fun sendIntent(intent: ShopIntent, withDelay: Boolean = false) {
-        when {
-            withDelay -> intentSharedFlow.tryEmit(intent)
-            else -> shopStore.accept(intent)
-        }
-    }
-
-
+    override fun acceptIntent(intent: ShopIntent) = shopStore.accept(intent)
 
 
 
@@ -387,10 +364,5 @@ class ShopViewModel(
             null -> addShop(shop.mapToCategoryShop()!!)
             else -> updateShop(shop.mapToCategoryShop()!!).map { shop.id }
         }
-    }
-
-
-    private companion object {
-        const val DELAY_MILLIS = 50L
     }
 }

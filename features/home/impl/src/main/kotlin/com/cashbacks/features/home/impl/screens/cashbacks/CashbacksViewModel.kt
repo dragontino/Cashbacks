@@ -1,6 +1,5 @@
 package com.cashbacks.features.home.impl.screens.cashbacks
 
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.arkivanov.mvikotlin.core.store.Store
 import com.arkivanov.mvikotlin.core.store.StoreFactory
@@ -10,6 +9,7 @@ import com.arkivanov.mvikotlin.extensions.coroutines.labels
 import com.arkivanov.mvikotlin.extensions.coroutines.stateFlow
 import com.cashbacks.common.composables.management.ScreenState
 import com.cashbacks.common.utils.dispatchFromAnotherThread
+import com.cashbacks.common.utils.mvi.IntentReceiverViewModel
 import com.cashbacks.features.cashback.domain.usecase.DeleteCashbackUseCase
 import com.cashbacks.features.cashback.domain.usecase.FetchAllCashbacksUseCase
 import com.cashbacks.features.cashback.domain.usecase.SearchCashbacksUseCase
@@ -21,13 +21,8 @@ import com.cashbacks.features.home.impl.mvi.CashbacksMessage
 import com.cashbacks.features.home.impl.mvi.CashbacksState
 import com.cashbacks.features.home.impl.mvi.HomeAction
 import com.cashbacks.features.home.impl.utils.launchWithLoading
-import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ObsoleteCoroutinesApi
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.actor
-import kotlinx.coroutines.channels.onClosed
-import kotlinx.coroutines.channels.onSuccess
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
@@ -39,12 +34,12 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 
-class CashbacksViewModel(
+internal class CashbacksViewModel(
     fetchAllCashbacks: FetchAllCashbacksUseCase,
     searchCashbacks: SearchCashbacksUseCase,
     deleteCashback: DeleteCashbackUseCase,
     storeFactory: StoreFactory,
-) : ViewModel() {
+) : IntentReceiverViewModel<CashbacksIntent>() {
 
     private val store: Store<CashbacksIntent, CashbacksState, CashbacksLabel> by lazy {
         storeFactory.create(
@@ -151,38 +146,18 @@ class CashbacksViewModel(
 
     internal val labelFlow: Flow<CashbacksLabel> by lazy { store.labels }
 
-    @OptIn(ObsoleteCoroutinesApi::class)
-    private val intentChannel = viewModelScope.actor(
-        capacity = Channel.RENDEZVOUS,
-        start = CoroutineStart.UNDISPATCHED
-    ) {
-        while (true) {
-            receiveCatching()
-                .onSuccess { store.accept(it) }
-                .onClosed { return@actor }
-            delay(DELAY_MILLIS)
-        }
-    }
-
     init {
         store.init()
     }
 
-    internal fun sendIntent(intent: CashbacksIntent, withDelay: Boolean = false) {
-        when {
-            withDelay -> intentChannel.trySend(intent)
-            else -> store.accept(intent)
-        }
-    }
+
+    override val scope: CoroutineScope get() = viewModelScope
+
+    override fun acceptIntent(intent: CashbacksIntent) = store.accept(intent)
+
 
     override fun onCleared() {
-        intentChannel.close()
         store.dispose()
         super.onCleared()
-    }
-
-
-    private companion object {
-        const val DELAY_MILLIS = 50L
     }
 }

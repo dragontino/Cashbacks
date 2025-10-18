@@ -1,7 +1,6 @@
 package com.cashbacks.features.category.presentation.impl.viewmodel
 
 import androidx.lifecycle.SavedStateHandle
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.arkivanov.mvikotlin.core.store.Store
 import com.arkivanov.mvikotlin.core.store.StoreFactory
@@ -13,6 +12,7 @@ import com.cashbacks.common.resources.MessageHandler
 import com.cashbacks.common.utils.AnimationDefaults
 import com.cashbacks.common.utils.dispatchFromAnotherThread
 import com.cashbacks.common.utils.forwardFromAnotherThread
+import com.cashbacks.common.utils.mvi.IntentReceiverViewModel
 import com.cashbacks.features.cashback.domain.usecase.DeleteCashbackUseCase
 import com.cashbacks.features.cashback.domain.usecase.FetchCashbacksFromCategoryUseCase
 import com.cashbacks.features.cashback.domain.usecase.GetMaxCashbacksFromShopUseCase
@@ -42,23 +42,21 @@ import com.cashbacks.features.shop.domain.usecase.AddShopUseCase
 import com.cashbacks.features.shop.domain.usecase.DeleteShopUseCase
 import com.cashbacks.features.shop.domain.usecase.FetchShopsFromCategoryUseCase
 import com.cashbacks.features.shop.presentation.api.ShopArgs
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.sample
 import kotlinx.coroutines.withContext
 
 @OptIn(FlowPreview::class)
-class CategoryEditingViewModel(
+internal class CategoryEditingViewModel(
     private val getCategory: GetCategoryUseCase,
     private val addShop: AddShopUseCase,
     private val updateCategory: UpdateCategoryUseCase,
@@ -73,12 +71,10 @@ class CategoryEditingViewModel(
     private val categoryId: Long,
     private val stateHandle: SavedStateHandle,
     val startTab: CategoryTabItemType
-) : ViewModel() {
+) : IntentReceiverViewModel<EditingIntent>() {
 
     private companion object {
         const val CATEGORY_NAME_SAVED_KEY = "CategoryName"
-
-        const val DELAY_MILLIS = 50L
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -116,19 +112,15 @@ class CategoryEditingViewModel(
                     .onEach { dispatchFromAnotherThread(CategoryAction.LoadCashbacks(it)) }
                     .launchIn(this)
 
-                stateHandle.getStateFlow(CATEGORY_NAME_SAVED_KEY, "")
-                    .onEach {
-                        val category = Category(categoryId, name = it)
-                        dispatchFromAnotherThread(CategoryAction.LoadCategory(category))
-                    }
-                    .launchIn(this)
-
                 launchWithLoading {
                     delay(AnimationDefaults.SCREEN_DELAY_MILLIS + 40L)
                     getCategory(categoryId)
                         .onSuccess {
-                            dispatchFromAnotherThread(EditingAction.LoadInitialCategory(it))
-                            dispatchFromAnotherThread(CategoryAction.LoadCategory(it))
+                            val category = it.copy(
+                                name = stateHandle[CATEGORY_NAME_SAVED_KEY] ?: it.name
+                            )
+                            dispatchFromAnotherThread(EditingAction.LoadInitialCategory(category))
+                            dispatchFromAnotherThread(CategoryAction.LoadCategory(category))
                         }
                         .onFailure { throwable ->
                             throwable.message?.takeIf { it.isNotBlank() }?.let {
@@ -148,6 +140,8 @@ class CategoryEditingViewModel(
 
                 onIntent<EditingIntent.UpdateCategoryName> {
                     stateHandle[CATEGORY_NAME_SAVED_KEY] = it.name
+                    val category = state().category.copy(name = it.name)
+                    dispatch(CategoryMessage.UpdateCategory(category))
                 }
                 onIntent<EditingIntent.NavigateToCategoryViewing> {
                     val args = CategoryArgs.Viewing(categoryId, it.startTab)
@@ -272,14 +266,9 @@ class CategoryEditingViewModel(
             },
             reducer = { message: EditingMessage ->
                 when (message) {
-                    is CategoryMessage.ChangeSelectedCashbackIndex -> copy(
-                        selectedCashbackIndex = message.index
-                    )
-
-                    is CategoryMessage.ChangeSelectedShopIndex -> copy(
-                        selectedShopIndex = message.index
-                    )
-
+                    is CategoryMessage.ChangeSelectedShopId -> copy(selectedShopId = message.id)
+                    is CategoryMessage.ChangeSwipedShopId -> copy(swipedShopId = message.id)
+                    is CategoryMessage.ChangeSwipedCashbackId -> copy(swipedCashbackId = message.id)
                     is CategoryMessage.UpdateScreenState -> copy(screenState = message.state)
                     is EditingMessage.SetInitialCategory -> copy(initialCategory = message.category)
                     is CategoryMessage.UpdateCategory -> copy(category = message.category)
@@ -292,6 +281,7 @@ class CategoryEditingViewModel(
                             ?.let { errors.plus(message.error to it) }
                             ?: errors.minus(message.error)
                     )
+
                     is EditingMessage.SetErrorMessages -> copy(errors = message.errors)
                     is EditingMessage.UpdateShowingErrors -> copy(showErrors = message.showErrors)
                 }
@@ -324,31 +314,13 @@ class CategoryEditingViewModel(
         editingStore.labels
     }
 
-    private val intentSharedFlow = MutableSharedFlow<EditingIntent>(
-        extraBufferCapacity = 1,
-        onBufferOverflow = BufferOverflow.DROP_OLDEST
-    )
+    override val scope: CoroutineScope get() = viewModelScope
 
-
-    init {
-        editingStore.init()
-        intentSharedFlow
-            .sample(DELAY_MILLIS)
-            .onEach { editingStore.accept(it) }
-            .launchIn(viewModelScope)
-    }
+    override fun acceptIntent(intent: EditingIntent) = editingStore.accept(intent)
 
 
     override fun onCleared() {
         editingStore.dispose()
         super.onCleared()
-    }
-
-
-    internal fun sendIntent(intent: EditingIntent, withDelay: Boolean = false) {
-        when {
-            withDelay -> intentSharedFlow.tryEmit(intent)
-            else -> editingStore.accept(intent)
-        }
     }
 }

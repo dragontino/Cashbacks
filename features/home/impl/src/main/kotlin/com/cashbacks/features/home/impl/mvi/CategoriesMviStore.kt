@@ -31,6 +31,7 @@ internal sealed interface CategoriesLabel {
 
 @Immutable
 internal sealed class CategoriesIntent {
+
     data object StartEdit : CategoriesIntent()
     data object FinishEdit : CategoriesIntent()
     data object SwitchEdit : CategoriesIntent()
@@ -91,8 +92,9 @@ internal data class CategoryWithCashback(
     val category: Category,
     val maxCashback: Cashback?
 ) {
-    val id: String get() = when(maxCashback) {
-        null -> category.id.toString()
-        else -> "${category.id}-${maxCashback.id}"
-    }
+    val id: String
+        get() = when (maxCashback) {
+            null -> category.id.toString()
+            else -> "${category.id}-${maxCashback.id}"
+        }
 }

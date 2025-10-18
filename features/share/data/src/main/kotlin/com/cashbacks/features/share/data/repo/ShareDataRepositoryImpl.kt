@@ -52,6 +52,10 @@ class ShareDataRepositoryImpl(
         val zipFile = File(exportDir, archiveFileName)
         val zipOutputStream = ZipOutputStream(zipFile.outputStream())
 
+        continuation.invokeOnCancellation {
+            zipOutputStream.close()
+        }
+
         try {
             val readableDatabase = database.openHelper.readableDatabase
 

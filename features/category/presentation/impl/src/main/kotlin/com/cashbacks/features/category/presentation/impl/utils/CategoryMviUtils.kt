@@ -46,11 +46,14 @@ internal fun ExecutorBuilder<in CategoryIntent, *, *, in CategoryMessage, in Cat
     onIntent<CategoryIntent.CloseDialog> {
         publish(CategoryLabel.CloseDialog)
     }
+    onIntent<CategoryIntent.SelectShop> {
+        dispatch(CategoryMessage.ChangeSelectedShopId(it.id))
+    }
     onIntent<CategoryIntent.SwipeShop> {
-        dispatch(CategoryMessage.ChangeSelectedShopIndex(it.position))
+        dispatch(CategoryMessage.ChangeSwipedShopId(it.id))
     }
     onIntent<CategoryIntent.SwipeCashback> {
-        dispatch(CategoryMessage.ChangeSelectedCashbackIndex(it.position))
+        dispatch(CategoryMessage.ChangeSwipedCashbackId(it.id))
     }
 }
 

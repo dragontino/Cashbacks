@@ -1,15 +1,15 @@
 package com.cashbacks.features.home.impl.viewmodel
 
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.arkivanov.mvikotlin.core.store.Store
 import com.arkivanov.mvikotlin.core.store.StoreFactory
 import com.arkivanov.mvikotlin.extensions.coroutines.coroutineExecutorFactory
 import com.arkivanov.mvikotlin.extensions.coroutines.labels
 import com.arkivanov.mvikotlin.extensions.coroutines.stateFlow
+import com.cashbacks.common.composables.management.ScreenState
 import com.cashbacks.common.resources.AppInfo
 import com.cashbacks.common.utils.forwardFromAnotherThread
-import com.cashbacks.common.composables.management.ScreenState
+import com.cashbacks.common.utils.mvi.IntentReceiverViewModel
 import com.cashbacks.features.home.impl.mvi.HomeAction
 import com.cashbacks.features.home.impl.mvi.HomeIntent
 import com.cashbacks.features.home.impl.mvi.HomeLabel
@@ -17,17 +17,20 @@ import com.cashbacks.features.home.impl.mvi.HomeMessage
 import com.cashbacks.features.home.impl.mvi.HomeState
 import com.cashbacks.features.home.impl.utils.launchWithLoading
 import com.cashbacks.features.share.domain.usecase.ExportDataUseCase
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.withContext
 
+@OptIn(FlowPreview::class)
 internal class HomeViewModel(
     private val exportData: ExportDataUseCase,
     private val appInfo: AppInfo,
     private val storeFactory: StoreFactory,
-) : ViewModel() {
+) : IntentReceiverViewModel<HomeIntent>() {
 
     private val homeStore: Store<HomeIntent, HomeState, HomeLabel> by lazy {
         storeFactory.create(
@@ -100,7 +103,13 @@ internal class HomeViewModel(
 
     internal val labelFlow: Flow<HomeLabel> by lazy { homeStore.labels }
 
-    internal fun sendIntent(intent: HomeIntent) {
-        homeStore.accept(intent)
+    override val scope: CoroutineScope get() = viewModelScope
+
+    override fun acceptIntent(intent: HomeIntent) = homeStore.accept(intent)
+
+
+    override fun onCleared() {
+        homeStore.dispose()
+        super.onCleared()
     }
 }

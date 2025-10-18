@@ -103,7 +103,7 @@ fun CashbackComposable(
             )
         ),
         tonalElevation = 4.dp,
-        shadowElevation = 4.dp,
+        shadow = null,
         modifier = modifier
     ) {
         Layout(

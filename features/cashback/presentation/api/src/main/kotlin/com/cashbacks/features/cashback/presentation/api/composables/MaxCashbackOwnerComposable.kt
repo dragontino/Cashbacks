@@ -26,6 +26,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -63,6 +64,7 @@ import com.cashbacks.features.cashback.presentation.api.utils.CashbackPresentati
 import kotlinx.datetime.LocalDate
 import java.util.Currency
 
+@Stable
 @Composable
 fun MaxCashbackOwnerComposable(
     maxCashback: Cashback?,
@@ -122,14 +124,14 @@ fun MaxCashbackOwnerComposable(
         leftActionIcon = {
             Icon(
                 imageVector = Icons.Rounded.Edit,
-                contentDescription = "edit",
+                contentDescription = "pencil",
                 modifier = Modifier.padding(16.dp)
             )
         },
         rightActionIcon = {
             Icon(
                 imageVector = Icons.Rounded.DeleteForever,
-                contentDescription = "delete",
+                contentDescription = "trash can",
                 modifier = Modifier.padding(16.dp)
             )
         },
@@ -137,8 +139,8 @@ fun MaxCashbackOwnerComposable(
         shape = MaterialTheme.shapes.small,
         colors = SwipeableListItemDefaults.colors(
             containerColor = MaterialTheme.colorScheme.surface
-                    .mix(Color.Transparent)
-                    .ratio((listItemState.swipeOffsetRatio.value + expandAnimation.value).coerceAtMost(1f)),
+                    .mix(MaterialTheme.colorScheme.background)
+                    .ratio((listItemState.swipeOffsetRatio.value * 2 + expandAnimation.value).coerceAtMost(1f)),
             leftActionColors = SwipeableListItemDefaults.actionColors(
                 containerColor = MaterialTheme.colorScheme.background,
                 clickedContainerColor = Color.Blue,
@@ -153,10 +155,7 @@ fun MaxCashbackOwnerComposable(
             )
         ),
         tonalElevation = elevation.value,
-        shadowElevation = when (expandAnimation.value) {
-            1f -> 4.dp
-            else -> 0.dp
-        },
+        shadow = null,
         modifier = modifier
     ) {
         Column(

@@ -67,7 +67,7 @@ import com.cashbacks.common.composables.utils.keyboardAsState
 import com.cashbacks.common.composables.utils.mix
 import com.cashbacks.common.composables.utils.reversed
 import com.cashbacks.common.resources.R
-import com.cashbacks.common.utils.IntentSender
+import com.cashbacks.common.utils.mvi.IntentSender
 import com.cashbacks.features.cashback.domain.model.Cashback
 import com.cashbacks.features.cashback.domain.model.CashbackOwner
 import com.cashbacks.features.cashback.presentation.api.CashbackArgs
@@ -121,9 +121,7 @@ internal fun CashbacksRoot(
     CashbacksScreen(
         state = state,
         snackbarHostState = snackbarHostState,
-        intentSender = IntentSender { intent, withDelay ->
-            viewModel.sendIntent(intent, withDelay)
-        },
+        intentSender = IntentSender(viewModel::sendIntent),
         modifier = modifier
     )
 }
@@ -137,12 +135,12 @@ private fun CashbacksScreen(
     modifier: Modifier = Modifier
 ) {
     BackHandler {
-        intentSender.sendIntentWithDelay(CashbacksIntent.ClickButtonBack)
+        intentSender.sendWithDelay(CashbacksIntent.ClickButtonBack)
     }
 
     if (state.showBottomSheet) {
         ModalBottomSheet(
-            onClose = { intentSender.sendIntent(CashbacksIntent.CloseBottomSheet) },
+            onClose = { intentSender.send(CashbacksIntent.CloseBottomSheet) },
             title = stringResource(R.string.add_cashback_title),
             beautifulDesign = true
         ) {
@@ -151,12 +149,12 @@ private fun CashbacksScreen(
                 iconTintColor = MaterialTheme.colorScheme.primary,
                 text = stringResource(R.string.to_category)
             ) {
-                intentSender.sendIntentWithDelay(
+                intentSender.sendWithDelay(
                     CashbacksIntent.NavigateToCashback(
                         args = CashbackArgs.fromCategory(categoryId = null)
                     )
                 )
-                intentSender.sendIntent(CashbacksIntent.CloseBottomSheet)
+                intentSender.send(CashbacksIntent.CloseBottomSheet)
             }
 
             IconTextItem(
@@ -164,12 +162,12 @@ private fun CashbacksScreen(
                 iconTintColor = MaterialTheme.colorScheme.primary,
                 text = stringResource(R.string.to_shop)
             ) {
-                intentSender.sendIntentWithDelay(
+                intentSender.sendWithDelay(
                     CashbacksIntent.NavigateToCashback(
                         args = CashbackArgs.fromShop(shopId = null)
                     )
                 )
-                intentSender.sendIntent(CashbacksIntent.CloseBottomSheet)
+                intentSender.send(CashbacksIntent.CloseBottomSheet)
             }
         }
     }
@@ -214,10 +212,10 @@ private fun CashbacksScreenContent(
             HomeTopAppBar(
                 title = HomeDestination.Cashbacks.screenTitle,
                 state = state.appBarState,
-                onStateChange = { intentSender.sendIntent(CashbacksIntent.ChangeAppBarState(it)) },
+                onStateChange = { intentSender.send(CashbacksIntent.ChangeAppBarState(it)) },
                 searchPlaceholder = stringResource(R.string.search_cashbacks_placeholder),
                 onNavigationIconClick = {
-                    intentSender.sendIntentWithDelay(CashbacksIntent.ClickNavigationButton)
+                    intentSender.sendWithDelay(CashbacksIntent.ClickNavigationButton)
                 },
                 colors = HomeAppBarDefaults.colors(
                     topBarContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = .6f)
@@ -246,7 +244,7 @@ private fun CashbacksScreenContent(
                 exit = floatingActionButtonExitAnimation()
             ) {
                 BasicFloatingActionButton(icon = Icons.Rounded.Add) {
-                    intentSender.sendIntentWithDelay(CashbacksIntent.OpenBottomSheet)
+                    intentSender.sendWithDelay(CashbacksIntent.OpenBottomSheet)
                 }
             }
         },
@@ -335,7 +333,7 @@ private fun CashbacksList(
                         cashback = cashback,
                         isEnabledToSwipe = state.swipedCashbackId == cashback.id || state.swipedCashbackId == null,
                         onSwipeStatusChanged = { isOnSwipe ->
-                            intentSender.sendIntentWithDelay(
+                            intentSender.sendWithDelay(
                                 CashbacksIntent.SwipeCashback(cashback.id, isOnSwipe)
                             )
                         },
@@ -351,10 +349,10 @@ private fun CashbacksList(
                                     shopId = cashback.owner.id
                                 )
                             }
-                            intentSender.sendIntentWithDelay(CashbacksIntent.NavigateToCashback(args))
+                            intentSender.sendWithDelay(CashbacksIntent.NavigateToCashback(args))
                         },
                         onDelete = {
-                            intentSender.sendIntentWithDelay(
+                            intentSender.sendWithDelay(
                                 CashbacksIntent.OpenDialog(DialogType.ConfirmDeletion(cashback))
                             )
                         },

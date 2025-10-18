@@ -1,6 +1,5 @@
 package com.cashbacks.features.bankcard.presentation.impl.viewmodel
 
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.arkivanov.mvikotlin.core.store.Store
 import com.arkivanov.mvikotlin.core.store.StoreFactory
@@ -8,9 +7,10 @@ import com.arkivanov.mvikotlin.extensions.coroutines.coroutineBootstrapper
 import com.arkivanov.mvikotlin.extensions.coroutines.coroutineExecutorFactory
 import com.arkivanov.mvikotlin.extensions.coroutines.labels
 import com.arkivanov.mvikotlin.extensions.coroutines.stateFlow
+import com.cashbacks.common.composables.management.ScreenState
 import com.cashbacks.common.utils.AnimationDefaults
 import com.cashbacks.common.utils.dispatchFromAnotherThread
-import com.cashbacks.common.composables.management.ScreenState
+import com.cashbacks.common.utils.mvi.IntentReceiverViewModel
 import com.cashbacks.features.bankcard.domain.usecase.DeleteBankCardUseCase
 import com.cashbacks.features.bankcard.domain.usecase.FetchBankCardByIdUseCase
 import com.cashbacks.features.bankcard.presentation.api.BankCardArgs
@@ -19,6 +19,7 @@ import com.cashbacks.features.bankcard.presentation.impl.mvi.ViewingIntent
 import com.cashbacks.features.bankcard.presentation.impl.mvi.ViewingLabel
 import com.cashbacks.features.bankcard.presentation.impl.mvi.ViewingMessage
 import com.cashbacks.features.bankcard.presentation.impl.mvi.ViewingState
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.SharingStarted
@@ -28,12 +29,12 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 
-class BankCardViewingViewModel(
+internal class BankCardViewingViewModel(
     private val fetchBankCardUseCase: FetchBankCardByIdUseCase,
     private val deleteBankCardUseCase: DeleteBankCardUseCase,
     private val storeFactory: StoreFactory,
     private val cardId: Long
-) : ViewModel() {
+) : IntentReceiverViewModel<ViewingIntent>() {
 
     private val viewingStore: Store<ViewingIntent, ViewingState, ViewingLabel> by lazy {
         object : Store<ViewingIntent, ViewingState, ViewingLabel> by storeFactory.create(
@@ -122,7 +123,7 @@ class BankCardViewingViewModel(
 
     internal val labelsFlow by lazy { viewingStore.labels }
 
-    internal fun sendIntent(intent: ViewingIntent) {
-        viewingStore.accept(intent)
-    }
+    override fun acceptIntent(intent: ViewingIntent) = viewingStore.accept(intent)
+
+    override val scope: CoroutineScope get() = viewModelScope
 }
