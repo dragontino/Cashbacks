@@ -62,7 +62,6 @@ import com.cashbacks.common.composables.BoundedSnackbar
 import com.cashbacks.common.composables.ModalSheetDefaults
 import com.cashbacks.common.composables.ModalSheetItems.IconTextItem
 import com.cashbacks.common.composables.theme.VerdanaFont
-import com.cashbacks.common.composables.usePermissions
 import com.cashbacks.common.composables.utils.Saver
 import com.cashbacks.common.composables.utils.animate
 import com.cashbacks.common.composables.utils.getActivity
@@ -70,6 +69,7 @@ import com.cashbacks.common.composables.utils.mutableStateSaver
 import com.cashbacks.common.navigation.enterScreenTransition
 import com.cashbacks.common.navigation.exitScreenTransition
 import com.cashbacks.common.resources.R
+import com.cashbacks.common.utils.usePermissions
 import com.cashbacks.features.bankcard.presentation.api.BankCardArgs
 import com.cashbacks.features.cashback.presentation.api.CashbackArgs
 import com.cashbacks.features.category.presentation.api.CategoryArgs
