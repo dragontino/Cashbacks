@@ -1,6 +1,7 @@
 package com.cashbacks.app.app
 
 import android.app.Application
+import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.cashbacks.app.di.ApplicationModules
@@ -27,6 +28,10 @@ class App : Application() {
             modules(ApplicationModules)
         }
 
-        WorkManager.getInstance(this).enqueue(deleteExpiredCashbacksWork)
+        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+            uniqueWorkName = DeleteExpiredCashbacksWorker.NAME,
+            existingPeriodicWorkPolicy = ExistingPeriodicWorkPolicy.UPDATE,
+            request = deleteExpiredCashbacksWork
+        )
     }
 }

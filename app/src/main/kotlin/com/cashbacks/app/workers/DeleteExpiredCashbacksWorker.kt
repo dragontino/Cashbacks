@@ -1,25 +1,25 @@
 package com.cashbacks.app.workers
 
 import android.Manifest
-import android.annotation.SuppressLint
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.content.res.Resources
 import android.graphics.drawable.Icon
 import android.os.Build
 import android.util.Log
-import androidx.annotation.RequiresPermission
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
 import androidx.work.CoroutineWorker
 import androidx.work.ForegroundInfo
 import androidx.work.WorkerParameters
 import com.cashbacks.app.BuildConfig
 import com.cashbacks.app.R
 import com.cashbacks.app.ui.MainActivity
-import com.cashbacks.common.composables.usePermissions
 import com.cashbacks.common.utils.now
 import com.cashbacks.common.utils.parseToDate
 import com.cashbacks.features.cashback.domain.usecase.DeleteCashbacksUseCase
@@ -35,8 +35,9 @@ class DeleteExpiredCashbacksWorker(
     context: Context,
     workerParams: WorkerParameters
 ) : CoroutineWorker(context, workerParams), KoinComponent {
-    private companion object {
-        const val TAG = "DeleteExpiredCashbacksWorker"
+    companion object {
+        private const val TAG = "DeleteExpiredCashbacksWorker"
+        const val NAME = "Delete expired cashbacks"
     }
 
     private val getExpiredCashbacks by inject<GetExpiredCashbacksUseCase>()
@@ -44,56 +45,54 @@ class DeleteExpiredCashbacksWorker(
     private val getSettings by inject<GetSettingsUseCase>()
 
 
-    @SuppressLint("MissingPermission")
     override suspend fun doWork(): Result {
-        Log.i(TAG, "Work started")
+        Log.d(TAG, "Work started")
         return try {
             val settings = getSettings().getOrNull() ?: Settings()
             if (settings.autoDeleteExpiredCashbacks.not()) {
+                Log.d(TAG, "Auto deleting cashbacks is disabled in settings")
                 return Result.success()
             }
 
             val today = LocalDate.now()
             val expiredCashbacks = getExpiredCashbacks(today).getOrNull() ?: emptyList()
             if (expiredCashbacks.isEmpty()) {
+                Log.d(TAG, "There are 0 cashbacks to delete")
                 return Result.success()
-            } else {
-                val deletionResult = deleteCashbacks(expiredCashbacks).onSuccess { count ->
-                    if (count > 0) {
-                        val msg = applicationContext.resources.getQuantityString(
+            }
+
+            val deletionResult = deleteCashbacks(expiredCashbacks).onSuccess { count ->
+                if (count > 0) {
+                    val msg = try {
+                        applicationContext.resources.getQuantityString(
                             com.cashbacks.common.resources.R.plurals.expired_cashbacks_deletion_success,
                             count,
                             count
                         )
-                        val notification = createNotification(msg)
-                        val id = generateIdFromDate()
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                            usePermissions(
-                                Manifest.permission.POST_NOTIFICATIONS,
-                                context = applicationContext,
-                                grantPermission = {}
-                            ) {
-                                pushNotification(id, notification)
-                            }
-                        } else {
-                            pushNotification(id, notification)
-                        }
-                        Log.i(TAG, msg)
-                    } else {
-                        Log.i(TAG, "There are 0 cashbacks to delete.")
+                    } catch (_: Resources.NotFoundException) {
+                        Log.d(TAG, "Resource 'R.plurals.expired_cashbacks_deletion_success' isn`t found, use default message")
+                        "$count expired cashbacks have been deleted"
                     }
+                    val notification = createNotification(msg)
+                    val id = generateIdFromDate()
+                    pushNotification(id, notification)
+                    Log.d(TAG, msg)
                 }
-                return when {
-                    deletionResult.isSuccess -> Result.success()
-                    else -> Result.retry()
+                if (count != expiredCashbacks.size) {
+                    Log.d(TAG, "There were ${expiredCashbacks.size} cashbacks to delete but $count cashbacks have been deleted")
                 }
+            }
+
+            return when {
+                deletionResult.getOrNull() == expiredCashbacks.size -> Result.success()
+                else -> Result.retry()
             }
 
         } catch (e: Throwable) {
             Log.e(TAG, e.message, e)
             Result.retry()
         } finally {
-            Log.i(TAG, "Work finished")
+            Log.d(TAG, "Work finished")
         }
     }
 
@@ -165,9 +164,17 @@ class DeleteExpiredCashbacksWorker(
     }
 
 
-    @RequiresPermission(Manifest.permission.POST_NOTIFICATIONS)
     private fun pushNotification(id: Int, notification: Notification) {
         val notificationManager = NotificationManagerCompat.from(applicationContext)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(
+                    applicationContext,
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                return
+            }
+        }
         notificationManager.notify(id, notification)
     }
 }
