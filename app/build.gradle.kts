@@ -11,9 +11,6 @@ android {
     namespace = "com.cashbacks.app"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
 
-    val appDebugSuffix = "beta30"
-    val appVersionDate = "09/06/2025"
-
     defaultConfig {
         applicationId = "com.cashbacks.app"
         minSdk = libs.versions.android.minSdk.get().toInt()
@@ -28,17 +25,21 @@ android {
             useSupportLibrary = true
         }
 
-        buildConfigField(
-            type = "String",
-            name = "VERSION_DATE",
-            value = "\"$appVersionDate\""
-        )
+        getLocalProperty("version.date")?.let {
+            buildConfigField(
+                type = "String",
+                name = "VERSION_DATE",
+                value = "\"$it\""
+            )
+        }
 
-        buildConfigField(
-            type = "String",
-            name = "VERSION_URL",
-            value = "\"${getLocalProperty("appversion.url")}\""
-        )
+        getLocalProperty("appversion.url")?.let {
+            buildConfigField(
+                type = "String",
+                name = "VERSION_URL",
+                value = "\"$it\""
+            )
+        }
     }
 
     buildTypes {
@@ -52,7 +53,9 @@ android {
 
         debug {
             applicationIdSuffix = ".debug"
-            versionNameSuffix = "-$appDebugSuffix"
+            getLocalProperty("debug.version.suffix")?.let {
+                versionNameSuffix = "-$it"
+            }
         }
     }
     compileOptions {
