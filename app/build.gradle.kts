@@ -1,4 +1,5 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.util.Properties
 
 plugins {
     alias(libs.plugins.android.application)
@@ -31,6 +32,12 @@ android {
             type = "String",
             name = "VERSION_DATE",
             value = "\"$appVersionDate\""
+        )
+
+        buildConfigField(
+            type = "String",
+            name = "VERSION_URL",
+            value = "\"${getLocalProperty("appversion.url")}\""
         )
     }
 
@@ -68,6 +75,16 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+}
+
+
+fun getLocalProperty(name: String): String? {
+    val propertiesFile = rootProject.file("local.properties")
+    if (propertiesFile.exists().not()) return null
+
+    val properties = Properties()
+    propertiesFile.inputStream().use { properties.load(it) }
+    return properties.getProperty(name, null)
 }
 
 
