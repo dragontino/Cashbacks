@@ -15,8 +15,9 @@ android {
         applicationId = "com.cashbacks.app"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = 36
-        versionCode = libs.versions.app.android.get().split(".")[0].toInt()
-        versionName = libs.versions.app.android.get()
+
+        versionName = getLocalProperty("app.version.name") ?: "1.0.0"
+        versionCode = versionName!!.split(".")[0].toInt()
 
         project.base.archivesName = "Cashbacks-$versionName"
 
@@ -25,7 +26,7 @@ android {
             useSupportLibrary = true
         }
 
-        getLocalProperty("version.date")?.let {
+        getLocalProperty("app.version.date")?.let {
             buildConfigField(
                 type = "String",
                 name = "VERSION_DATE",
@@ -33,7 +34,7 @@ android {
             )
         }
 
-        getLocalProperty("appversion.url")?.let {
+        getLocalProperty("app.version.url")?.let {
             buildConfigField(
                 type = "String",
                 name = "VERSION_URL",
