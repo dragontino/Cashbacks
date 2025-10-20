@@ -33,14 +33,6 @@ android {
                 value = "\"$it\""
             )
         }
-
-        getLocalProperty("app.version.url")?.let {
-            buildConfigField(
-                type = "String",
-                name = "VERSION_URL",
-                value = "\"$it\""
-            )
-        }
     }
 
     buildTypes {
@@ -104,6 +96,7 @@ dependencies {
     api(project(":common:resources"))
     api(project(":common:navigation"))
     api(project(":core:database"))
+    api(project(":core:network"))
 
     api(project(":features:settings:domain"))
     api(project(":features:settings:data"))
