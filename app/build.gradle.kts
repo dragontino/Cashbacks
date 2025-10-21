@@ -1,4 +1,5 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.util.Properties
 
 plugins {
     alias(libs.plugins.android.application)
@@ -10,15 +11,13 @@ android {
     namespace = "com.cashbacks.app"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
 
-    val appDebugSuffix = "beta30"
-    val appVersionDate = "09/06/2025"
-
     defaultConfig {
         applicationId = "com.cashbacks.app"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = 36
-        versionCode = libs.versions.app.android.get().split(".")[0].toInt()
-        versionName = libs.versions.app.android.get()
+
+        versionName = getLocalProperty("app.version.name") ?: "1.0.0"
+        versionCode = versionName!!.split(".")[0].toInt()
 
         project.base.archivesName = "Cashbacks-$versionName"
 
@@ -27,11 +26,13 @@ android {
             useSupportLibrary = true
         }
 
-        buildConfigField(
-            type = "String",
-            name = "VERSION_DATE",
-            value = "\"$appVersionDate\""
-        )
+        getLocalProperty("app.version.date")?.let {
+            buildConfigField(
+                type = "String",
+                name = "VERSION_DATE",
+                value = "\"$it\""
+            )
+        }
     }
 
     buildTypes {
@@ -45,7 +46,9 @@ android {
 
         debug {
             applicationIdSuffix = ".debug"
-            versionNameSuffix = "-$appDebugSuffix"
+            getLocalProperty("debug.version.suffix")?.let {
+                versionNameSuffix = "-$it"
+            }
         }
     }
     compileOptions {
@@ -68,6 +71,22 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+        }
+    }
+}
+
+
+fun getLocalProperty(name: String): String? {
+    val propertiesFile = rootProject.file("local.properties")
+    if (propertiesFile.exists().not()) return null
+
+    val properties = Properties()
+    propertiesFile.inputStream().use { properties.load(it) }
+    return properties.getProperty(name, null)
 }
 
 
@@ -83,6 +102,7 @@ dependencies {
     api(project(":common:resources"))
     api(project(":common:navigation"))
     api(project(":core:database"))
+    api(project(":core:network"))
 
     api(project(":features:settings:domain"))
     api(project(":features:settings:data"))
@@ -146,9 +166,12 @@ dependencies {
 
     // Tests
     testImplementation(libs.junit)
+    testImplementation(libs.robolectric)
     androidTestImplementation(libs.espresso)
+    androidTestImplementation(libs.espresso.intents)
     androidTestImplementation(libs.junit.ext)
     androidTestImplementation(libs.room.testing)
+    androidTestImplementation(libs.androidx.uiautomator)
 
 
     // Koin
