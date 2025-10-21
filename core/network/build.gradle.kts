@@ -1,15 +1,14 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.util.Properties
 
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.google.ksp)
     alias(libs.plugins.kotlinx.serialization)
-    alias(libs.plugins.androidx.room)
 }
 
 android {
-    namespace = "com.cashbacks.core.database"
+    namespace = "com.cashbacks.core.network"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
 
     defaultConfig {
@@ -17,6 +16,14 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
+
+        getLocalProperty("app.repos.url")?.let {
+            buildConfigField(
+                type = "String",
+                name = "APP_REPOS_URL",
+                value = "\"$it\""
+            )
+        }
     }
 
     buildTypes {
@@ -39,30 +46,35 @@ android {
         }
     }
 
-    room {
-        schemaDirectory("$projectDir/schemas")
+    buildFeatures {
+        buildConfig = true
     }
 }
 
+
+fun getLocalProperty(name: String): String? {
+    val propertiesFile = rootProject.file("local.properties")
+    if (propertiesFile.exists().not()) return null
+
+    val properties = Properties()
+    propertiesFile.inputStream().use { properties.load(it) }
+    return properties.getProperty(name, null)
+}
+
+
 dependencies {
-    implementation(project(":common:utils"))
-    implementation(project(":features:category:domain"))
-    implementation(project(":features:shop:domain"))
-    implementation(project(":features:cashback:domain"))
-    implementation(project(":features:bankcard:domain"))
-    implementation(project(":features:settings:domain"))
+    implementation(libs.androidx.core)
 
-    // Room
-    implementation(libs.room.runtime)
-    implementation(libs.room.ktx)
-    ksp(libs.room.compiler)
-
-    implementation(libs.koin.android)
-    implementation(libs.kotlinx.datetime)
     implementation(libs.kotlinx.serialization.json)
 
+    // Retrofit
+    implementation(libs.squareup.retrofit)
+    implementation(libs.squareup.retrofit.kotlinx.serialization.converter)
+
+    // DI
+    implementation(libs.koin.android)
+
     testImplementation(libs.junit)
-    androidTestImplementation(libs.room.testing)
     androidTestImplementation(libs.junit.ext)
     androidTestImplementation(libs.espresso)
 }

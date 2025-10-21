@@ -2,6 +2,7 @@ package com.cashbacks.app.di
 
 import com.cashbacks.app.di.modules.AppModule
 import com.cashbacks.core.database.di.DatabaseModule
+import com.cashbacks.core.network.di.NetworkModule
 import com.cashbacks.features.bankcard.data.di.BankCardDataModule
 import com.cashbacks.features.bankcard.domain.di.BankCardDomainModule
 import com.cashbacks.features.bankcard.presentation.impl.di.BankCardPresentationModule
@@ -70,6 +71,7 @@ val ApplicationModules = buildList {
     addAll(CategoryModules)
     addAll(ShareModules)
     add(DatabaseModule)
+    add(NetworkModule)
     add(HomeModule)
     add(ShareDomainModule)
     add(AppModule)

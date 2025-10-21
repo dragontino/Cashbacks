@@ -8,4 +8,10 @@
         dragontino://cashbacks/CashbacksNotificationChannel
     </string>
     <string name="default_notification_channel_name">General</string>
+    <string name="new_version_notification_channel_id" translatable="false">
+        dragontino://cashbacks/NewVersionNotificationChannel
+    </string>
+    <string name="new_version_notification_channel_name">New version of the app</string>
+    <string name="new_version_is_available">A new version of the app is available</string>
+    <string name="click_to_download">Click here to download</string>
 </resources>
