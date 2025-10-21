@@ -5,6 +5,7 @@
     <string name="data_exported">Все данные сохранены в папку %s</string>
     <string name="permission_required">Для нормальной работы этой функции необходимо разрешение!</string>
     <string name="open_in">Открыть в…</string>
+    <string name="download">Скачать</string>
 
     <string name="home">Главная</string>
     <string name="categories_title">Мои Категории</string>

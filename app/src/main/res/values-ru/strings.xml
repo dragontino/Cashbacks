@@ -4,4 +4,7 @@
     <string name="activity_name">Мои Кешбэки</string>
     <string name="app_version_pattern">Версия %1$s от %2$s</string>
     <string name="default_notification_channel_name">Общие</string>
+    <string name="new_version_notification_channel_name">Новая версия приложения</string>
+    <string name="new_version_is_available">Доступна новая версия приложения</string>
+    <string name="click_to_download">Нажмите здесь, чтобы загрузить</string>
 </resources>

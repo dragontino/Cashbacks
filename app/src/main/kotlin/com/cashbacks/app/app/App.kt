@@ -1,10 +1,14 @@
 package com.cashbacks.app.app
 
 import android.app.Application
+import androidx.work.Constraints
 import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.NetworkType
+import androidx.work.PeriodicWorkRequest
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.cashbacks.app.di.ApplicationModules
+import com.cashbacks.app.workers.CheckNewVersionWorker
 import com.cashbacks.app.workers.DeleteExpiredCashbacksWorker
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
@@ -17,6 +21,21 @@ class App : Application() {
         flexTimeInterval = Duration.ofMinutes(15)
     ).build()
 
+    private val checkNewVersionWorkRequest: PeriodicWorkRequest
+        get() {
+            val constraints = Constraints.Builder()
+                .setRequiresCharging(true)
+                .setRequiredNetworkType(NetworkType.UNMETERED)
+                .build()
+
+            return PeriodicWorkRequestBuilder<CheckNewVersionWorker>(
+                repeatInterval = Duration.ofDays(2),
+                flexTimeInterval = Duration.ofHours(2)
+            )
+                .setConstraints(constraints)
+                .build()
+        }
+
 
     override fun onCreate() {
         super.onCreate()
@@ -28,10 +47,18 @@ class App : Application() {
             modules(ApplicationModules)
         }
 
-        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+
+        val workManager = WorkManager.getInstance(this)
+        workManager.enqueueUniquePeriodicWork(
             uniqueWorkName = DeleteExpiredCashbacksWorker.NAME,
             existingPeriodicWorkPolicy = ExistingPeriodicWorkPolicy.UPDATE,
             request = deleteExpiredCashbacksWork
+        )
+
+        workManager.enqueueUniquePeriodicWork(
+            uniqueWorkName = CheckNewVersionWorker.NAME,
+            existingPeriodicWorkPolicy = ExistingPeriodicWorkPolicy.KEEP,
+            request = checkNewVersionWorkRequest
         )
     }
 }

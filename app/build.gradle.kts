@@ -71,6 +71,12 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+        }
+    }
 }
 
 
@@ -160,9 +166,12 @@ dependencies {
 
     // Tests
     testImplementation(libs.junit)
+    testImplementation(libs.robolectric)
     androidTestImplementation(libs.espresso)
+    androidTestImplementation(libs.espresso.intents)
     androidTestImplementation(libs.junit.ext)
     androidTestImplementation(libs.room.testing)
+    androidTestImplementation(libs.androidx.uiautomator)
 
 
     // Koin
