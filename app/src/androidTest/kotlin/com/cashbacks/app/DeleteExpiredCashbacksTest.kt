@@ -35,7 +35,7 @@ import org.koin.core.context.stopKoin
 import org.koin.dsl.module
 
 @RunWith(AndroidJUnit4::class)
-class WorkManagerInstrumentedTest : KoinComponent {
+class DeleteExpiredCashbacksTest : KoinComponent {
     private lateinit var context: Context
     private lateinit var db: AppDatabase
 
@@ -56,7 +56,7 @@ class WorkManagerInstrumentedTest : KoinComponent {
     }
 
     @Test
-    fun testDeleteExpiredCashbacksWorker() {
+    fun useDeleteExpiredCashbacksWorker() {
         val worker = TestListenableWorkerBuilder<DeleteExpiredCashbacksWorker>(context).build()
         runBlocking {
             addMockData()
