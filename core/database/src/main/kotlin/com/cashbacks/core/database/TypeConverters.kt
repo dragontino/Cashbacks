@@ -43,8 +43,8 @@ object LocalDateConverter {
 
     @TypeConverter
     fun convertStringToLocalDate(string: String): LocalDate = try {
-        string.parseToDate()
+        LocalDate.parse(string, format)
     } catch (_: IllegalArgumentException) {
-        string.let { LocalDate.parse(it, format) }
+        string.parseToDate()
     }
 }
