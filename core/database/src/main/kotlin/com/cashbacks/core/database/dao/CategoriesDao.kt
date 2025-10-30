@@ -12,10 +12,10 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface CategoriesDao {
 
-    @Insert(onConflict = OnConflictStrategy.Companion.IGNORE)
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun addCategory(category: CategoryEntity): Long?
 
-    @Update(entity = CategoryEntity::class, onConflict = OnConflictStrategy.Companion.REPLACE)
+    @Update(entity = CategoryEntity::class, onConflict = OnConflictStrategy.REPLACE)
     suspend fun updateCategory(category: CategoryEntity)
 
     @Delete
