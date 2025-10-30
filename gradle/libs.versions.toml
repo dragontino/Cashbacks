@@ -18,7 +18,7 @@ compose-bom = "2025.10.00"
 activity-compose = "1.11.0"
 compose-navigation = "2.9.5"
 
-room = "2.8.2"
+room = "2.8.3"
 dagger = "2.57.2"
 koin = "4.1.1"
 mvikotlin = "4.3.0"
