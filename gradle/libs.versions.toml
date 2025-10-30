@@ -19,6 +19,7 @@ activity-compose = "1.11.0"
 compose-navigation = "2.9.5"
 
 room = "2.8.3"
+sqlcipher = "4.5.4"
 dagger = "2.57.2"
 koin = "4.1.1"
 mvikotlin = "4.3.0"
@@ -69,11 +70,12 @@ compose-material3 = { group = "androidx.compose.material3", name = "material3-an
 compose-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
 
-# Room
+# Db
 room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
 room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
 room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
 room-testing = { group = "androidx.room", name = "room-testing", version.ref = "room" }
+zetetic-sqlcipher = { group = "net.zetetic", name = "android-database-sqlcipher", version.ref = "sqlcipher" }
 
 # Retrofit
 squareup-retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }

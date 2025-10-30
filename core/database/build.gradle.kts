@@ -57,6 +57,8 @@ dependencies {
     implementation(libs.room.ktx)
     ksp(libs.room.compiler)
 
+    implementation(libs.zetetic.sqlcipher)
+
     implementation(libs.koin.android)
     implementation(libs.kotlinx.datetime)
     implementation(libs.kotlinx.serialization.json)
