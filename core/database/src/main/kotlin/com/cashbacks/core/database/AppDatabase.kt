@@ -6,6 +6,7 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import androidx.sqlite.db.SupportSQLiteOpenHelper
 import com.cashbacks.core.database.dao.CardsDao
 import com.cashbacks.core.database.dao.CashbacksDao
 import com.cashbacks.core.database.dao.CategoriesDao
@@ -49,7 +50,7 @@ abstract class AppDatabase : RoomDatabase() {
         @Volatile
         private var INSTANCE: AppDatabase? = null
 
-        fun getDatabase(context: Context): AppDatabase {
+        fun getDatabase(context: Context, factory: SupportSQLiteOpenHelper.Factory): AppDatabase {
             val tmpInstance = INSTANCE
             if (tmpInstance != null) {
                 return tmpInstance
@@ -62,6 +63,7 @@ abstract class AppDatabase : RoomDatabase() {
                         klass = AppDatabase::class.java,
                         name = "SalesDatabase.db"
                     )
+                    .openHelperFactory(factory)
                     .build()
 
                 INSTANCE = instance

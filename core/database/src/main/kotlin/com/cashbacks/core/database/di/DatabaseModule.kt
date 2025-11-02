@@ -1,6 +1,9 @@
 package com.cashbacks.core.database.di
 
+import androidx.sqlite.db.SupportSQLiteOpenHelper
 import com.cashbacks.core.database.AppDatabase
+import com.cashbacks.core.database.encryption.SqlCipherKeyManager
+import org.koin.android.ext.koin.androidApplication
 import org.koin.android.ext.koin.androidContext
 import org.koin.dsl.module
 
@@ -26,6 +29,10 @@ val DatabaseModule = module {
     }
 
     single {
-        AppDatabase.getDatabase(androidContext())
+        AppDatabase.getDatabase(androidContext(), get())
+    }
+
+    single<SupportSQLiteOpenHelper.Factory> {
+        SqlCipherKeyManager(androidApplication()).getSupportFactory()
     }
 }
