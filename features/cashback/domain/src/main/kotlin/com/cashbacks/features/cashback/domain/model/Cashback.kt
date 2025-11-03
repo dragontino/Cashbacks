@@ -1,5 +1,6 @@
 package com.cashbacks.features.cashback.domain.model
 
+import com.cashbacks.common.utils.jumpToTheLastDayOfMonth
 import com.cashbacks.common.utils.now
 import com.cashbacks.features.bankcard.domain.model.BasicBankCard
 import kotlinx.datetime.LocalDate
@@ -24,7 +25,7 @@ data class BasicCashback(
     override val amount: String,
     override val measureUnit: MeasureUnit = MeasureUnit.Percent,
     override val startDate: LocalDate? = LocalDate.now(),
-    override val expirationDate: LocalDate? = null,
+    override val expirationDate: LocalDate? = startDate?.jumpToTheLastDayOfMonth(),
     override val comment: String = ""
 ) : Cashback()
 
@@ -37,7 +38,7 @@ data class FullCashback(
     override val amount: String,
     override val measureUnit: MeasureUnit = MeasureUnit.Percent,
     override val startDate: LocalDate? = LocalDate.now(),
-    override val expirationDate: LocalDate? = null,
+    override val expirationDate: LocalDate? = startDate?.jumpToTheLastDayOfMonth(),
     override val comment: String = ""
 ) : Cashback() {
     constructor(basicCashback: BasicCashback, owner: CashbackOwner) : this(

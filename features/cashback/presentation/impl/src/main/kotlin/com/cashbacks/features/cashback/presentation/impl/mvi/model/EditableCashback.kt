@@ -1,6 +1,7 @@
 package com.cashbacks.features.cashback.presentation.impl.mvi.model
 
 import androidx.compose.runtime.Immutable
+import com.cashbacks.common.utils.jumpToTheLastDayOfMonth
 import com.cashbacks.common.utils.now
 import com.cashbacks.features.bankcard.domain.model.BasicBankCard
 import com.cashbacks.features.cashback.domain.model.CashbackOwner
@@ -32,7 +33,7 @@ internal data class EditableCashback(
         amount = "",
         measureUnit = MeasureUnit.Percent,
         startDate = LocalDate.now(),
-        expirationDate = null,
+        expirationDate = LocalDate.now().jumpToTheLastDayOfMonth(),
         comment = ""
     )
 

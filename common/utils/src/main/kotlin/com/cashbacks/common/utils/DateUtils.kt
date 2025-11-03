@@ -2,6 +2,7 @@ package com.cashbacks.common.utils
 
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.Month
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.daysUntil
@@ -10,6 +11,7 @@ import kotlinx.datetime.format.DateTimeFormatBuilder
 import kotlinx.datetime.format.char
 import kotlinx.datetime.toJavaLocalDate
 import kotlinx.datetime.toLocalDateTime
+import java.time.Year
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import kotlin.time.Clock
@@ -110,4 +112,13 @@ fun LocalDate.Companion.now(timeZone: TimeZone = TimeZone.currentSystemDefault()
 @OptIn(ExperimentalTime::class)
 fun LocalDateTime.Companion.now(timeZone: TimeZone = TimeZone.currentSystemDefault()): LocalDateTime {
     return Clock.System.now().toLocalDateTime(timeZone)
+}
+
+fun LocalDate.jumpToTheLastDayOfMonth(): LocalDate {
+    val day = when (month) {
+        Month.FEBRUARY -> if (Year.isLeap(year.toLong())) 29 else 28
+        Month.APRIL, Month.JUNE, Month.SEPTEMBER, Month.NOVEMBER -> 30
+        else -> 31
+    }
+    return LocalDate(year, month, day)
 }
