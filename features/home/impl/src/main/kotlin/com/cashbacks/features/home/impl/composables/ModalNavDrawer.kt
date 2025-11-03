@@ -1,5 +1,6 @@
 package com.cashbacks.features.home.impl.composables
 
+import android.graphics.BitmapFactory
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
@@ -23,19 +24,27 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.cashbacks.common.composables.ModalSheetDefaults
 import com.cashbacks.common.composables.utils.animate
 import com.cashbacks.common.resources.AppInfo
-import com.cashbacks.features.home.impl.R
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 @Composable
 internal fun ModalNavigationDrawerContent(
@@ -80,6 +89,15 @@ private fun NavHeader(
     appInfo: AppInfo,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
+    var appImageBitmap: ImageBitmap? by remember { mutableStateOf(null) }
+    LaunchedEffect(Unit) {
+        withContext(Dispatchers.IO) {
+            val appImage = context.assets.open("icon.png")
+            appImageBitmap = BitmapFactory.decodeStream(appImage).asImageBitmap()
+        }
+    }
+
     Column(
         modifier = Modifier
             .background(
@@ -94,15 +112,16 @@ private fun NavHeader(
             .fillMaxWidth(),
         horizontalAlignment = Alignment.Start
     ) {
-
-        Image(
-            painter = painterResource(R.drawable.icon),
-            contentDescription = "navigation header",
-            alignment = Alignment.Center,
-            modifier = Modifier
-                .size(100.dp)
-                .align(Alignment.CenterHorizontally)
-        )
+        appImageBitmap?.let {
+            Image(
+                bitmap = it,
+                contentDescription = "navigation header",
+                alignment = Alignment.Center,
+                modifier = Modifier
+                    .size(100.dp)
+                    .align(Alignment.CenterHorizontally)
+            )
+        }
 
         Spacer(modifier = Modifier.height(15.dp))
         Text(

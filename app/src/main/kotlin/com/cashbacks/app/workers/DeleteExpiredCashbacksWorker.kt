@@ -144,7 +144,7 @@ class DeleteExpiredCashbacksWorker(
 
         return Notification.Builder(applicationContext, channel.id)
             .setSmallIcon(com.cashbacks.common.resources.R.drawable.cashback_filled)
-            .setLargeIcon(Icon.createWithResource(applicationContext, R.drawable.icon))
+            .setLargeIcon(Icon.createWithResource(applicationContext, R.mipmap.ic_app_icon))
             .setContentTitle(applicationContext.getString(R.string.activity_name))
             .setContentText(message)
             .let {

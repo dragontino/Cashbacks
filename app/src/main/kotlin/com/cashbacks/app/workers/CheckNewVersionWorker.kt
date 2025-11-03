@@ -174,7 +174,7 @@ class CheckNewVersionWorker(
         return NotificationCompat.Builder(applicationContext, channel.id)
             .setSmallIcon(com.cashbacks.common.resources.R.drawable.cashback_filled)
             .setLargeIcon(
-                BitmapFactory.decodeResource(applicationContext.resources, R.drawable.icon)
+                BitmapFactory.decodeResource(applicationContext.resources, R.mipmap.ic_app_icon_foreground)
             )
             .setContentTitle(title)
             .setContentText(message)
