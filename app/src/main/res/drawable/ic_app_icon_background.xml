@@ -6,7 +6,7 @@
     <gradient
         android:type="radial"
         android:startColor="@color/wallet"
-        android:endColor="?attr/backgroundColor"
+        android:endColor="@color/white"
         android:gradientRadius="70%"
         />
 
