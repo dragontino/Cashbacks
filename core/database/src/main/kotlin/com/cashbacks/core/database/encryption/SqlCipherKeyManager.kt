@@ -45,25 +45,10 @@ internal class SqlCipherKeyManager(context: Context) {
         val encryptedPhrase = preferences.getString(PASSPHRASE_KEY, null).orEmpty().decodeBase64()
         val iv = preferences.getString(IV_KEY, null).orEmpty().decodeBase64()
         val passphrase = encryptionHelper.decryptPass(EncryptionData(encryptedPhrase, iv))
-        return DisposableKeySupportFactory(passphrase)
+        return SupportFactory(passphrase)
     }
 
 
     private fun String.decodeBase64(): ByteArray = Base64.decode(this, Base64.NO_WRAP)
     private fun ByteArray.encodeBase64(): String = Base64.encodeToString(this, Base64.NO_WRAP)
-}
-
-
-
-private class DisposableKeySupportFactory(
-    private val passphrase: ByteArray
-) : SupportSQLiteOpenHelper.Factory {
-
-    private val supportFactory = SupportFactory(passphrase)
-
-    override fun create(configuration: SupportSQLiteOpenHelper.Configuration): SupportSQLiteOpenHelper {
-        val helper = supportFactory.create(configuration)
-        passphrase.fill(0)
-        return helper
-    }
 }
