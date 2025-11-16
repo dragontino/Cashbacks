@@ -15,6 +15,9 @@ interface CategoriesDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun addCategory(category: CategoryEntity): Long?
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(categories: List<CategoryEntity>)
+
     @Update(entity = CategoryEntity::class, onConflict = OnConflictStrategy.REPLACE)
     suspend fun updateCategory(category: CategoryEntity)
 
@@ -43,6 +46,10 @@ interface CategoriesDao {
         """
     )
     fun fetchCategoriesWithCashback(): Flow<List<CategoryEntity>>
+
+
+    @Query("SELECT * FROM Categories")
+    suspend fun getAll(): List<CategoryEntity>
 
 
     @Query(

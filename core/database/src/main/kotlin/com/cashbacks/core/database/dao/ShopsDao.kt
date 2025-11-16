@@ -16,6 +16,9 @@ interface ShopsDao {
     @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun addShop(shop: ShopEntity): Long
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(shops: List<ShopEntity>)
+
     @Query(
         """
             SELECT COUNT(name) 
@@ -55,6 +58,10 @@ interface ShopsDao {
         """
     )
     fun fetchCategoryShopsWithCashback(): Flow<List<CategoryShopEntity>>
+
+
+    @Query("SELECT * FROM Shops")
+    suspend fun getAll(): List<ShopEntity>
 
 
     @Query(

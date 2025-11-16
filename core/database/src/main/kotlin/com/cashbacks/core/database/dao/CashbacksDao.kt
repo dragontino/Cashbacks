@@ -16,6 +16,9 @@ interface CashbacksDao {
     @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun addCashback(cashback: CashbackEntity): Long
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(cashbacks: List<CashbackEntity>)
+
     @Update(onConflict = OnConflictStrategy.ABORT)
     suspend fun updateCashback(cashback: CashbackEntity): Int
 
@@ -144,6 +147,10 @@ interface CashbacksDao {
         """
     )
     suspend fun searchCashbacks(query: String): List<FullCashbackEntity>
+
+
+    @Query("SELECT * FROM Cashbacks")
+    suspend fun getAll(): List<CashbackEntity>
 
 
     @Query("DELETE FROM Cashbacks WHERE id = :id")
