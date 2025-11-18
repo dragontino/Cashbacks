@@ -3,7 +3,6 @@ package com.cashbacks.core.database
 import android.content.Context
 import androidx.room.AutoMigration
 import androidx.room.Database
-import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import androidx.sqlite.db.SupportSQLiteOpenHelper
@@ -17,6 +16,7 @@ import com.cashbacks.core.database.entity.CashbackEntity
 import com.cashbacks.core.database.entity.CategoryEntity
 import com.cashbacks.core.database.entity.SettingsEntity
 import com.cashbacks.core.database.entity.ShopEntity
+import com.cashbacks.core.database.utils.DatabaseHelper
 
 @Database(
     entities = [
@@ -50,22 +50,14 @@ abstract class AppDatabase : RoomDatabase() {
         @Volatile
         private var INSTANCE: AppDatabase? = null
 
-        fun getDatabase(context: Context, factory: SupportSQLiteOpenHelper.Factory): AppDatabase {
+        internal fun getDatabase(context: Context, factory: SupportSQLiteOpenHelper.Factory): AppDatabase {
             val tmpInstance = INSTANCE
             if (tmpInstance != null) {
                 return tmpInstance
             }
 
             synchronized(this) {
-                val instance = Room
-                    .databaseBuilder(
-                        context = context.applicationContext,
-                        klass = AppDatabase::class.java,
-                        name = "SalesDatabase.db"
-                    )
-                    .openHelperFactory(factory)
-                    .build()
-
+                val instance = DatabaseHelper.buildEncryptedDatabase(context, factory)
                 INSTANCE = instance
                 return instance
             }
