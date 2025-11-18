@@ -64,3 +64,8 @@ abstract class AppDatabase : RoomDatabase() {
         }
     }
 }
+
+
+fun AppDatabase(context: Context, factory: SupportSQLiteOpenHelper.Factory): AppDatabase {
+    return AppDatabase.getDatabase(context, factory)
+}

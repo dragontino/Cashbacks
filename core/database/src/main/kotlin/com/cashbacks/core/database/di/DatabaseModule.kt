@@ -29,7 +29,7 @@ val DatabaseModule = module {
     }
 
     single {
-        AppDatabase.getDatabase(androidContext(), get())
+        AppDatabase(androidContext(), get())
     }
 
     single<SupportSQLiteOpenHelper.Factory> {
