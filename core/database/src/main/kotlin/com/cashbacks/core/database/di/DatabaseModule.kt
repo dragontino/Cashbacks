@@ -1,7 +1,9 @@
 package com.cashbacks.core.database.di
 
 import androidx.sqlite.db.SupportSQLiteOpenHelper
+import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory
 import com.cashbacks.core.database.AppDatabase
+import com.cashbacks.core.database.BuildConfig
 import com.cashbacks.core.database.encryption.SqlCipherKeyManager
 import com.cashbacks.core.database.utils.DatabaseHelper
 import com.cashbacks.core.database.utils.DatabaseMigrator
@@ -41,7 +43,10 @@ val DatabaseModule = module {
     }
 
     single<SupportSQLiteOpenHelper.Factory> {
-        SqlCipherKeyManager(androidApplication()).getSupportFactory()
+        when {
+            BuildConfig.DEBUG -> FrameworkSQLiteOpenHelperFactory()
+            else -> SqlCipherKeyManager(androidApplication()).getSupportFactory()
+        }
     }
 
     single<DatabaseMigrator> {
