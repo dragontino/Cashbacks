@@ -24,9 +24,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -133,24 +138,29 @@ class MainActivity : ComponentActivity() {
     
     @Composable
     private fun MainScreen(modifier: Modifier = Modifier) {
+        var isMigratingDatabase by rememberSaveable {
+            mutableStateOf(databaseMigrator.needToMigrate())
+        }
+
+        LaunchedEffect(Unit) {
+            if (isMigratingDatabase) {
+                do {
+                    val result = databaseMigrator.migrate().onFailure {
+                        it.localizedMessage?.let(::showSnackbar)
+                    }
+                } while (result.isFailure)
+                isMigratingDatabase = false
+            }
+        }
+
         Crossfade(
-            targetState = databaseMigrator.needToMigrate(),
+            targetState = isMigratingDatabase,
             animationSpec = loadingContentAnimationSpec(),
             modifier = modifier.fillMaxSize()
-        ) { needToMigrate ->
-
-            if (needToMigrate) {
-                LaunchedEffect(Unit) {
-                    do {
-                        val result = databaseMigrator.migrate().onFailure {
-                            it.localizedMessage?.let(::showSnackbar)
-                        }
-                    } while (result.isFailure)
-                }
-
-                DatabaseMigrateLoading()
-            } else {
-                NavHost()
+        ) { isMigrating ->
+            when {
+                isMigrating -> DatabaseMigrateLoading()
+                else -> NavHost()
             }
         }
     }
@@ -193,11 +203,17 @@ class MainActivity : ComponentActivity() {
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = modifier
                 .background(MaterialTheme.colorScheme.background.animate())
+                .padding(16.dp)
                 .fillMaxSize()
         ) {
             Loading(Modifier.scale(1.4f))
             Spacer(Modifier.padding(16.dp))
-            Text("Шифруем базу данных…")
+            Text(
+                text = stringResource(R.string.database_encryption_message),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onBackground.animate(),
+                textAlign = TextAlign.Center
+            )
         }
     }
 
