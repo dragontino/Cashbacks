@@ -17,7 +17,7 @@ interface CashbacksDao {
     suspend fun addCashback(cashback: CashbackEntity): Long
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertAll(cashbacks: List<CashbackEntity>)
+    suspend fun insertAll(cashbacks: List<CashbackEntity>): List<Long>
 
     @Update(onConflict = OnConflictStrategy.ABORT)
     suspend fun updateCashback(cashback: CashbackEntity): Int

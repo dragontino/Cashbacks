@@ -17,7 +17,7 @@ interface ShopsDao {
     suspend fun addShop(shop: ShopEntity): Long
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertAll(shops: List<ShopEntity>)
+    suspend fun insertAll(shops: List<ShopEntity>): List<Long>
 
     @Query(
         """

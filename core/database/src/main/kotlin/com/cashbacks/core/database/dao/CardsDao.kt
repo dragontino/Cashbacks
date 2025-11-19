@@ -19,7 +19,7 @@ interface CardsDao {
     suspend fun addBankCard(bankCardEntity: BankCardEntity): Long?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertAll(cards: List<BankCardEntity>)
+    suspend fun insertAll(cards: List<BankCardEntity>): List<Long>
 
     @Update(onConflict = OnConflictStrategy.IGNORE)
     suspend fun updateBankCard(bankCardEntity: BankCardEntity): Int

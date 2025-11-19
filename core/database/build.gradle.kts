@@ -33,6 +33,12 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
+    packaging {
+        resources {
+            excludes += "/META-INF/LICENSE*"
+        }
+    }
+
     kotlin {
         compilerOptions {
             jvmTarget = JvmTarget.JVM_17
@@ -71,4 +77,6 @@ dependencies {
     androidTestImplementation(libs.room.testing)
     androidTestImplementation(libs.junit.ext)
     androidTestImplementation(libs.espresso)
+    androidTestImplementation(libs.mockk.android)
+    androidTestImplementation(libs.mockk.agent)
 }
