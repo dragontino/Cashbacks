@@ -6,7 +6,6 @@ import com.cashbacks.core.database.BuildConfig
 import com.cashbacks.core.database.EncryptedDatabase
 import com.cashbacks.core.database.LegacyDatabase
 import com.cashbacks.core.database.encryption.SqlCipherKeyManager
-import com.cashbacks.core.database.utils.DatabaseHelper
 import com.cashbacks.core.database.utils.DatabaseMigrator
 import com.cashbacks.core.database.utils.DatabaseMigratorImpl
 import org.koin.android.ext.koin.androidApplication
