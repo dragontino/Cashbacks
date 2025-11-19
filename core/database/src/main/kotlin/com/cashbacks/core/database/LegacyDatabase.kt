@@ -33,7 +33,7 @@ import java.io.File
     MeasureUnitConverter::class,
     LocalDateConverter::class
 )
-abstract class LegacyDatabase : AppDatabase() {
+internal abstract class LegacyDatabase : AppDatabase() {
     companion object {
         @Volatile
         private var INSTANCE: LegacyDatabase? = null
@@ -66,6 +66,6 @@ abstract class LegacyDatabase : AppDatabase() {
 }
 
 
-fun LegacyDatabase(context: Context): LegacyDatabase {
+internal fun LegacyDatabase(context: Context): LegacyDatabase {
     return LegacyDatabase.getDatabase(context)
 }
