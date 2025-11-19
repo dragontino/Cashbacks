@@ -9,7 +9,7 @@ import androidx.work.ListenableWorker
 import androidx.work.testing.TestListenableWorkerBuilder
 import com.cashbacks.app.workers.DeleteExpiredCashbacksWorker
 import com.cashbacks.common.utils.now
-import com.cashbacks.core.database.AppDatabase
+import com.cashbacks.core.database.EncryptedDatabase
 import com.cashbacks.features.bankcard.domain.model.FullBankCard
 import com.cashbacks.features.bankcard.domain.usecase.AddBankCardUseCase
 import com.cashbacks.features.cashback.domain.model.BasicCashback
@@ -37,13 +37,13 @@ import org.koin.dsl.module
 @RunWith(AndroidJUnit4::class)
 class DeleteExpiredCashbacksTest : KoinComponent {
     private lateinit var context: Context
-    private lateinit var db: AppDatabase
+    private lateinit var db: EncryptedDatabase
 
     @Before
     fun setup() {
         context = ApplicationProvider.getApplicationContext()
 
-        db = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java)
+        db = Room.inMemoryDatabaseBuilder(context, EncryptedDatabase::class.java)
             .allowMainThreadQueries()
             .build()
 
