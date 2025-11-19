@@ -2,44 +2,44 @@ package com.cashbacks.core.database.di
 
 import androidx.sqlite.db.SupportSQLiteOpenHelper
 import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory
-import com.cashbacks.core.database.AppDatabase
 import com.cashbacks.core.database.BuildConfig
+import com.cashbacks.core.database.EncryptedDatabase
+import com.cashbacks.core.database.LegacyDatabase
 import com.cashbacks.core.database.encryption.SqlCipherKeyManager
 import com.cashbacks.core.database.utils.DatabaseHelper
 import com.cashbacks.core.database.utils.DatabaseMigrator
 import com.cashbacks.core.database.utils.DatabaseMigratorImpl
 import org.koin.android.ext.koin.androidApplication
 import org.koin.android.ext.koin.androidContext
-import org.koin.core.qualifier.qualifier
 import org.koin.dsl.module
 
 val DatabaseModule = module {
     single {
-        get<AppDatabase>().settingsDao
+        get<EncryptedDatabase>().settingsDao
     }
 
     single {
-        get<AppDatabase>().cardsDao
+        get<EncryptedDatabase>().cardsDao
     }
 
     single {
-        get<AppDatabase>().cashbacksDao
+        get<EncryptedDatabase>().cashbacksDao
     }
 
     single {
-        get<AppDatabase>().shopsDao
+        get<EncryptedDatabase>().shopsDao
     }
 
     single {
-        get<AppDatabase>().categoriesDao
+        get<EncryptedDatabase>().categoriesDao
     }
 
-    single {
-        AppDatabase(androidContext(), get())
+    single<EncryptedDatabase> {
+        EncryptedDatabase(androidContext(), get())
     }
 
-    single(qualifier = qualifier("Legacy")) {
-        DatabaseHelper.buildLegacyDatabase(androidContext())
+    single<LegacyDatabase> {
+        LegacyDatabase(androidContext())
     }
 
     single<SupportSQLiteOpenHelper.Factory> {
@@ -53,7 +53,7 @@ val DatabaseModule = module {
         DatabaseMigratorImpl(
             context = androidContext(),
             encryptedDatabase = get(),
-            legacyDbProvider = { get(qualifier("Legacy")) }
+            legacyDbProvider = { get() }
         )
     }
 }
