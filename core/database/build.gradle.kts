@@ -33,6 +33,12 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
+    packaging {
+        resources {
+            excludes += "/META-INF/LICENSE*"
+        }
+    }
+
     kotlin {
         compilerOptions {
             jvmTarget = JvmTarget.JVM_17
@@ -41,6 +47,10 @@ android {
 
     room {
         schemaDirectory("$projectDir/schemas")
+    }
+
+    buildFeatures {
+        buildConfig = true
     }
 }
 
@@ -57,6 +67,8 @@ dependencies {
     implementation(libs.room.ktx)
     ksp(libs.room.compiler)
 
+    implementation(libs.zetetic.sqlcipher)
+
     implementation(libs.koin.android)
     implementation(libs.kotlinx.datetime)
     implementation(libs.kotlinx.serialization.json)
@@ -65,4 +77,6 @@ dependencies {
     androidTestImplementation(libs.room.testing)
     androidTestImplementation(libs.junit.ext)
     androidTestImplementation(libs.espresso)
+    androidTestImplementation(libs.mockk.android)
+    androidTestImplementation(libs.mockk.agent)
 }

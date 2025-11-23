@@ -6,6 +6,7 @@
     <string name="permission_required">Permission is required for this feature to work correctly!</string>
     <string name="open_in">Open in…</string>
     <string name="download">Download</string>
+    <string name="database_encryption_message">Encrypting the database…</string>
 
     <string name="home">Home</string>
     <string name="categories_title">My categories</string>

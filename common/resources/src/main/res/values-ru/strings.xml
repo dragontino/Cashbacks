@@ -6,6 +6,7 @@
     <string name="permission_required">Для нормальной работы этой функции необходимо разрешение!</string>
     <string name="open_in">Открыть в…</string>
     <string name="download">Скачать</string>
+    <string name="database_encryption_message">Шифруем базу данных…</string>
 
     <string name="home">Главная</string>
     <string name="categories_title">Мои Категории</string>
