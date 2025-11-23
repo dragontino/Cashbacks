@@ -1,4 +1,4 @@
-name: Android build CI
+name: Build_on_develop
 
 on:
   push:
