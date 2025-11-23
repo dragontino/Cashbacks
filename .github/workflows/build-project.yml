@@ -1,10 +1,12 @@
 name: Build_on_develop
 
 on:
-  push:
-    branches: [ "develop" ]
   pull_request:
-    branches: [ "develop" ]
+    branches:
+      - "develop"
+  push:
+    branches:
+      - "develop"
 
 jobs:
   build:
@@ -16,10 +18,10 @@ jobs:
       uses: actions/setup-java@v4
       with:
         java-version: '17'
-        distribution: 'temurin'
         cache: gradle
 
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
+
     - name: Build with Gradle
       run: ./gradlew build
