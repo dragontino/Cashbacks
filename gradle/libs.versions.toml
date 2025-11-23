@@ -34,7 +34,7 @@ kotlinx-immutable-collections = "0.4.0"
 leakcanary = "2.14"
 retrofit = "3.0.0"
 uiautomator = "2.4.0-alpha06"
-mockk = "1.14.3"
+mockk = "1.14.6"
 
 [libraries]
 androidx-uiautomator = { module = "androidx.test.uiautomator:uiautomator", version.ref = "uiautomator" }
