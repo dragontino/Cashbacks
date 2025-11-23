@@ -146,7 +146,6 @@ dependencies {
     androidTestImplementation(libs.androidx.work.testing)
 
     // Compose
-    implementation(platform(libs.compose.bom))
     implementation(libs.compose.activity)
     implementation(libs.compose.navigation)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
@@ -157,7 +156,6 @@ dependencies {
     implementation(libs.compose.icons.core)
     implementation(libs.compose.icons.extended)
     implementation(libs.compose.material3)
-    androidTestImplementation(platform(libs.compose.bom))
     androidTestImplementation(libs.compose.junit4)
     debugImplementation(libs.compose.ui.tooling)
     debugImplementation(libs.compose.ui.test.manifest)

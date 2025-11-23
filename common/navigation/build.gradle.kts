@@ -37,7 +37,6 @@ dependencies {
     implementation(project(":common:utils"))
 
     implementation(libs.androidx.core)
-    implementation(platform(libs.compose.bom))
     implementation(libs.compose.runtime)
     implementation(libs.compose.navigation)
     implementation(libs.compose.ui)
