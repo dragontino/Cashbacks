@@ -4,7 +4,7 @@ import android.content.Context
 import android.util.Base64
 import androidx.core.content.edit
 import androidx.sqlite.db.SupportSQLiteOpenHelper
-import net.sqlcipher.database.SupportFactory
+import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
 import java.security.SecureRandom
 
 internal class SqlCipherKeyManager(context: Context) {
@@ -41,11 +41,13 @@ internal class SqlCipherKeyManager(context: Context) {
     }
 
 
-    fun getSupportFactory(): SupportSQLiteOpenHelper.Factory {
+    fun getOpenHelperFactory(): SupportSQLiteOpenHelper.Factory {
         val encryptedPhrase = preferences.getString(PASSPHRASE_KEY, null).orEmpty().decodeBase64()
         val iv = preferences.getString(IV_KEY, null).orEmpty().decodeBase64()
         val passphrase = encryptionHelper.decryptPass(EncryptionData(encryptedPhrase, iv))
-        return SupportFactory(passphrase)
+
+        System.loadLibrary("sqlcipher")
+        return SupportOpenHelperFactory(passphrase)
     }
 
 

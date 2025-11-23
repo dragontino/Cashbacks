@@ -30,7 +30,7 @@ internal class PassphraseEncryptionHelper {
 
     fun decryptPass(encryptionData: EncryptionData): ByteArray {
         val secretKey = getSecretKey()
-        val cipher = Cipher.getInstance("AES/GCM/NoPadding").apply {
+        val cipher = Cipher.getInstance(TRANSFORMATION).apply {
             val spec = GCMParameterSpec(128, encryptionData.iv)
             init(Cipher.DECRYPT_MODE, secretKey, spec)
         }
@@ -40,16 +40,13 @@ internal class PassphraseEncryptionHelper {
 
     private fun generateKeystoreKeyIfNeeded() {
         if (!keyStore.containsAlias(KEYSTORE_ALIAS)) {
-            val keyGenerator = KeyGenerator.getInstance(
-                KeyProperties.KEY_ALGORITHM_AES,
-                ANDROID_KEYSTORE
-            )
+            val keyGenerator = KeyGenerator.getInstance(ALGORITHM, ANDROID_KEYSTORE)
             val keyGenSpec = KeyGenParameterSpec.Builder(
                 KEYSTORE_ALIAS,
                 KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT
             )
-                .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
-                .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
+                .setBlockModes(BLOCK_MODE)
+                .setEncryptionPaddings(PADDING)
                 .build()
 
             keyGenerator.init(keyGenSpec)
