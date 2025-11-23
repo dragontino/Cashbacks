@@ -12,10 +12,13 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface CategoriesDao {
 
-    @Insert(onConflict = OnConflictStrategy.Companion.IGNORE)
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun addCategory(category: CategoryEntity): Long?
 
-    @Update(entity = CategoryEntity::class, onConflict = OnConflictStrategy.Companion.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(categories: List<CategoryEntity>): List<Long>
+
+    @Update(entity = CategoryEntity::class, onConflict = OnConflictStrategy.REPLACE)
     suspend fun updateCategory(category: CategoryEntity)
 
     @Delete
@@ -43,6 +46,10 @@ interface CategoriesDao {
         """
     )
     fun fetchCategoriesWithCashback(): Flow<List<CategoryEntity>>
+
+
+    @Query("SELECT * FROM Categories")
+    suspend fun getAll(): List<CategoryEntity>
 
 
     @Query(

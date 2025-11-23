@@ -18,6 +18,9 @@ interface CardsDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun addBankCard(bankCardEntity: BankCardEntity): Long?
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(cards: List<BankCardEntity>): List<Long>
+
     @Update(onConflict = OnConflictStrategy.IGNORE)
     suspend fun updateBankCard(bankCardEntity: BankCardEntity): Int
 
@@ -42,6 +45,9 @@ interface CardsDao {
         """
     )
     suspend fun searchBankCards(query: String): List<PrimaryBankCardEntity>
+
+    @Query("SELECT * FROM Cards")
+    suspend fun getAll(): List<BankCardEntity>
 
     @Query("SELECT * FROM Cards WHERE id = :id")
     suspend fun getBankCardById(id: Long): BankCardEntity?

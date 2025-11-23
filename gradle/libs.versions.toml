@@ -18,7 +18,8 @@ compose-bom = "2025.10.00"
 activity-compose = "1.11.0"
 compose-navigation = "2.9.5"
 
-room = "2.8.2"
+room = "2.8.3"
+sqlcipher = "4.5.4"
 dagger = "2.57.2"
 koin = "4.1.1"
 mvikotlin = "4.3.0"
@@ -33,6 +34,7 @@ kotlinx-immutable-collections = "0.4.0"
 leakcanary = "2.14"
 retrofit = "3.0.0"
 uiautomator = "2.4.0-alpha06"
+mockk = "1.14.3"
 
 [libraries]
 androidx-uiautomator = { module = "androidx.test.uiautomator:uiautomator", version.ref = "uiautomator" }
@@ -69,11 +71,12 @@ compose-material3 = { group = "androidx.compose.material3", name = "material3-an
 compose-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
 
-# Room
+# Db
 room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
 room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
 room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
 room-testing = { group = "androidx.room", name = "room-testing", version.ref = "room" }
+zetetic-sqlcipher = { group = "net.zetetic", name = "android-database-sqlcipher", version.ref = "sqlcipher" }
 
 # Retrofit
 squareup-retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
@@ -104,6 +107,8 @@ junit = { module = "junit:junit", version.ref = "junit" }
 junit-ext = { module = "androidx.test.ext:junit", version.ref = "junit-ext" }
 espresso = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espresso" }
 espresso-intents = { group = "androidx.test.espresso", name = "espresso-intents", version.ref = "espresso" }
+mockk-android = { group = "io.mockk", name = "mockk-android", version.ref = "mockk" }
+mockk-agent = { group = "io.mockk", name = "mockk-agent", version.ref = "mockk" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
