@@ -31,7 +31,7 @@ jobs:
           curl -s -X PATCH "$API" \
             -H "Authorization: Bearer $GH_TOKEN" \
             -H "Content-Type: application/json" \
-            -d "{\"name\":\"VAR_NAME\",\"value\":\"$NEXT\"}"
+            -d "{\"name\":\"$VAR_NAME\",\"value\":\"$NEXT\"}"
 
           echo "BUILD_NUMBER=$NEXT" >> "$GITHUB_ENV"
 
