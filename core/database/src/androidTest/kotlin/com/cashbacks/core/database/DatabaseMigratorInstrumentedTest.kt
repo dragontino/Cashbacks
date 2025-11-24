@@ -38,7 +38,7 @@ class DatabaseMigratorInstrumentedTest {
     fun setup() {
         context = ApplicationProvider.getApplicationContext()
 
-        val supportFactory = SqlCipherKeyManager(context).getSupportFactory()
+        val supportFactory = SqlCipherKeyManager(context).getOpenHelperFactory()
         encryptedDb = Room.inMemoryDatabaseBuilder(context, EncryptedDatabase::class.java)
             .openHelperFactory(supportFactory)
             .build()

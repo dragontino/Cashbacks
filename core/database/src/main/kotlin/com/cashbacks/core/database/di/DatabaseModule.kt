@@ -41,10 +41,10 @@ val DatabaseModule = module {
         LegacyDatabase(androidContext())
     }
 
-    single<SupportSQLiteOpenHelper.Factory> {
+    single<SupportSQLiteOpenHelper.Factory>(createdAtStart = true) {
         when {
             BuildConfig.DEBUG -> FrameworkSQLiteOpenHelperFactory()
-            else -> SqlCipherKeyManager(androidApplication()).getSupportFactory()
+            else -> SqlCipherKeyManager(androidApplication()).getOpenHelperFactory()
         }
     }
 

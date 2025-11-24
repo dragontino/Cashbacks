@@ -1,4 +1,7 @@
+
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import java.util.Properties
 
 plugins {
@@ -7,31 +10,56 @@ plugins {
     alias(libs.plugins.compose.compiler)
 }
 
+
+
+val versionMajor: Int by rootProject.extra
+val versionMinor: Int by rootProject.extra
+val versionPatch: Int by rootProject.extra
+val versionName = generateVersionName()
+val minSdkVersion: Int by rootProject.extra
+
+val localPropsPath = rootDir.resolve("local.properties")
+val properties: Properties by lazy {
+    Properties().apply {
+        localPropsPath.inputStream().use { load(it) }
+    }
+}
+
+val envBuildNumber = System.getenv("BUILD_NUMBER")?.toIntOrNull()
+val buildNumber: Int by lazy {
+    val localBuildNumber = properties.getProperty("build.number")?.toIntOrNull() ?: 0
+    return@lazy envBuildNumber ?: (localBuildNumber + 1)
+}
+
+fun generateVersionCode(): Int {
+    val versionCode = minSdkVersion * 1_000_000 + versionMajor * 10_000 + versionMinor * 100 + versionPatch
+    return versionCode
+}
+fun generateVersionName(): String {
+    return "$versionMajor.$versionMinor.$versionPatch"
+}
+
+
+
 android {
+    val compileSdkVersion: Int by rootProject.extra
+
     namespace = "com.cashbacks.app"
-    compileSdk = libs.versions.android.compileSdk.get().toInt()
+    compileSdk = compileSdkVersion
 
     defaultConfig {
         applicationId = "com.cashbacks.app"
-        minSdk = libs.versions.android.minSdk.get().toInt()
+        minSdk = minSdkVersion
         targetSdk = 36
 
-        versionName = getLocalProperty("app.version.name") ?: "1.0.0"
-        versionCode = versionName!!.split(".")[0].toInt()
+        versionName = generateVersionName()
+        versionCode = generateVersionCode()
 
-        project.base.archivesName = "Cashbacks-$versionName"
+        project.base.archivesName = "Cashbacks $versionName"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary = true
-        }
-
-        getLocalProperty("app.version.date")?.let {
-            buildConfigField(
-                type = "String",
-                name = "VERSION_DATE",
-                value = "\"$it\""
-            )
         }
     }
 
@@ -42,13 +70,27 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+
+            properties.getProperty("app.version.date")?.let {
+                buildConfigField(
+                    type = "String",
+                    name = "VERSION_DATE",
+                    value = it.padQuotes()
+                )
+            }
         }
 
         debug {
             applicationIdSuffix = ".debug"
-            getLocalProperty("debug.version.suffix")?.let {
-                versionNameSuffix = "-$it"
-            }
+            versionNameSuffix = " build $buildNumber"
+
+            val versionDate = LocalDate.now()
+            val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
+            buildConfigField(
+                type = "String",
+                name = "VERSION_DATE",
+                value = versionDate.format(formatter).padQuotes()
+            )
         }
     }
     compileOptions {
@@ -62,7 +104,7 @@ android {
             jvmTarget = JvmTarget.JVM_17
         }
     }
-    
+
     buildFeatures {
         buildConfig = true
     }
@@ -79,15 +121,41 @@ android {
     }
 }
 
-
-fun getLocalProperty(name: String): String? {
-    val propertiesFile = rootProject.file("local.properties")
-    if (propertiesFile.exists().not()) return null
-
-    val properties = Properties()
-    propertiesFile.inputStream().use { properties.load(it) }
-    return properties.getProperty(name, null)
+fun setLocalProperty(name: String, value: Any) {
+    properties.setProperty(name, value.toString())
+    localPropsPath.outputStream().use {
+        properties.store(it, null)
+    }
 }
+
+fun String.padQuotes(): String = "\"$this\""
+
+
+tasks.register("incrementLocalBuildNumber") {
+    onlyIf { envBuildNumber == null }
+
+    doLast {
+        val currentBuildNumber = properties.getProperty("build.number")?.toIntOrNull() ?: 0
+        val nextBuildNumber = currentBuildNumber + 1
+        setLocalProperty("build.number", nextBuildNumber)
+        println("build.number has been updated: $currentBuildNumber -> $nextBuildNumber")
+    }
+}
+
+tasks.whenTaskAdded {
+    if (name == "assembleDebug") {
+        dependsOn("incrementLocalBuildNumber")
+    }
+}
+
+
+tasks.register("resetLocalBuildNumber") {
+    doLast {
+        setLocalProperty("build.number", 0)
+        println("build.number reset to 0")
+    }
+}
+
 
 
 composeCompiler {
@@ -146,7 +214,6 @@ dependencies {
     androidTestImplementation(libs.androidx.work.testing)
 
     // Compose
-    implementation(platform(libs.compose.bom))
     implementation(libs.compose.activity)
     implementation(libs.compose.navigation)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
@@ -157,7 +224,6 @@ dependencies {
     implementation(libs.compose.icons.core)
     implementation(libs.compose.icons.extended)
     implementation(libs.compose.material3)
-    androidTestImplementation(platform(libs.compose.bom))
     androidTestImplementation(libs.compose.junit4)
     debugImplementation(libs.compose.ui.tooling)
     debugImplementation(libs.compose.ui.test.manifest)

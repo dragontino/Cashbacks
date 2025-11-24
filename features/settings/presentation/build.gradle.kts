@@ -56,7 +56,6 @@ dependencies {
     implementation(libs.koin.compose.navigation)
 
     // Compose
-    implementation(platform(libs.compose.bom))
     implementation(libs.compose.activity)
     implementation(libs.compose.navigation)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
@@ -77,7 +76,6 @@ dependencies {
 
     // Testing
     testImplementation(libs.junit)
-    androidTestImplementation(platform(libs.compose.bom))
     androidTestImplementation(libs.compose.junit4)
     androidTestImplementation(libs.junit.ext)
     androidTestImplementation(libs.espresso)
