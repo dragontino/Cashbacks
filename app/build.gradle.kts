@@ -33,7 +33,6 @@ val buildNumber: Int by lazy {
 
 fun generateVersionCode(): Int {
     val versionCode = minSdkVersion * 1_000_000 + versionMajor * 10_000 + versionMinor * 100 + versionPatch
-    project.logger.debug("versionCode", versionCode)
     return versionCode
 }
 fun generateVersionName(): String {
