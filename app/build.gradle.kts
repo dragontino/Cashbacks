@@ -18,7 +18,7 @@ val versionPatch: Int by rootProject.extra
 val versionName = generateVersionName()
 val minSdkVersion: Int by rootProject.extra
 
-val localPropsPath = rootDir.resolve("local.properties")
+val localPropsPath by lazy { rootDir.resolve("local.properties") }
 val properties: Properties by lazy {
     Properties().apply {
         localPropsPath.inputStream().use { load(it) }
@@ -27,8 +27,9 @@ val properties: Properties by lazy {
 
 val envBuildNumber = System.getenv("BUILD_NUMBER")?.toIntOrNull()
 val buildNumber: Int by lazy {
-    val localBuildNumber = properties.getProperty("build.number")?.toIntOrNull() ?: 0
-    return@lazy envBuildNumber ?: (localBuildNumber + 1)
+    return@lazy envBuildNumber
+        ?: properties.getProperty("build.number")?.toIntOrNull()?.plus(1)
+        ?: 1
 }
 
 fun generateVersionCode(): Int {
