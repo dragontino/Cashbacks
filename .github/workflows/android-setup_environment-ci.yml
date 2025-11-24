@@ -1,0 +1,41 @@
+name: Android_setup_environment_variables_on_develop
+
+on:
+  pull_request:
+    branches:
+      - "develop"
+  push:
+    branches:
+      - "develop"
+
+jobs:
+  setup-environment:
+    name: Update version number
+    runs-on: ubuntu-latest
+
+    env:
+      REPO_OWNER: ${{ github.repository_owner }}
+      REPO_NAME: ${{ github.event.repository.name }}
+
+    steps:
+      - name: Increment repo BUILD_NUMBER variable
+        env:
+          GH_TOKEN: ${{ secrets.PAT_UPDATE_VARS }}
+        run: |
+          VAR_NAME="BUILD_NUMBER"
+          API="https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/actions/variables/$VAR_NAME"
+
+          CURRENT=$(curl -s -H "Authorization: Bearer $GH_TOKEN" "$API" | jq -r .value)
+          NEXT=$((CURRENT+1))
+
+          curl -s -X PATCH "$API" \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "{\"name\":\"VAR_NAME\",\"value\":\"$NEXT\"}"
+
+          echo "BUILD_NUMBER=$NEXT" >> "$GITHUB_ENV"
+
+      - name: Set up app url
+        run: |
+          API="https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/"
+          echo "REPOS_URL=$API" >> "$GITHUB_ENV"
