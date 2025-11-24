@@ -1,4 +1,4 @@
-name: Android_setup_environment_variables_on_develop
+name: Android build and test project on develop
 
 on:
   pull_request:
@@ -39,3 +39,33 @@ jobs:
         run: |
           API="https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/"
           echo "REPOS_URL=$API" >> "$GITHUB_ENV"
+  build:
+    needs: setup-environment
+    name: Build project
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: set up JDK
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        cache: gradle
+
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+
+    - name: Build with Gradle
+      run: ./gradlew clean build
+
+  unit-test:
+    needs: build
+    name: Run unit tests on PR in develop
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Run unit tests
+        run: ./gradlew test
