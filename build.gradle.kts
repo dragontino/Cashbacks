@@ -9,3 +9,12 @@ plugins {
     alias(libs.plugins.compose.compiler) apply false
     alias(libs.plugins.androidx.room) apply false
 }
+
+
+ext {
+    this["versionMajor"] = 2
+    this["versionMinor"] = 0
+    this["versionPatch"] = 0
+    this["minSdkVersion"] = 27
+    this["compileSdkVersion"] = 36
+}
