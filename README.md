@@ -1,6 +1,6 @@
 # Cashbacks
 
-[![Build and test application](https://github.com/dragontino/Cashbacks/actions/workflows/android-develop-ci.yml/badge.svg?branch=ci-branch)](https://github.com/dragontino/Cashbacks/actions/workflows/android-develop-ci.yml)
+[![Build and test application](https://github.com/dragontino/Cashbacks/actions/workflows/android-ci.yml/badge.svg?branch=develop)](https://github.com/dragontino/Cashbacks/actions/workflows/android-develop-ci.yml)
 
 Android-приложение для хранения кешбэков, скидок и банковских карт.
 Приложение позволяет удобно добавлять, просматривать, редактировать и удалять кешбэки, которые предлагают вам разные банки.
