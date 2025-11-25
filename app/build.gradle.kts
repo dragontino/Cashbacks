@@ -26,13 +26,15 @@ val envBuildNumber = System.getenv("BUILD_NUMBER")
     ?.toIntOrNull()
 
 val properties: Properties? by lazy {
-    when (envBuildNumber) {
-        null -> Properties().apply {
-            localPropsPath.inputStream().use { load(it) }
-        }
+    runCatching {
+        when (envBuildNumber) {
+            null -> Properties().apply {
+                localPropsPath.inputStream().use { load(it) }
+            }
 
-        else -> null
-    }
+            else -> null
+        }
+    }.getOrNull()
 }
 
 val buildNumber: Int by lazy {
