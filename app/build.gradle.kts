@@ -58,7 +58,7 @@ android {
     defaultConfig {
         applicationId = "com.cashbacks.app"
         minSdk = minSdkVersion
-        targetSdk = 36
+        targetSdk = rootProject.extra["targetSdkVersion"] as Int
 
         versionName = generateVersionName()
         versionCode = generateVersionCode()

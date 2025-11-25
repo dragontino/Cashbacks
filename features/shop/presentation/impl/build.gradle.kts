@@ -7,10 +7,10 @@ plugins {
 
 android {
     namespace = "com.cashbacks.features.shop.presentation.impl"
-    compileSdk = libs.versions.android.compileSdk.get().toInt()
+    compileSdk = rootProject.extra["compileSdkVersion"] as Int
 
     defaultConfig {
-        minSdk = libs.versions.android.minSdk.get().toInt()
+        minSdk = rootProject.extra["minSdkVersion"] as Int
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")

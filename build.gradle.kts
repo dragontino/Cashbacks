@@ -18,4 +18,5 @@ ext {
     this["versionPatch"] = 0
     this["minSdkVersion"] = 27
     this["compileSdkVersion"] = 36
+    this["targetSdkVersion"] = 36
 }

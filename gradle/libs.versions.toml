@@ -1,7 +1,4 @@
 [versions]
-android-minSdk = "27"
-android-compileSdk = "36"
-
 agp = "8.13.1"
 androidx-core = "1.17.0"
 androidx-lifecycle = "2.10.0"
