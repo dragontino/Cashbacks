@@ -1,4 +1,4 @@
-name: Android build and test project on develop
+name: Android build and test project
 
 on:
   pull_request:
@@ -12,7 +12,7 @@ on:
 
 jobs:
   setup-environment:
-    name: Update version number
+    name: Setup environment variables
     runs-on: ubuntu-latest
 
     env:
@@ -37,7 +37,7 @@ jobs:
 
           echo "BUILD_NUMBER=$NEXT" >> "$GITHUB_ENV"
 
-      - name: Set up app url
+      - name: Setup app url
         run: |
           API="https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/"
           echo "REPOS_URL=$API" >> "$GITHUB_ENV"
@@ -66,9 +66,9 @@ jobs:
 
   unit-test:
     needs: build
-    name: Run unit tests on PR in develop
+    name: Run unit tests
     runs-on: ubuntu-latest
 
     steps:
       - name: Run unit tests
-        run: ./gradlew test
+        run: ./gradlew clean test
