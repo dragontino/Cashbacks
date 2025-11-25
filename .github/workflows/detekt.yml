@@ -37,15 +37,3 @@ jobs:
           name: detekt-report
           path: build/reports/detekt/
           retention-days: 7
-
-      - name: Annotate PR with Detekt results
-        if: failure() && github.event_name == 'pull_request'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: '❌ Detekt check failed. Please review the code quality issues.'
-            })
