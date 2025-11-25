@@ -48,6 +48,7 @@ kotlinx-collections-immutable = { group = "org.jetbrains.kotlinx", name = "kotli
 opencsv = { group = "com.opencsv", name = "opencsv", version.ref = "csv" }
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
+detekt-formatting = { group = "io.gitlab.arturbosch.detekt", name = "detekt-formatting", version.ref = "detekt" }
 
 robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }
 tools-desugaring = { group = "com.android.tools", name = "desugar_jdk_libs", version.ref = "desugaring" }

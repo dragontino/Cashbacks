@@ -129,6 +129,15 @@ android {
     }
 }
 
+
+detekt {
+    buildUponDefaultConfig = true
+    allRules = false
+    config.setFrom("$projectDir/config/detekt/detekt.yml")
+    baseline = file("$projectDir/config/detekt/baseline.xml")
+}
+
+
 fun setLocalProperty(name: String, value: Any) {
     properties?.setProperty(name, value.toString())
     localPropsPath.outputStream().use {
@@ -161,6 +170,14 @@ tasks.register("resetLocalBuildNumber") {
     doLast {
         setLocalProperty("build.number", 0)
         println("build.number reset to 0")
+    }
+}
+
+
+tasks.withType<Detekt>().configureEach {
+    reports {
+        html.required = true
+        md.required = true
     }
 }
 
@@ -268,4 +285,6 @@ dependencies {
     implementation(libs.mvikotlin.coroutines)
     implementation(libs.mvikotlin.logging)
     implementation(libs.mvikotlin.timetravel)
+
+    detektPlugins(libs.detekt.formatting)
 }
