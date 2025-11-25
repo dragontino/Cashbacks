@@ -1,4 +1,5 @@
-
+import io.gitlab.arturbosch.detekt.Detekt
+import io.gitlab.arturbosch.detekt.DetektCreateBaselineTask
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -8,6 +9,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.compose.compiler)
+    alias(libs.plugins.detekt)
 }
 
 
@@ -160,6 +162,15 @@ tasks.register("resetLocalBuildNumber") {
         setLocalProperty("build.number", 0)
         println("build.number reset to 0")
     }
+}
+
+
+tasks.withType<Detekt>().configureEach {
+    jvmTarget = "17"
+}
+
+tasks.withType<DetektCreateBaselineTask>().configureEach {
+    jvmTarget = "17"
 }
 
 
