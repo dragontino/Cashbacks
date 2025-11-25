@@ -21,7 +21,9 @@ val versionName = generateVersionName()
 val minSdkVersion: Int by rootProject.extra
 
 val localPropsPath by lazy { rootDir.resolve("local.properties") }
-val envBuildNumber = System.getenv("BUILD_NUMBER")?.toIntOrNull()
+val envBuildNumber = System.getenv("BUILD_NUMBER")
+    .also { println("variable = $it") }
+    ?.toIntOrNull()
 
 val properties: Properties? by lazy {
     when (envBuildNumber) {
