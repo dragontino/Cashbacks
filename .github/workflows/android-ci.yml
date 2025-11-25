@@ -25,7 +25,7 @@ jobs:
           GH_TOKEN: ${{ secrets.PAT_UPDATE_VARS }}
         run: |
           VAR_NAME="BUILD_NUMBER"
-          API="https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/actions/variables/$VAR_NAME"
+          API="https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/actions/variables/$VAR_NAME/"
 
           CURRENT=$(curl -s -H "Authorization: Bearer $GH_TOKEN" "$API" | jq -r .value)
           NEXT=$((CURRENT+1))
@@ -35,16 +35,16 @@ jobs:
             -H "Content-Type: application/json" \
             -d "{\"name\":\"$VAR_NAME\",\"value\":\"$NEXT\"}"
 
-          echo "BUILD_NUMBER=$NEXT" >> "$GITHUB_ENV"
+          echo "build.number=$NEXT" >> local.properties
 
       - name: Setup app url
         run: |
           API="https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/"
-          echo "REPOS_URL=$API" >> "$GITHUB_ENV"
+          echo "app.repos.url=$API" >> local.properties
 
   build:
-    needs: setup-environment
     name: Build project
+    needs: setup-environment
     runs-on: ubuntu-latest
 
     steps:
@@ -55,14 +55,21 @@ jobs:
       uses: actions/setup-java@v4
       with:
         java-version: '17'
-        distribution: 'temurin'
+        distribution: "temurin"
         cache: gradle
 
-    - name: Grant execute permission for gradlew
-      run: chmod +x gradlew
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v5
 
     - name: Build with Gradle
-      run: ./gradlew clean build
+      run: ./gradlew clean build --scan
+
+    - name: Upload build reports
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: build-reports
+        path: /build/reports/
 
   unit-test:
     needs: build

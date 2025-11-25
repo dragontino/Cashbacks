@@ -27,12 +27,12 @@ val envBuildNumber = System.getenv("BUILD_NUMBER")
 
 val properties: Properties? by lazy {
     runCatching {
-        when (envBuildNumber) {
-            null -> Properties().apply {
+        if (localPropsPath.exists()) {
+            Properties().apply {
                 localPropsPath.inputStream().use { load(it) }
             }
-
-            else -> null
+        } else {
+            null
         }
     }.getOrNull()
 }
