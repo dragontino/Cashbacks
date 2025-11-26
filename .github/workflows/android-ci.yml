@@ -51,6 +51,11 @@ jobs:
           API="https://api.github.com/repos/$REPO_OWNER/$REPO_NAME"
           echo "app.repos.url=$API/" >> local.properties
 
+      - name: Setup app version date
+        run: |
+          CURR_DATE = $(date +"%d/%m/%y")
+          echo "app.version.date=$CURR_DATE" >> local.properties
+
       - name: set up JDK
         uses: actions/setup-java@v4
         with:
