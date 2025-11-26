@@ -12,7 +12,7 @@ on:
 
 jobs:
   build-project:
-    name: Setup environment variables
+    name: Setup environment and build
     runs-on: ubuntu-latest
 
     env:
