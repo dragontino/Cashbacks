@@ -34,7 +34,7 @@ jobs:
           GH_TOKEN: ${{ secrets.PAT_UPDATE_VARS }}
         run: |
           VAR_NAME="BUILD_NUMBER"
-          API="https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/actions/variables/$VAR_NAME/"
+          API="https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/actions/variables/$VAR_NAME"
 
           CURRENT=$(curl -s -H "Authorization: Bearer $GH_TOKEN" "$API" | jq -r .value)
           NEXT=$((CURRENT+1))
@@ -48,8 +48,8 @@ jobs:
 
       - name: Setup app url
         run: |
-          API="https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/"
-          echo "app.repos.url=$API" >> local.properties
+          API="https://api.github.com/repos/$REPO_OWNER/$REPO_NAME"
+          echo "app.repos.url=$API/" >> local.properties
 
   build:
     name: Build project
@@ -74,7 +74,7 @@ jobs:
       run: chmod +x gradlew
 
     - name: Build with Gradle
-      run: ./gradlew clean build --scan
+      run: ./gradlew build --scan
 
     - name: Upload build reports
       uses: actions/upload-artifact@v4
@@ -90,4 +90,4 @@ jobs:
 
     steps:
       - name: Run unit tests
-        run: ./gradlew clean test
+        run: ./gradlew test
