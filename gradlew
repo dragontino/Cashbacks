@@ -65,7 +65,7 @@ cygwin=false
 msys=false
 darwin=false
 nonstop=false
-case "`uname`" in
+case "$(uname)" in
   CYGWIN* )
     cygwin=true
     ;;
@@ -106,13 +106,18 @@ location of your Java installation."
 fi
 
 # Increase the maximum file descriptors if we can.
+# shellcheck disable=SC2166
 if [ "$cygwin" = "false" -a "$darwin" = "false" -a "$nonstop" = "false" ] ; then
+    # shellcheck disable=SC3045
     MAX_FD_LIMIT=$(ulimit -H -n)
+    # shellcheck disable=SC2181
     if [ $? -eq 0 ] ; then
         if [ "$MAX_FD" = "maximum" -o "$MAX_FD" = "max" ] ; then
             MAX_FD="$MAX_FD_LIMIT"
         fi
+        # shellcheck disable=SC3045
         ulimit -n "$MAX_FD"
+        # shellcheck disable=SC2181
         if [ $? -ne 0 ] ; then
             warn "Could not set maximum file descriptor limit: $MAX_FD"
         fi
@@ -127,6 +132,7 @@ if $darwin; then
 fi
 
 # For Cygwin or MSYS, switch paths to Windows format before running java
+# shellcheck disable=SC2166
 if [ "$cygwin" = "true" -o "$msys" = "true" ] ; then
     APP_HOME=$(cygpath --path --mixed "$APP_HOME")
     CLASSPATH=$(cygpath --path --mixed "$CLASSPATH")
@@ -148,16 +154,24 @@ if [ "$cygwin" = "true" -o "$msys" = "true" ] ; then
     # Now convert the arguments - kludge to limit ourselves to /bin/sh
     i=0
     for arg in "$@" ; do
-        CHECK=`echo "$arg"|egrep -c "$OURCYGPATTERN" -`
-        CHECK2=`echo "$arg"|egrep -c "^-"`                                 ### Determine if an option
+        # shellcheck disable=SC2196
+        CHECK=$(echo "$arg"|egrep -c "$OURCYGPATTERN" -)
+        # shellcheck disable=SC2196
+        CHECK2=$(echo "$arg"|egrep -c "^-")                                 ### Determine if an option
 
-        if [ $CHECK -ne 0 ] && [ $CHECK2 -eq 0 ] ; then                    ### Added a condition
+        if [ "$CHECK" -ne 0 ] && [ "$CHECK2" -eq 0 ] ; then                    ### Added a condition
+            # shellcheck disable=SC2046
+            # shellcheck disable=SC2116
             eval $(echo args"$i")=$(cygpath --path --ignore --mixed "$arg")
         else
-            eval `echo args$i`="\"$arg\""
+            # shellcheck disable=SC2046
+            # shellcheck disable=SC2116
+            eval $(echo args"$i")="\"$arg\""
         fi
-        i=$(expr $i + 1)
+        # shellcheck disable=SC2003
+        i=$(expr "$i" + 1)
     done
+    # shellcheck disable=SC2154
     case $i in
         0) set -- ;;
         1) set -- "$args0" ;;
