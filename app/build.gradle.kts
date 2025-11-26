@@ -21,26 +21,15 @@ val versionName = generateVersionName()
 val minSdkVersion: Int by rootProject.extra
 
 val localPropsPath by lazy { rootDir.resolve("local.properties") }
-val envBuildNumber = System.getenv("BUILD_NUMBER")
-    .also { println("variable = $it") }
-    ?.toIntOrNull()
 
-val properties: Properties? by lazy {
-    runCatching {
-        if (localPropsPath.exists()) {
-            Properties().apply {
-                localPropsPath.inputStream().use { load(it) }
-            }
-        } else {
-            null
-        }
-    }.getOrNull()
+val properties: Properties by lazy {
+    Properties().apply {
+        localPropsPath.inputStream().use { load(it) }
+    }
 }
 
 val buildNumber: Int by lazy {
-    return@lazy envBuildNumber
-        ?: properties?.getProperty("build.number")?.toIntOrNull()?.plus(1)
-        ?: 1
+    properties.getProperty("build.number")?.toIntOrNull()?.plus(1) ?: 1
 }
 
 fun generateVersionCode(): Int {
@@ -83,7 +72,7 @@ android {
                 "proguard-rules.pro"
             )
 
-            properties?.getProperty("app.version.date")?.let {
+            properties.getProperty("app.version.date")?.let {
                 buildConfigField(
                     type = "String",
                     name = "VERSION_DATE",
@@ -142,9 +131,9 @@ detekt {
 
 
 fun setLocalProperty(name: String, value: Any) {
-    properties?.setProperty(name, value.toString())
+    properties.setProperty(name, value.toString())
     localPropsPath.outputStream().use {
-        properties?.store(it, null)
+        properties.store(it, null)
     }
 }
 
@@ -152,10 +141,8 @@ fun String.padQuotes(): String = "\"$this\""
 
 
 tasks.register("incrementLocalBuildNumber") {
-    onlyIf { envBuildNumber == null }
-
     doLast {
-        val currentBuildNumber = properties?.getProperty("build.number")?.toIntOrNull() ?: 0
+        val currentBuildNumber = properties.getProperty("build.number")?.toIntOrNull() ?: 0
         val nextBuildNumber = currentBuildNumber + 1
         setLocalProperty("build.number", nextBuildNumber)
         println("build.number has been updated: $currentBuildNumber -> $nextBuildNumber")

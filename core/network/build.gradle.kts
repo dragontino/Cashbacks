@@ -17,7 +17,7 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
 
-        val reposUrl = System.getenv("REPOS_URL") ?: getLocalProperty("app.repos.url")
+        val reposUrl = getLocalProperty("app.repos.url")
         reposUrl?.let {
             buildConfigField(
                 type = "String",
