@@ -20,6 +20,15 @@ jobs:
       REPO_NAME: ${{ github.event.repository.name }}
 
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Ensure local.properties file
+        run: |
+          if [ ! -f local.properties ]; then
+            touch local.properties
+          fi
+
       - name: Increment repo BUILD_NUMBER variable
         env:
           GH_TOKEN: ${{ secrets.PAT_UPDATE_VARS }}
