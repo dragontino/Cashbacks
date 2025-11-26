@@ -17,7 +17,6 @@ plugins {
 val versionMajor: Int by rootProject.extra
 val versionMinor: Int by rootProject.extra
 val versionPatch: Int by rootProject.extra
-val versionName = generateVersionName()
 val minSdkVersion: Int by rootProject.extra
 
 val localPropsPath by lazy { rootDir.resolve("local.properties") }
@@ -28,8 +27,11 @@ val properties: Properties by lazy {
     }
 }
 
+val ciBuildNumber: Int? by lazy {
+    properties.getProperty("ci.build.number")?.toIntOrNull()
+}
 val buildNumber: Int by lazy {
-    properties.getProperty("build.number")?.toIntOrNull()?.plus(1) ?: 1
+    ciBuildNumber ?: (properties.getProperty("build.number").toInt() + 1)
 }
 
 fun generateVersionCode(): Int {
@@ -141,8 +143,10 @@ fun String.padQuotes(): String = "\"$this\""
 
 
 tasks.register("incrementLocalBuildNumber") {
+    onlyIf { ciBuildNumber == null }
+
     doLast {
-        val currentBuildNumber = properties.getProperty("build.number")?.toIntOrNull() ?: 0
+        val currentBuildNumber = properties.getProperty("build.number").toInt()
         val nextBuildNumber = currentBuildNumber + 1
         setLocalProperty("build.number", nextBuildNumber)
         println("build.number has been updated: $currentBuildNumber -> $nextBuildNumber")
