@@ -147,9 +147,7 @@ fun String.padQuotes(): String = "\"$this\""
 
 
 tasks.register("incrementLocalBuildNumber") {
-    onlyIf { ciBuildNumber == null }
-
-    doLast {
+    if (ciBuildNumber == null) {
         val currentBuildNumber = properties.getProperty("build.number").toInt()
         val nextBuildNumber = currentBuildNumber + 1
         setLocalProperty("build.number", nextBuildNumber)
