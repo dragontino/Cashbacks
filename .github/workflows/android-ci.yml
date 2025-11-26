@@ -11,7 +11,7 @@ on:
       - "main"
 
 jobs:
-  setup-environment:
+  build-project:
     name: Setup environment variables
     runs-on: ubuntu-latest
 
@@ -51,45 +51,36 @@ jobs:
           API="https://api.github.com/repos/$REPO_OWNER/$REPO_NAME"
           echo "app.repos.url=$API/" >> local.properties
 
-  build:
-    name: Build project
-    needs: setup-environment
-    runs-on: ubuntu-latest
+      - name: set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: "temurin"
+          cache: gradle
 
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v4
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v5
 
-    - name: set up JDK
-      uses: actions/setup-java@v4
-      with:
-        java-version: '17'
-        distribution: "temurin"
-        cache: gradle
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
 
-    - name: Setup Gradle
-      uses: gradle/actions/setup-gradle@v5
+      - name: Check local.properties exists
+        run: |
+          if [ -f local.properties ]; then
+            echo "local.properties exists!"
+          else
+            echo "local properties does not exists"
+          fi
 
-    - name: Grant execute permission for gradlew
-      run: chmod +x gradlew
+      - name: Build with Gradle
+        run: ./gradlew build --scan
 
-    - name: Check local.properties exists
-      run: |
-        if [ -f local.properties ]; then
-          echo "local.properties exists!"
-        else
-          echo "local properties does not exists"
-        fi
-
-    - name: Build with Gradle
-      run: ./gradlew build --scan
-
-    - name: Upload build reports
-      uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        name: build-reports
-        path: /build/reports/
+      - name: Upload build reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: build-reports
+          path: /build/reports/
 
   unit-test:
     needs: build
