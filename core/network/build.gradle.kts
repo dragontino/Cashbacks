@@ -18,13 +18,11 @@ android {
         consumerProguardFiles("consumer-rules.pro")
 
         val reposUrl = getLocalProperty("app.repos.url")
-        reposUrl?.let {
-            buildConfigField(
-                type = "String",
-                name = "APP_REPOS_URL",
-                value = "\"$it\""
-            )
-        }
+        buildConfigField(
+            type = "String",
+            name = "APP_REPOS_URL",
+            value = "\"$reposUrl\""
+        )
     }
 
     buildTypes {
@@ -53,10 +51,8 @@ android {
 }
 
 
-fun getLocalProperty(name: String): String? {
+fun getLocalProperty(name: String): String {
     val propertiesFile = rootProject.file("local.properties")
-    if (propertiesFile.exists().not()) return null
-
     val properties = Properties()
     propertiesFile.inputStream().use { properties.load(it) }
     return properties.getProperty(name, null)

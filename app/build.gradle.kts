@@ -64,6 +64,12 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
+
+        buildConfigField(
+            type = "String",
+            name = "BUILD_NUMBER",
+            value = buildNumber.toString().padQuotes()
+        )
     }
 
     buildTypes {
@@ -74,13 +80,11 @@ android {
                 "proguard-rules.pro"
             )
 
-            properties.getProperty("app.version.date")?.let {
-                buildConfigField(
-                    type = "String",
-                    name = "VERSION_DATE",
-                    value = it.padQuotes()
-                )
-            }
+            buildConfigField(
+                type = "String",
+                name = "VERSION_DATE",
+                value = properties.getProperty("app.version.date").padQuotes()
+            )
         }
 
         debug {
