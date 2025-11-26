@@ -30,6 +30,9 @@ jobs:
       - name: Run Detekt
         run: ./gradlew detekt
 
+      - name: Create reports directory
+        run: mkdir -p build/reports/detekt
+
       - name: Upload Detekt report
         if: always()
         uses: actions/upload-artifact@v4
