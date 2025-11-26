@@ -24,6 +24,12 @@ jobs:
           java-version: '17'
           cache: gradle
 
+      - name: Ensure local.properties file
+        run: |
+          if [ ! -f local.properties ]; then
+            touch local.properties
+          fi
+
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
