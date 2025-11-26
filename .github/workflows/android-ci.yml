@@ -53,7 +53,7 @@ jobs:
 
       - name: Setup app version date
         run: |
-          CURR_DATE = $(date +"%d/%m/%y")
+          CURR_DATE=$(date +"%d/%m/%y")
           echo "app.version.date=$CURR_DATE" >> local.properties
 
       - name: set up JDK
@@ -77,6 +77,7 @@ jobs:
         if: always()
         with:
           name: build-reports
+          path: /build/reports/
 
   unit-test:
     needs: build-project
