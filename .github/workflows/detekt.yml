@@ -37,10 +37,31 @@ jobs:
         run: chmod +x gradlew
 
       - name: Run Detekt
-        run: detekt-cli --version
+        continue-on-error: true
+        run: detekt --input ${{ github.workspace }} --report sarif:${{ github.workspace }}/detekt.sarif.json
 
       - name: Create reports directory
         run: mkdir -p build/reports/detekt
+
+      # Modifies the SARIF output produced by Detekt so that absolute URIs are relative
+      # This is so we can easily map results onto their source files
+      # This can be removed once relative URI support lands in Detekt: https://git.io/JLBbA
+      - name: Make artifact location URIs relative
+        continue-on-error: true
+        run: |
+          echo "$(
+            jq --arg github_workspace ${{ github.workspace }} \
+              '. | ( .runs[].results[].locations[].physicalLocation.artifactLocation.uri |= if test($github_workspace) then .[($github_workspace | length | . + 1):] else . end )' \
+              ${{ github.workspace }}/detekt.sarif.json
+          )" > ${{ github.workspace }}/detekt.sarif.json
+
+      # Uploads results to GitHub repository using the upload-sarif action
+      - name: Upload detekt results to GitHub
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          # Path to SARIF file relative to the root of the repository
+          sarif_file: ${{ github.workspace }}/detekt.sarif.json
+          checkout_path: ${{ github.workspace }}
 
       - name: Upload Detekt report
         if: always()
