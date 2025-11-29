@@ -39,7 +39,7 @@ jobs:
         run: chmod +x gradlew
 
       - name: Get changed Kotlin files
-        if: github.event_name == "pull_request"
+        if: github.event_name == 'pull_request'
         id: changed-files
         run: |
           BASE_SHA="${{ github.event.pull_request.base.sha }}"
@@ -57,15 +57,15 @@ jobs:
           echo "files=$FILES" >> "$GITHUB_OUTPUT"
 
       - name: Run Detekt on changed files
-        if: github.event_name == "pull_request" && steps.changed-files.outputs.has_changes == "true"
+        if: github.event_name == 'pull_request' && steps.changed-files.outputs.has_changes == 'true'
         run: ./gradlew detektChanged -PdetektChangedFiles="${{ steps.changed-files.outputs.files }}" --max-workers=4
 
       - name: Skip Detekt (no Kotlin changes)
-        if: github.event_name == 'pull_request' && steps.changed-files.outputs.has_changes != "true"
+        if: github.event_name == 'pull_request' && steps.changed-files.outputs.has_changes != 'true'
         run: echo "No Kotlin files changed, skipping Detekt."
 
       - name: Run full Detekt
-        if: github.event_name == "push"
+        if: github.event_name == 'push'
         run: ./gradlew detekt
 
       - name: Upload detekt results to GitHub
