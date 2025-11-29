@@ -1,0 +1,96 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+    <ManuallySuppressedIssues />
+    <CurrentIssues>
+        <ID>ArgumentListWrapping:CheckNewVersionWorker.kt$CheckNewVersionWorker$(TAG, "Current app
+            version is newer than on server ($currentAppVersion vs $latestAppVersion)")
+        </ID>
+        <ID>ArgumentListWrapping:DeleteExpiredCashbacksWorker.kt$DeleteExpiredCashbacksWorker$(TAG,
+            "Resource 'R.plurals.expired_cashbacks_deletion_success' isn`t found, use default
+            message")
+        </ID>
+        <ID>ArgumentListWrapping:DeleteExpiredCashbacksWorker.kt$DeleteExpiredCashbacksWorker$(TAG,
+            "There were ${expiredCashbacks.size} cashbacks to delete but $count cashbacks have been
+            deleted")
+        </ID>
+        <ID>FinalNewline:App.kt$com.cashbacks.app.app.App.kt</ID>
+        <ID>FinalNewline:AppModule.kt$com.cashbacks.app.di.modules.AppModule.kt</ID>
+        <ID>FinalNewline:ApplicationModules.kt$com.cashbacks.app.di.ApplicationModules.kt</ID>
+        <ID>
+            FinalNewline:CheckNewVersionWorker.kt$com.cashbacks.app.workers.CheckNewVersionWorker.kt
+        </ID>
+        <ID>
+            FinalNewline:DeleteExpiredCashbacksWorker.kt$com.cashbacks.app.workers.DeleteExpiredCashbacksWorker.kt
+        </ID>
+        <ID>FinalNewline:ExampleUnitTest.kt$com.cashbacks.app.ExampleUnitTest.kt</ID>
+        <ID>FinalNewline:MainActivity.kt$com.cashbacks.app.ui.MainActivity.kt</ID>
+        <ID>FinalNewline:MainViewModel.kt$com.cashbacks.app.viewmodel.MainViewModel.kt</ID>
+        <ID>FunctionNaming:MainActivity.kt$MainActivity$@Composable private fun
+            DatabaseMigrateLoading(modifier: Modifier = Modifier)
+        </ID>
+        <ID>FunctionNaming:MainActivity.kt$MainActivity$@Composable private fun MainScreen(modifier:
+            Modifier = Modifier)
+        </ID>
+        <ID>FunctionNaming:MainActivity.kt$MainActivity$@Composable private fun NavHost(modifier:
+            Modifier = Modifier)
+        </ID>
+        <ID>ImportOrdering:ExampleUnitTest.kt$import org.junit.Test import org.junit.Assert.*</ID>
+        <ID>MagicNumber:App.kt$App$15</ID>
+        <ID>MagicNumber:CheckNewVersionWorker.kt$CheckNewVersionWorker$0xff6A00</ID>
+        <ID>MagicNumber:CheckNewVersionWorker.kt$CheckNewVersionWorker$10</ID>
+        <ID>MagicNumber:CheckNewVersionWorker.kt$CheckNewVersionWorker$100</ID>
+        <ID>MagicNumber:CheckNewVersionWorker.kt$CheckNewVersionWorker$30</ID>
+        <ID>MagicNumber:CheckNewVersionWorker.kt$CheckNewVersionWorker$80</ID>
+        <ID>MagicNumber:DeleteExpiredCashbacksWorker.kt$DeleteExpiredCashbacksWorker$0xff6A00</ID>
+        <ID>MagicNumber:MainActivity.kt$MainActivity$1.4f</ID>
+        <ID>MagicNumber:MainViewModel.kt$MainViewModel$5000</ID>
+        <ID>MaxLineLength:CheckNewVersionWorker.kt$CheckNewVersionWorker$else -&gt; Log.d(TAG,
+            "Current app version is newer than on server ($currentAppVersion vs $latestAppVersion)")
+        </ID>
+        <ID>MaxLineLength:DeleteExpiredCashbacksWorker.kt$DeleteExpiredCashbacksWorker$Log.d(TAG,
+            "Resource 'R.plurals.expired_cashbacks_deletion_success' isn`t found, use default
+            message")
+        </ID>
+        <ID>MaxLineLength:DeleteExpiredCashbacksWorker.kt$DeleteExpiredCashbacksWorker$Log.d(TAG,
+            "There were ${expiredCashbacks.size} cashbacks to delete but $count cashbacks have been
+            deleted")
+        </ID>
+        <ID>MaximumLineLength:CheckNewVersionWorker.kt$CheckNewVersionWorker$</ID>
+        <ID>MaximumLineLength:DeleteExpiredCashbacksWorker.kt$DeleteExpiredCashbacksWorker$</ID>
+        <ID>NewLineAtEndOfFile:App.kt$com.cashbacks.app.app.App.kt</ID>
+        <ID>NewLineAtEndOfFile:AppModule.kt$com.cashbacks.app.di.modules.AppModule.kt</ID>
+        <ID>NewLineAtEndOfFile:ApplicationModules.kt$com.cashbacks.app.di.ApplicationModules.kt</ID>
+        <ID>
+            NewLineAtEndOfFile:CheckNewVersionWorker.kt$com.cashbacks.app.workers.CheckNewVersionWorker.kt
+        </ID>
+        <ID>
+            NewLineAtEndOfFile:DeleteExpiredCashbacksWorker.kt$com.cashbacks.app.workers.DeleteExpiredCashbacksWorker.kt
+        </ID>
+        <ID>NewLineAtEndOfFile:ExampleUnitTest.kt$com.cashbacks.app.ExampleUnitTest.kt</ID>
+        <ID>NewLineAtEndOfFile:MainActivity.kt$com.cashbacks.app.ui.MainActivity.kt</ID>
+        <ID>NewLineAtEndOfFile:MainViewModel.kt$com.cashbacks.app.viewmodel.MainViewModel.kt</ID>
+        <ID>NoBlankLineBeforeRbrace:DeleteExpiredCashbacksWorker.kt$DeleteExpiredCashbacksWorker$
+        </ID>
+        <ID>NoConsecutiveBlankLines:App.kt$App$</ID>
+        <ID>NoConsecutiveBlankLines:ApplicationModules.kt$</ID>
+        <ID>NoConsecutiveBlankLines:CheckNewVersionWorker.kt$CheckNewVersionWorker$</ID>
+        <ID>NoConsecutiveBlankLines:DeleteExpiredCashbacksWorker.kt$DeleteExpiredCashbacksWorker$
+        </ID>
+        <ID>NoConsecutiveBlankLines:MainActivity.kt$MainActivity$</ID>
+        <ID>NoTrailingSpaces:MainActivity.kt$MainActivity$</ID>
+        <ID>NoWildcardImports:ExampleUnitTest.kt$import org.junit.Assert.*</ID>
+        <ID>ReturnCount:CheckNewVersionWorker.kt$CheckNewVersionWorker$override suspend fun
+            doWork(): Result
+        </ID>
+        <ID>ReturnCount:DeleteExpiredCashbacksWorker.kt$DeleteExpiredCashbacksWorker$override
+            suspend fun doWork(): Result
+        </ID>
+        <ID>TooGenericExceptionCaught:CheckNewVersionWorker.kt$CheckNewVersionWorker$e: Throwable
+        </ID>
+        <ID>
+            TooGenericExceptionCaught:DeleteExpiredCashbacksWorker.kt$DeleteExpiredCashbacksWorker$e:
+            Throwable
+        </ID>
+        <ID>WildcardImport:ExampleUnitTest.kt$import org.junit.Assert.*</ID>
+    </CurrentIssues>
+</SmellBaseline>

@@ -1,4 +1,5 @@
-
+import io.gitlab.arturbosch.detekt.Detekt
+import io.gitlab.arturbosch.detekt.DetektCreateBaselineTask
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -8,6 +9,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.compose.compiler)
+    alias(libs.plugins.detekt)
 }
 
 
@@ -15,20 +17,21 @@ plugins {
 val versionMajor: Int by rootProject.extra
 val versionMinor: Int by rootProject.extra
 val versionPatch: Int by rootProject.extra
-val versionName = generateVersionName()
 val minSdkVersion: Int by rootProject.extra
 
-val localPropsPath = rootDir.resolve("local.properties")
+val localPropsPath by lazy { rootDir.resolve("local.properties") }
+
 val properties: Properties by lazy {
     Properties().apply {
         localPropsPath.inputStream().use { load(it) }
     }
 }
 
-val envBuildNumber = System.getenv("BUILD_NUMBER")?.toIntOrNull()
+val ciBuildNumber: Int? by lazy {
+    properties.getProperty("ci.build.number")?.toIntOrNull()
+}
 val buildNumber: Int by lazy {
-    val localBuildNumber = properties.getProperty("build.number")?.toIntOrNull() ?: 0
-    return@lazy envBuildNumber ?: (localBuildNumber + 1)
+    ciBuildNumber ?: (properties.getProperty("build.number").toInt() + 1)
 }
 
 fun generateVersionCode(): Int {
@@ -50,7 +53,7 @@ android {
     defaultConfig {
         applicationId = "com.cashbacks.app"
         minSdk = minSdkVersion
-        targetSdk = 36
+        targetSdk = rootProject.extra["targetSdkVersion"] as Int
 
         versionName = generateVersionName()
         versionCode = generateVersionCode()
@@ -61,6 +64,12 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
+
+        buildConfigField(
+            type = "String",
+            name = "BUILD_NUMBER",
+            value = buildNumber.toString().padQuotes()
+        )
     }
 
     buildTypes {
@@ -71,13 +80,11 @@ android {
                 "proguard-rules.pro"
             )
 
-            properties.getProperty("app.version.date")?.let {
-                buildConfigField(
-                    type = "String",
-                    name = "VERSION_DATE",
-                    value = it.padQuotes()
-                )
-            }
+            buildConfigField(
+                type = "String",
+                name = "VERSION_DATE",
+                value = properties.getProperty("app.version.date").padQuotes()
+            )
         }
 
         debug {
@@ -121,6 +128,62 @@ android {
     }
 }
 
+
+detekt {
+    buildUponDefaultConfig = true
+    allRules = false
+    baseline = file("$projectDir/config/detekt/baseline.xml")
+    basePath = projectDir.absolutePath
+}
+
+
+tasks.withType<Detekt>().configureEach {
+    reports {
+        html.required = true
+        md.required = true
+        sarif.required = true
+        sarif.outputLocation = file("${layout.buildDirectory}/reports/detekt/detekt.sarif")
+    }
+}
+
+
+tasks.withType<Detekt>().configureEach {
+    jvmTarget = "17"
+}
+
+
+tasks.withType<DetektCreateBaselineTask>().configureEach {
+    jvmTarget = "17"
+}
+
+tasks.register<Detekt>("detektChanged") {
+    description = "Run detekt only on changed Kotlin files"
+    parallel = true
+    buildUponDefaultConfig = true
+
+    config.setFrom(files("$projectDir/.github/workflows/detekt.yml"))
+    autoCorrect = true
+
+    val changed = (project.findProperty("detektChangedFiles") as String?)
+        ?.split(",")
+        ?.map { it.trim() }
+        ?.filter { it.isNotEmpty() }
+        .orEmpty()
+
+    source = when {
+        changed.isNotEmpty() -> project.layout.projectDirectory.asFileTree.matching {
+            include(changed)
+        }
+
+        else -> files().asFileTree
+    }
+
+    reports.sarif.required = true
+    reports.sarif.outputLocation = file("${layout.buildDirectory}/reports/detekt/detekt.sarif")
+}
+
+
+
 fun setLocalProperty(name: String, value: Any) {
     properties.setProperty(name, value.toString())
     localPropsPath.outputStream().use {
@@ -132,10 +195,8 @@ fun String.padQuotes(): String = "\"$this\""
 
 
 tasks.register("incrementLocalBuildNumber") {
-    onlyIf { envBuildNumber == null }
-
-    doLast {
-        val currentBuildNumber = properties.getProperty("build.number")?.toIntOrNull() ?: 0
+    if (ciBuildNumber == null) {
+        val currentBuildNumber = properties.getProperty("build.number").toInt()
         val nextBuildNumber = currentBuildNumber + 1
         setLocalProperty("build.number", nextBuildNumber)
         println("build.number has been updated: $currentBuildNumber -> $nextBuildNumber")
@@ -155,6 +216,9 @@ tasks.register("resetLocalBuildNumber") {
         println("build.number reset to 0")
     }
 }
+
+
+
 
 
 
@@ -251,4 +315,6 @@ dependencies {
     implementation(libs.mvikotlin.coroutines)
     implementation(libs.mvikotlin.logging)
     implementation(libs.mvikotlin.timetravel)
+
+    detektPlugins(libs.detekt.formatting)
 }

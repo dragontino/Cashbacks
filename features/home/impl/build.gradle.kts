@@ -9,10 +9,10 @@ plugins {
 
 android {
     namespace = "com.cashbacks.features.home.impl"
-    compileSdk = 36
+    compileSdk = rootProject.extra["compileSdkVersion"] as Int
 
     defaultConfig {
-        minSdk = 26
+        minSdk = rootProject.extra["minSdkVersion"] as Int
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")

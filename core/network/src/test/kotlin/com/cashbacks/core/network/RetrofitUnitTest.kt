@@ -2,7 +2,6 @@ package com.cashbacks.core.network
 
 import com.cashbacks.core.network.model.AppReleaseDto
 import com.cashbacks.core.network.retrofit.AppVersionService
-import com.cashbacks.core.network.retrofit.buildAppRepositoryRetrofit
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -12,8 +11,7 @@ class RetrofitUnitTest {
     @Test
     fun appLatestRelease_isSuccess() {
         runBlocking {
-            val retrofit = buildAppRepositoryRetrofit()
-            val appVersionService = retrofit.create(AppVersionService::class.java)
+            val appVersionService = AppVersionService()
             val release: AppReleaseDto
             val measuredTime = measureTime {
                 release = appVersionService.getLatestRelease()

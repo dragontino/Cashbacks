@@ -1,0 +1,83 @@
+name: Android build and test project
+
+on:
+  pull_request:
+    branches:
+      - "develop"
+      - "main"
+  push:
+    branches:
+      - "develop"
+      - "main"
+
+jobs:
+  build_and_test:
+    name: Setup environment, build and test project
+    runs-on: ubuntu-latest
+
+    env:
+      REPO_OWNER: ${{ github.repository_owner }}
+      REPO_NAME: ${{ github.event.repository.name }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Ensure local.properties file
+        run: |
+          if [ ! -f local.properties ]; then
+            touch local.properties
+          fi
+
+      - name: Increment repo BUILD_NUMBER variable
+        env:
+          GH_TOKEN: ${{ secrets.PAT_UPDATE_VARS }}
+        run: |
+          VAR_NAME="BUILD_NUMBER"
+          API="https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/actions/variables/$VAR_NAME"
+
+          CURRENT=$(curl -s -H "Authorization: Bearer $GH_TOKEN" "$API" | jq -r .value)
+          NEXT=$((CURRENT+1))
+
+          curl -s -X PATCH "$API" \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "{\"name\":\"$VAR_NAME\",\"value\":\"$NEXT\"}"
+
+          echo "ci.build.number=$NEXT" >> local.properties
+
+      - name: Setup app url
+        run: |
+          API="https://api.github.com/repos/$REPO_OWNER/$REPO_NAME"
+          echo "app.repos.url=$API/" >> local.properties
+
+      - name: Setup app version date
+        run: |
+          CURR_DATE=$(date +"%d/%m/%y")
+          echo "app.version.date=$CURR_DATE" >> local.properties
+
+      - name: set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: "temurin"
+          cache: gradle
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v5
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Assemble debug with gradle
+        run: ./gradlew assembleDebug --stacktrace
+
+      - name: Run unit tests
+        run: ./gradlew test --info
+
+      - name: Upload gradle reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: gradle-reports
+          path: build/reports/

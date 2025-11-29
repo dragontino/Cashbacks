@@ -1,12 +1,10 @@
 [versions]
-android-minSdk = "27"
-android-compileSdk = "36"
-
 agp = "8.13.1"
 androidx-core = "1.17.0"
 androidx-lifecycle = "2.10.0"
 androidx-work = "2.11.0"
 desugaring = "2.1.5"
+detekt = "1.23.8"
 
 kotlin = "2.2.21"
 kotlinx-coroutines = "1.10.2"
@@ -47,6 +45,7 @@ kotlinx-collections-immutable = { group = "org.jetbrains.kotlinx", name = "kotli
 opencsv = { group = "com.opencsv", name = "opencsv", version.ref = "csv" }
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
+detekt-formatting = { group = "io.gitlab.arturbosch.detekt", name = "detekt-formatting", version.ref = "detekt" }
 
 robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }
 tools-desugaring = { group = "com.android.tools", name = "desugar_jdk_libs", version.ref = "desugaring" }
@@ -121,3 +120,4 @@ compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "
 kotlinx-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 google-ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 androidx-room = { id = "androidx.room", version.ref = "room" }
+detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }

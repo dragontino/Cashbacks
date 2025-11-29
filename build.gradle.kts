@@ -8,6 +8,7 @@ plugins {
     alias(libs.plugins.kotlinx.serialization) apply false
     alias(libs.plugins.compose.compiler) apply false
     alias(libs.plugins.androidx.room) apply false
+    alias(libs.plugins.detekt) apply false
 }
 
 
@@ -17,4 +18,5 @@ ext {
     this["versionPatch"] = 0
     this["minSdkVersion"] = 27
     this["compileSdkVersion"] = 36
+    this["targetSdkVersion"] = 36
 }
