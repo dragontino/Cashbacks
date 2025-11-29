@@ -23,15 +23,34 @@ val localPropsPath by lazy { rootDir.resolve("local.properties") }
 
 val properties: Properties by lazy {
     Properties().apply {
-        localPropsPath.inputStream().use { load(it) }
+        if (localPropsPath.exists()) {
+            localPropsPath.inputStream().use { load(it) }
+        }
     }
 }
 
 val ciBuildNumber: Int? by lazy {
     properties.getProperty("ci.build.number")?.toIntOrNull()
 }
-val buildNumber: Int by lazy {
-    ciBuildNumber ?: (properties.getProperty("build.number").toInt() + 1)
+val buildNumber: Int? by lazy {
+    when (ciBuildNumber) {
+        null -> {
+            logger.log(
+                LogLevel.INFO,
+                "Couldn`t find \"ci.build.number\" property in local.properties, trying to use \"build.number\" instead"
+            )
+            properties.getProperty("build.number", null)?.toIntOrNull().also {
+                if (it == null) {
+                    logger.log(
+                        LogLevel.WARN,
+                        "Couldn`t find property \"build.number\" in local.properties"
+                    )
+                }
+            }
+        }
+
+        else -> ciBuildNumber
+    }
 }
 
 fun generateVersionCode(): Int {
@@ -65,11 +84,13 @@ android {
             useSupportLibrary = true
         }
 
-        buildConfigField(
-            type = "String",
-            name = "BUILD_NUMBER",
-            value = buildNumber.toString().padQuotes()
-        )
+        buildNumber?.let {
+            buildConfigField(
+                type = "String",
+                name = "BUILD_NUMBER",
+                value = it.toString().padQuotes()
+            )
+        }
     }
 
     buildTypes {
@@ -80,23 +101,36 @@ android {
                 "proguard-rules.pro"
             )
 
+
+            val versionDate = properties.getProperty("app.version.date", null)
+                .also {
+                    if (it == null) {
+                        logger.log(
+                            LogLevel.WARN,
+                            "Couldn`t find \"app.version.date\" property in local.properties, use today date!"
+                        )
+                    }
+                }
+                ?: getCurrentDateString()
+
             buildConfigField(
                 type = "String",
                 name = "VERSION_DATE",
-                value = properties.getProperty("app.version.date").padQuotes()
+                value = versionDate.padQuotes()
             )
         }
 
         debug {
             applicationIdSuffix = ".debug"
-            versionNameSuffix = " build $buildNumber"
+            buildNumber?.let {
+                versionNameSuffix = " build $it"
+            }
 
-            val versionDate = LocalDate.now()
-            val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
+
             buildConfigField(
                 type = "String",
                 name = "VERSION_DATE",
-                value = versionDate.format(formatter).padQuotes()
+                value = getCurrentDateString().padQuotes()
             )
         }
     }
@@ -133,7 +167,7 @@ detekt {
     buildUponDefaultConfig = true
     allRules = false
     baseline = file("$projectDir/config/detekt/baseline.xml")
-    basePath = projectDir.absolutePath
+    basePath = projectDir.toString()
 }
 
 
@@ -142,7 +176,7 @@ tasks.withType<Detekt>().configureEach {
         html.required = true
         md.required = true
         sarif.required = true
-        sarif.outputLocation = file("${layout.buildDirectory}/reports/detekt/detekt.sarif")
+        sarif.outputLocation = file("build/reports/detekt/detekt.sarif")
     }
 }
 
@@ -179,7 +213,7 @@ tasks.register<Detekt>("detektChanged") {
     }
 
     reports.sarif.required = true
-    reports.sarif.outputLocation = file("${layout.buildDirectory}/reports/detekt/detekt.sarif")
+    reports.sarif.outputLocation = file("build/reports/detekt/detekt.sarif")
 }
 
 
@@ -191,12 +225,18 @@ fun setLocalProperty(name: String, value: Any) {
     }
 }
 
+
+fun getCurrentDateString(pattern: String = "dd/MM/yyyy"): String {
+    val formatter = DateTimeFormatter.ofPattern(pattern)
+    return LocalDate.now().format(formatter)
+}
+
 fun String.padQuotes(): String = "\"$this\""
 
 
 tasks.register("incrementLocalBuildNumber") {
     if (ciBuildNumber == null) {
-        val currentBuildNumber = properties.getProperty("build.number").toInt()
+        val currentBuildNumber = buildNumber ?: return@register
         val nextBuildNumber = currentBuildNumber + 1
         setLocalProperty("build.number", nextBuildNumber)
         println("build.number has been updated: $currentBuildNumber -> $nextBuildNumber")
