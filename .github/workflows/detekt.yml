@@ -8,9 +8,14 @@ on:
   schedule:
      - cron: '30 14 * * 0'
 
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
 jobs:
   scan:
-    name: Scan
+    name: Detekt scan
     runs-on: ubuntu-latest
 
     steps:
@@ -30,38 +35,45 @@ jobs:
             touch local.properties
           fi
 
-      - name: Setup detekt
-        uses: peter-murray/setup-detekt@v3
-
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Run Detekt
-        continue-on-error: true
-        run: detekt --input ${{ github.workspace }} --report sarif:${{ github.workspace }}/detekt.sarif.json
-
-      - name: Create reports directory
-        run: mkdir -p build/reports/detekt
-
-      # Modifies the SARIF output produced by Detekt so that absolute URIs are relative
-      # This is so we can easily map results onto their source files
-      # This can be removed once relative URI support lands in Detekt: https://git.io/JLBbA
-      - name: Make artifact location URIs relative
-        continue-on-error: true
+      - name: Get changed Kotlin files
+        if: github.event_name == "pull_request"
+        id: changed-files
         run: |
-          echo "$(
-            jq --arg github_workspace ${{ github.workspace }} \
-              '. | ( .runs[].results[].locations[].physicalLocation.artifactLocation.uri |= if test($github_workspace) then .[($github_workspace | length | . + 1):] else . end )' \
-              ${{ github.workspace }}/detekt.sarif.json
-          )" > ${{ github.workspace }}/detekt.sarif.json
+          BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          HEAD_SHA="${{ github.sha }}"
 
-      # Uploads results to GitHub repository using the upload-sarif action
+          CHANGED=$(git diff --name-only --diff-filter=AMRT "$BASE_SHA...$HEAD_SHA" | grep '\.kt$' || true)
+
+          if [ -z "$CHANGED" ]; then
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          FILES=$(echo "$CHANGED" | paste -sd, -)
+          echo "has_changes=true" >> "$GITHUB_OUTPUT"
+          echo "files=$FILES" >> "$GITHUB_OUTPUT"
+
+      - name: Run Detekt on changed files
+        if: github.event_name == "pull_request" && steps.changed-files.outputs.has_changes == "true"
+        run: ./gradlew detektChanged -PdetektChangedFiles="${{ steps.changed-files.outputs.files }}" --max-workers=4
+
+      - name: Skip Detekt (no Kotlin changes)
+        if: github.event_name == 'pull_request' && steps.changed-files.outputs.has_changes != "true"
+        run: echo "No Kotlin files changed, skipping Detekt."
+
+      - name: Run full Detekt
+        if: github.event_name == "push"
+        run: ./gradlew detekt
+
       - name: Upload detekt results to GitHub
+        if: github.event_name == 'push' || (github.event_name == 'pull_request' && steps.changed-files.outputs.has_changes == 'true')
         uses: github/codeql-action/upload-sarif@v4
         with:
-          # Path to SARIF file relative to the root of the repository
-          sarif_file: ${{ github.workspace }}/detekt.sarif.json
-          checkout_path: ${{ github.workspace }}
+          sarif_file: build/reports/detekt/detekt.sarif
+          category: detekt
 
       - name: Upload Detekt report
         if: always()

@@ -133,7 +133,55 @@ detekt {
     buildUponDefaultConfig = true
     allRules = false
     baseline = file("$projectDir/config/detekt/baseline.xml")
+    basePath = projectDir.absolutePath
 }
+
+
+tasks.withType<Detekt>().configureEach {
+    reports {
+        html.required = true
+        md.required = true
+        sarif.required = true
+        sarif.outputLocation = file("${layout.buildDirectory}/reports/detekt/detekt.sarif")
+    }
+}
+
+
+tasks.withType<Detekt>().configureEach {
+    jvmTarget = "17"
+}
+
+
+tasks.withType<DetektCreateBaselineTask>().configureEach {
+    jvmTarget = "17"
+}
+
+tasks.register<Detekt>("detektChanged") {
+    description = "Run detekt only on changed Kotlin files"
+    parallel = true
+    buildUponDefaultConfig = true
+
+    config.setFrom(files("$projectDir/.github/workflows/detekt.yml"))
+    autoCorrect = true
+
+    val changed = (project.findProperty("detektChangedFiles") as String?)
+        ?.split(",")
+        ?.map { it.trim() }
+        ?.filter { it.isNotEmpty() }
+        .orEmpty()
+
+    source = when {
+        changed.isNotEmpty() -> project.layout.projectDirectory.asFileTree.matching {
+            include(changed)
+        }
+
+        else -> files().asFileTree
+    }
+
+    reports.sarif.required = true
+    reports.sarif.outputLocation = file("${layout.buildDirectory}/reports/detekt/detekt.sarif")
+}
+
 
 
 fun setLocalProperty(name: String, value: Any) {
@@ -170,21 +218,7 @@ tasks.register("resetLocalBuildNumber") {
 }
 
 
-tasks.withType<Detekt>().configureEach {
-    reports {
-        html.required = true
-        md.required = true
-    }
-}
 
-
-tasks.withType<Detekt>().configureEach {
-    jvmTarget = "17"
-}
-
-tasks.withType<DetektCreateBaselineTask>().configureEach {
-    jvmTarget = "17"
-}
 
 
 
