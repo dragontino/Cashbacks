@@ -97,7 +97,7 @@ jobs:
       shell: bash
       run: |
         chmod +x gradlew
-        ./gradlew clean build --info
+        ./gradlew assembleDebug --info
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v4
