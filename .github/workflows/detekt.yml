@@ -32,14 +32,14 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Get changed Kotlin files
+      - name: Get changed files
         if: github.event_name == 'pull_request'
         id: changed-files
         run: |
           BASE_SHA="${{ github.event.pull_request.base.sha }}"
           HEAD_SHA="${{ github.sha }}"
 
-          CHANGED=$(git diff --name-only --diff-filter=AMRT "$BASE_SHA...$HEAD_SHA" | grep '\.kt$' || true)
+          CHANGED=$(git diff --name-only --diff-filter=AMRT "$BASE_SHA...$HEAD_SHA" || true)
 
           if [ -z "$CHANGED" ]; then
             echo "has_changes=false" >> "$GITHUB_OUTPUT"
