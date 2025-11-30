@@ -27,14 +27,12 @@ jobs:
     #   - https://gh.io/supported-runners-and-hardware-resources
     #   - https://gh.io/using-larger-runners (GitHub.com only)
     # Consider using larger runners or machines with greater resources for possible analysis time improvements.
-    runs-on: ${{ (matrix.language == 'swift' && 'macos-latest') || 'ubuntu-latest' }}
+    runs-on: 'ubuntu-latest'
     permissions:
       # required for all workflows
       security-events: write
-
       # required to fetch internal or private CodeQL packs
       packages: read
-
       # only required for workflows in private repositories
       actions: read
       contents: read
@@ -44,7 +42,7 @@ jobs:
       matrix:
         include:
         - language: java-kotlin
-          build-mode: autobuild
+          build-mode: manual
 
     steps:
     - name: Checkout repository
@@ -55,26 +53,7 @@ jobs:
     # or others). This is typically only required for manual builds.
     # - name: Setup runtime (example)
     #   uses: actions/setup-example@v1
-
-    - name: Setup environment
-      run: |
-        if [ ! -f local.properties ]; then
-          touch local.properties
-        fi
-
-    - name: Set variables
-      env:
-        REPO_OWNER: ${{ github.repository_owner }}
-        REPO_NAME: ${{ github.event.repository.name }}
-      run: |
-        echo "ci.build.number=1" >> local.properties
-        
-        API="https://api.github.com/repos/$REPO_OWNER/$REPO_NAME"
-        echo "app.repos.url=$API/" >> local.properties
-        
-        CURR_DATE=$(date +"%d/%m/%y")
-        echo "app.version.date=$CURR_DATE" >> local.properties
-
+    
     # Initializes the CodeQL tools for scanning.
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v4
