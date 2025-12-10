@@ -53,6 +53,7 @@ dependencies {
     implementation(project(":common:utils"))
     implementation(project(":common:navigation"))
     implementation(project(":features:login:api"))
+    implementation(project(":components:login"))
 
     implementation(libs.androidx.core)
     implementation(libs.kotlinx.serialization.json)
