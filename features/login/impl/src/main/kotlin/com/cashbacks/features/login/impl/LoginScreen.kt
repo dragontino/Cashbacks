@@ -1,38 +1,49 @@
 package com.cashbacks.features.login.impl
 
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.cashbacks.common.composables.theme.CashbacksTheme
 import com.cashbacks.common.utils.mvi.IntentSender
+import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
 internal fun LoginRoot(
+    navigateToMainScreen: () -> Unit,
     viewModel: LoginViewModel = koinViewModel()
 ) {
     val state by viewModel.stateFlow.collectAsStateWithLifecycle()
+    val snackbarHostState = remember(::SnackbarHostState)
 
     LaunchedEffect(Unit) {
         viewModel.labelFlow.collect { label ->
             when (label) {
-                else -> TODO("Handle labels")
+                is LoginLabel.DisplayMessage -> launch {
+                    snackbarHostState.showSnackbar(label.message)
+                }
+
+                is LoginLabel.NavigateToHomeScreen -> navigateToMainScreen()
             }
         }
     }
 
     LoginScreen(
         state = state,
-        sendIntent = IntentSender(viewModel::sendIntent)
+        snackbarHostState = snackbarHostState,
+        intentSender = IntentSender(viewModel::sendIntent)
     )
 }
 
 @Composable
 internal fun LoginScreen(
     state: LoginState,
-    sendIntent: IntentSender<LoginIntent>,
+    snackbarHostState: SnackbarHostState,
+    intentSender: IntentSender<LoginIntent>,
 ) {
 
 }
@@ -42,8 +53,9 @@ internal fun LoginScreen(
 private fun LoginScreenPreview() {
     CashbacksTheme {
         LoginScreen(
-            state = LoginState.SignIn(password = "12345"),
-            sendIntent = IntentSender()
+            state = LoginState.SignIn(pinCode = "12345"),
+            snackbarHostState = remember { SnackbarHostState() },
+            intentSender = IntentSender()
         )
     }
 }
