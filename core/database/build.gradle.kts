@@ -68,6 +68,7 @@ dependencies {
     ksp(libs.room.compiler)
 
     implementation(libs.zetetic.sqlcipher)
+    implementation(libs.androidx.datastore)
 
     implementation(libs.koin.android)
     implementation(libs.kotlinx.datetime)
