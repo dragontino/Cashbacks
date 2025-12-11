@@ -5,7 +5,11 @@ import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory
 import com.cashbacks.core.database.BuildConfig
 import com.cashbacks.core.database.EncryptedDatabase
 import com.cashbacks.core.database.LegacyDatabase
+import com.cashbacks.core.database.datastore.CredentialsDataStore
+import com.cashbacks.core.database.datastore.credentialsDataStore
 import com.cashbacks.core.database.encryption.SqlCipherKeyManager
+import com.cashbacks.core.database.source.CredentialsLocalDataSource
+import com.cashbacks.core.database.source.CredentialsLocalDataSourceImpl
 import com.cashbacks.core.database.utils.DatabaseMigrator
 import com.cashbacks.core.database.utils.DatabaseMigratorImpl
 import org.koin.android.ext.koin.androidApplication
@@ -54,5 +58,13 @@ val DatabaseModule = module {
             encryptedDatabase = get(),
             legacyDbProvider = { get() }
         )
+    }
+
+    single<CredentialsLocalDataSource> {
+        CredentialsLocalDataSourceImpl(get())
+    }
+
+    single<CredentialsDataStore> {
+        androidContext().credentialsDataStore
     }
 }
