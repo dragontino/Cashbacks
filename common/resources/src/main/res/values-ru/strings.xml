@@ -111,7 +111,7 @@
     <string name="full_name_for_copy">ФИО скопированы</string>
     <string name="cvv_for_copy">Номер CVV скопирован</string>
     <string name="card_name_for_copy">Название карты скопировано</string>
-    <string name="pin_for_copy">ПИН-код карты скопирован</string>
+    <string name="card_pin_for_copy">ПИН-код карты скопирован</string>
     <string name="number_for_copy">Число скопировано</string>
     <string name="comment_for_copy">Комментарий скопирован</string>
 
@@ -153,4 +153,10 @@
     <string name="incorrect_card_cvv">CVV код должен содержать 3 цифры</string>
     <string name="empty_pin_code">Вы не ввели пин-код</string>
     <string name="insert_cashback_exception">Достигнут лимит кэшбэков по карте «%1$s» за %2$s</string>
+    <plurals name="too_short_password_exception">
+        <item quantity="one">Длина пин-кода должна быть не меньше %d цифр</item>
+        <item quantity="other">Длина пин-кода должна быть не меньше %d цифр</item>
+    </plurals>
+    <string name="credentials_not_found_exception">Не удалось найти сохранённые данные для входа!</string>
+    <string name="wrong_pin_exception">Неверный пин-код. Пожалуйста, повторите снова!</string>
 </resources>

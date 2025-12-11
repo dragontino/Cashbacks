@@ -110,7 +110,7 @@
     <string name="full_name_for_copy">Full name has been copied</string>
     <string name="cvv_for_copy">CVV number has been copied</string>
     <string name="card_name_for_copy">Card name has been copied</string>
-    <string name="pin_for_copy">Card PIN code has been copied</string>
+    <string name="card_pin_for_copy">Card PIN code has been copied</string>
     <string name="number_for_copy">Number has been copied</string>
     <string name="comment_for_copy">Comment has been copied</string>
 
@@ -161,4 +161,10 @@
     <string name="incorrect_card_cvv">The CVV must contain 3 digits</string>
     <string name="empty_pin_code">You haven\'t entered the PIN code</string>
     <string name="insert_cashback_exception">Reached cashback limit on card «%1$s» for %2$s</string>
+    <plurals name="too_short_password_exception">
+        <item quantity="one">Pin-code length must be at least %d digits</item>
+        <item quantity="other">Pin-code length must be at least %d digits</item>
+    </plurals>
+    <string name="credentials_not_found_exception">Failed to found saved credentials!</string>
+    <string name="wrong_pin_exception">Wrong pin-code. Please, try again!</string>
 </resources>
