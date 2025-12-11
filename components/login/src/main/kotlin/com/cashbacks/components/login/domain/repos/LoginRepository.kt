@@ -1,7 +1,11 @@
 package com.cashbacks.components.login.domain.repos
 
-internal interface LoginRepository {
-    suspend fun signUp(password: String): Result<Unit>
+import com.cashbacks.components.login.domain.model.LoginCredentials
 
-    suspend fun signIn(password: String): Result<Unit>
+internal interface LoginRepository {
+    suspend fun signUp(credentials: LoginCredentials): Result<Unit>
+
+    suspend fun signIn(credentials: LoginCredentials): Result<Unit>
+
+    suspend fun hasSavedCredentials(): Result<Boolean>
 }

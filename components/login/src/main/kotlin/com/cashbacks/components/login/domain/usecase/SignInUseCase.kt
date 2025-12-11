@@ -8,18 +8,18 @@ import com.cashbacks.components.login.domain.util.validate
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 
-interface SignUpUseCase {
+interface SignInUseCase {
     suspend operator fun invoke(credentials: LoginCredentials): Result<Unit>
 }
 
 
-internal class SignUpUseCaseImpl(
+internal class SignInUseCaseImpl(
     private val repository: LoginRepository,
     private val dispatcher: CoroutineDispatcher,
     private val context: Context
-) : SignUpUseCase {
+) : SignInUseCase {
     companion object {
-        private const val TAG = "SignUpUseCase"
+        private const val TAG = "SignInUseCase"
     }
 
     override suspend fun invoke(credentials: LoginCredentials): Result<Unit> {
@@ -28,7 +28,7 @@ internal class SignUpUseCaseImpl(
             validationResult
         } else {
             withContext(dispatcher) {
-                repository.signUp(credentials).onFailure {
+                repository.signIn(credentials).onFailure {
                     Log.e(TAG, it.message, it)
                 }
             }

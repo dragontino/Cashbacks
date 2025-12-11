@@ -44,6 +44,7 @@ android {
 }
 
 dependencies {
+    implementation(project(":common:resources"))
     implementation(project(":core:database"))
 
     implementation(libs.androidx.core)
