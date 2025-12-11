@@ -355,7 +355,7 @@ private fun ScreenContent(
                                 ViewingIntent.DisplayMessage(
                                     context.getString(
                                         R.string.card_part_text_is_copied,
-                                        context.getString(R.string.pin_for_copy)
+                                        context.getString(R.string.card_pin_for_copy)
                                     )
                                 )
                             )
