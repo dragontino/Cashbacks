@@ -2,10 +2,10 @@ package com.cashbacks.features.bankcard.data.repo
 
 import android.content.Context
 import com.cashbacks.common.resources.toException
-import com.cashbacks.core.database.dao.CardsDao
-import com.cashbacks.core.database.utils.mapToBankCard
-import com.cashbacks.core.database.utils.mapToDomainBankCard
-import com.cashbacks.core.database.utils.mapToEntity
+import com.cashbacks.core.database.room.dao.CardsDao
+import com.cashbacks.core.database.room.utils.mapToBankCard
+import com.cashbacks.core.database.room.utils.mapToDomainBankCard
+import com.cashbacks.core.database.room.utils.mapToEntity
 import com.cashbacks.features.bankcard.data.resources.CardDeletionException
 import com.cashbacks.features.bankcard.data.resources.CardInsertionException
 import com.cashbacks.features.bankcard.data.resources.CardNotFoundException

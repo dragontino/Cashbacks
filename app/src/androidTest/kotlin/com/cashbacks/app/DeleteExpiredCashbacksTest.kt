@@ -9,7 +9,7 @@ import androidx.work.ListenableWorker
 import androidx.work.testing.TestListenableWorkerBuilder
 import com.cashbacks.app.workers.DeleteExpiredCashbacksWorker
 import com.cashbacks.common.utils.now
-import com.cashbacks.core.database.EncryptedDatabase
+import com.cashbacks.core.database.room.EncryptedDatabase
 import com.cashbacks.features.bankcard.domain.model.FullBankCard
 import com.cashbacks.features.bankcard.domain.usecase.AddBankCardUseCase
 import com.cashbacks.features.cashback.domain.model.BasicCashback

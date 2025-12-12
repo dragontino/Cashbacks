@@ -1,4 +1,4 @@
-package com.cashbacks.core.database.encryption
+package com.cashbacks.core.database.room.encryption
 
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties

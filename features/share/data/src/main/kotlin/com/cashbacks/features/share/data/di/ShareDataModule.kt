@@ -1,6 +1,6 @@
 package com.cashbacks.features.share.data.di
 
-import com.cashbacks.core.database.EncryptedDatabase
+import com.cashbacks.core.database.room.EncryptedDatabase
 import com.cashbacks.features.share.data.repo.ShareDataRepositoryImpl
 import com.cashbacks.features.share.domain.repo.ShareDataRepository
 import org.koin.android.ext.koin.androidContext

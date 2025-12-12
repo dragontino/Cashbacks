@@ -48,7 +48,7 @@ import com.cashbacks.common.composables.utils.loadingContentAnimationSpec
 import com.cashbacks.common.composables.utils.reversed
 import com.cashbacks.common.navigation.utils.register
 import com.cashbacks.common.resources.R
-import com.cashbacks.core.database.utils.DatabaseMigrator
+import com.cashbacks.core.database.room.DatabaseMigrator
 import com.cashbacks.features.bankcard.presentation.impl.navigation.BankCardFeature
 import com.cashbacks.features.cashback.presentation.impl.navigation.CashbackFeature
 import com.cashbacks.features.category.presentation.impl.navigation.CategoryFeature

@@ -1,15 +1,15 @@
-package com.cashbacks.core.database
+package com.cashbacks.core.database.room
 
 import android.content.Context
 import androidx.room.AutoMigration
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.TypeConverters
-import com.cashbacks.core.database.entity.BankCardEntity
-import com.cashbacks.core.database.entity.CashbackEntity
-import com.cashbacks.core.database.entity.CategoryEntity
-import com.cashbacks.core.database.entity.SettingsEntity
-import com.cashbacks.core.database.entity.ShopEntity
+import com.cashbacks.core.database.room.entity.BankCardEntity
+import com.cashbacks.core.database.room.entity.CashbackEntity
+import com.cashbacks.core.database.room.entity.CategoryEntity
+import com.cashbacks.core.database.room.entity.SettingsEntity
+import com.cashbacks.core.database.room.entity.ShopEntity
 import java.io.File
 
 @Database(

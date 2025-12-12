@@ -1,16 +1,14 @@
-package com.cashbacks.core.database.utils
+package com.cashbacks.core.database.room
 
 import android.content.Context
 import android.util.Log
 import androidx.core.content.edit
 import androidx.room.withTransaction
-import com.cashbacks.core.database.EncryptedDatabase
-import com.cashbacks.core.database.LegacyDatabase
-import com.cashbacks.core.database.entity.BankCardEntity
-import com.cashbacks.core.database.entity.CashbackEntity
-import com.cashbacks.core.database.entity.CategoryEntity
-import com.cashbacks.core.database.entity.SettingsEntity
-import com.cashbacks.core.database.entity.ShopEntity
+import com.cashbacks.core.database.room.entity.BankCardEntity
+import com.cashbacks.core.database.room.entity.CashbackEntity
+import com.cashbacks.core.database.room.entity.CategoryEntity
+import com.cashbacks.core.database.room.entity.SettingsEntity
+import com.cashbacks.core.database.room.entity.ShopEntity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.withContext

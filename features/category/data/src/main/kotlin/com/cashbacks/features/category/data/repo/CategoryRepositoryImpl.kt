@@ -2,10 +2,10 @@ package com.cashbacks.features.category.data.repo
 
 import android.content.Context
 import com.cashbacks.common.resources.toException
-import com.cashbacks.core.database.dao.CategoriesDao
+import com.cashbacks.core.database.room.dao.CategoriesDao
+import com.cashbacks.core.database.room.utils.mapToDomainCategory
+import com.cashbacks.core.database.room.utils.mapToEntity
 import com.cashbacks.core.database.utils.mapList
-import com.cashbacks.core.database.utils.mapToDomainCategory
-import com.cashbacks.core.database.utils.mapToEntity
 import com.cashbacks.features.category.data.resources.CategoryAlreadyExistsException
 import com.cashbacks.features.category.data.resources.CategoryDeletionException
 import com.cashbacks.features.category.data.resources.CategoryNotFoundException

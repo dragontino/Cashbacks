@@ -1,15 +1,15 @@
-package com.cashbacks.core.database.utils
+package com.cashbacks.core.database.room.utils
 
-import com.cashbacks.core.database.entity.AmountDB
-import com.cashbacks.core.database.entity.BankCardEntity
-import com.cashbacks.core.database.entity.BasicCashbackEntity
-import com.cashbacks.core.database.entity.CashbackEntity
-import com.cashbacks.core.database.entity.CategoryEntity
-import com.cashbacks.core.database.entity.CategoryShopEntity
-import com.cashbacks.core.database.entity.FullCashbackEntity
-import com.cashbacks.core.database.entity.PrimaryBankCardEntity
-import com.cashbacks.core.database.entity.SettingsEntity
-import com.cashbacks.core.database.entity.ShopEntity
+import com.cashbacks.core.database.room.entity.AmountDB
+import com.cashbacks.core.database.room.entity.BankCardEntity
+import com.cashbacks.core.database.room.entity.BasicCashbackEntity
+import com.cashbacks.core.database.room.entity.CashbackEntity
+import com.cashbacks.core.database.room.entity.CategoryEntity
+import com.cashbacks.core.database.room.entity.CategoryShopEntity
+import com.cashbacks.core.database.room.entity.FullCashbackEntity
+import com.cashbacks.core.database.room.entity.PrimaryBankCardEntity
+import com.cashbacks.core.database.room.entity.SettingsEntity
+import com.cashbacks.core.database.room.entity.ShopEntity
 import com.cashbacks.features.bankcard.domain.model.FullBankCard
 import com.cashbacks.features.bankcard.domain.model.PrimaryBankCard
 import com.cashbacks.features.cashback.domain.model.BasicCashback

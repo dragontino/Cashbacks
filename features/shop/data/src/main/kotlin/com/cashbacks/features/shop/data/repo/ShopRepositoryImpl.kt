@@ -2,11 +2,11 @@ package com.cashbacks.features.shop.data.repo
 
 import android.content.Context
 import com.cashbacks.common.resources.toException
-import com.cashbacks.core.database.dao.ShopsDao
-import com.cashbacks.core.database.entity.ShopEntity
+import com.cashbacks.core.database.room.dao.ShopsDao
+import com.cashbacks.core.database.room.entity.ShopEntity
+import com.cashbacks.core.database.room.utils.mapToDomainShop
+import com.cashbacks.core.database.room.utils.mapToEntity
 import com.cashbacks.core.database.utils.mapList
-import com.cashbacks.core.database.utils.mapToDomainShop
-import com.cashbacks.core.database.utils.mapToEntity
 import com.cashbacks.features.shop.data.resources.InsertionException
 import com.cashbacks.features.shop.data.resources.ShopAlreadyExistsException
 import com.cashbacks.features.shop.data.resources.ShopDeletionException

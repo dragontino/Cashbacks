@@ -1,4 +1,4 @@
-package com.cashbacks.core.database.dao
+package com.cashbacks.core.database.room.dao
 
 import androidx.room.Dao
 import androidx.room.Delete
@@ -7,8 +7,8 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Update
-import com.cashbacks.core.database.entity.CategoryShopEntity
-import com.cashbacks.core.database.entity.ShopEntity
+import com.cashbacks.core.database.room.entity.CategoryShopEntity
+import com.cashbacks.core.database.room.entity.ShopEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao

@@ -1,8 +1,8 @@
-package com.cashbacks.core.database.utils
+package com.cashbacks.core.database.room.utils
 
 import com.cashbacks.common.utils.DateUtils
 import com.cashbacks.common.utils.now
-import com.cashbacks.core.database.entity.BasicCashbackEntity
+import com.cashbacks.core.database.room.entity.BasicCashbackEntity
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateRange
 

@@ -1,4 +1,4 @@
-package com.cashbacks.core.database.entity
+package com.cashbacks.core.database.room.entity
 
 import androidx.room.ColumnInfo
 import androidx.room.Entity

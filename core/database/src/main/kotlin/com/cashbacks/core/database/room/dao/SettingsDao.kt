@@ -1,20 +1,20 @@
-package com.cashbacks.core.database.dao
+package com.cashbacks.core.database.room.dao
 
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
-import com.cashbacks.core.database.entity.SettingsEntity
+import com.cashbacks.core.database.room.entity.SettingsEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface SettingsDao {
 
-    @Insert(onConflict = OnConflictStrategy.Companion.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertSettings(settings: SettingsEntity): Long
 
-    @Update(onConflict = OnConflictStrategy.Companion.REPLACE)
+    @Update(onConflict = OnConflictStrategy.REPLACE)
     suspend fun updateSettings(settings: SettingsEntity): Int
 
     @Query("SELECT * FROM Settings")

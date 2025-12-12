@@ -2,13 +2,13 @@ package com.cashbacks.features.cashback.data.repo
 
 import android.content.Context
 import com.cashbacks.common.resources.toException
-import com.cashbacks.core.database.dao.CashbacksDao
-import com.cashbacks.core.database.entity.CashbackEntity
-import com.cashbacks.core.database.entity.FullCashbackEntity
-import com.cashbacks.core.database.utils.getDateRange
+import com.cashbacks.core.database.room.dao.CashbacksDao
+import com.cashbacks.core.database.room.entity.CashbackEntity
+import com.cashbacks.core.database.room.entity.FullCashbackEntity
+import com.cashbacks.core.database.room.utils.getDateRange
+import com.cashbacks.core.database.room.utils.mapToDomainCashback
+import com.cashbacks.core.database.room.utils.mapToEntity
 import com.cashbacks.core.database.utils.mapList
-import com.cashbacks.core.database.utils.mapToDomainCashback
-import com.cashbacks.core.database.utils.mapToEntity
 import com.cashbacks.features.cashback.data.resources.CashbackNotFoundException
 import com.cashbacks.features.cashback.data.resources.CashbackOverflowException
 import com.cashbacks.features.cashback.data.resources.DeletionException

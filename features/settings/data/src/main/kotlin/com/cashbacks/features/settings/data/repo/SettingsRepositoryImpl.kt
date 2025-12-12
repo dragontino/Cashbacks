@@ -2,9 +2,9 @@ package com.cashbacks.features.settings.data.repo
 
 import android.content.Context
 import com.cashbacks.common.resources.toException
-import com.cashbacks.core.database.dao.SettingsDao
-import com.cashbacks.core.database.utils.mapToDomainSettings
-import com.cashbacks.core.database.utils.mapToEntity
+import com.cashbacks.core.database.room.dao.SettingsDao
+import com.cashbacks.core.database.room.utils.mapToDomainSettings
+import com.cashbacks.core.database.room.utils.mapToEntity
 import com.cashbacks.features.settings.data.resources.SaveSettingsException
 import com.cashbacks.features.settings.data.resources.SettingsNotFoundException
 import com.cashbacks.features.settings.domain.model.Settings

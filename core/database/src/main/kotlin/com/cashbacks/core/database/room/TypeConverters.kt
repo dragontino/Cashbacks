@@ -1,8 +1,8 @@
-package com.cashbacks.core.database
+package com.cashbacks.core.database.room
 
 import androidx.room.TypeConverter
 import com.cashbacks.common.utils.parseToDate
-import com.cashbacks.core.database.entity.AmountDB
+import com.cashbacks.core.database.room.entity.AmountDB
 import com.cashbacks.features.bankcard.domain.model.PaymentSystem
 import com.cashbacks.features.cashback.domain.model.MeasureUnit
 import kotlinx.datetime.LocalDate
