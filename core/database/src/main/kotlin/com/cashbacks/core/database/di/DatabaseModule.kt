@@ -13,5 +13,7 @@ val DatabaseModule = module {
         CredentialsLocalDataSourceImpl(get())
     }
 
+    single<CategoryLocalDataSource> {
+        CategoryLocalDataSourceImpl(get())
     }
 }
