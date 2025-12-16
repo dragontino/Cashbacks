@@ -24,7 +24,6 @@ import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -38,7 +37,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
@@ -48,21 +46,16 @@ import androidx.compose.ui.layout.MeasurePolicy
 import androidx.compose.ui.layout.MeasureResult
 import androidx.compose.ui.layout.MeasureScope
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontStyle
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewFontScale
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.cashbacks.common.composables.AutoresizeText
+import com.cashbacks.common.composables.FontSizeRange
 import com.cashbacks.common.resources.R
 import com.cashbacks.common.utils.OnClick
 import com.cashbacks.features.bankcard.domain.model.BankCard
@@ -159,6 +152,7 @@ fun PlasticBankCard(
 }
 
 
+@Suppress("COMPOSE_APPLIER_CALL_MISMATCH")
 @Composable
 private fun CardFrontSide(
     bankCard: BankCard,
@@ -173,7 +167,7 @@ private fun CardFrontSide(
         remember(this) { mutableFloatStateOf(bodyMedium.fontSize.value) }
     }
     val fontSizeRange = FontSizeRange(
-        min = MaterialTheme.typography.bodySmall.fontSize,
+        min = 12.sp,
         max = MaterialTheme.typography.bodyMedium.fontSize
     )
 
@@ -306,7 +300,7 @@ private fun CardFrontSide(
                     text = bankCard.validityPeriod,
                     fontSize = textSize,
                     fontSizeRange = FontSizeRange(
-                        min = MaterialTheme.typography.bodySmall.fontSize,
+                        min = 12.sp,
                         max = MaterialTheme.typography.bodyMedium.fontSize
                     ),
                     onResizeText = { if (textSize > it) textSize = it },
@@ -354,6 +348,7 @@ private fun CardFrontSide(
 }
 
 
+@Suppress("COMPOSE_APPLIER_CALL_MISMATCH")
 @Composable
 private fun CardBackSide(
     bankCard: BankCard,
@@ -450,7 +445,7 @@ private fun CardBackSide(
                     AutoresizeText(
                         text = stringResource(R.string.cvv),
                         fontSizeRange = FontSizeRange(
-                            min = MaterialTheme.typography.bodySmall.fontSize,
+                            min = 12.sp,
                             max = MaterialTheme.typography.bodyMedium.fontSize
                         ),
                         style = MaterialTheme.typography.bodyMedium,
@@ -527,117 +522,6 @@ private fun ShadowElevatedCard(
             modifier = modifier,
             content = content
         )
-    }
-}
-
-
-@Composable
-private fun AutoresizeText(
-    text: String,
-    fontSizeRange: FontSizeRange,
-    modifier: Modifier = Modifier,
-    color: Color = Color.Unspecified,
-    fontStyle: FontStyle? = null,
-    fontWeight: FontWeight? = null,
-    fontFamily: FontFamily? = null,
-    letterSpacing: TextUnit = TextUnit.Unspecified,
-    textDecoration: TextDecoration? = null,
-    textAlign: TextAlign? = null,
-    lineHeight: TextUnit = TextUnit.Unspecified,
-    overflow: TextOverflow = TextOverflow.Clip,
-    softWrap: Boolean = true,
-    maxLines: Int = Int.MAX_VALUE,
-    style: TextStyle = LocalTextStyle.current,
-) {
-    var fontSizeValue by remember { mutableFloatStateOf(fontSizeRange.max.value) }
-
-    AutoresizeText(
-        text = text,
-        fontSize = fontSizeValue,
-        fontSizeRange = fontSizeRange,
-        onResizeText = { fontSizeValue = it },
-        modifier = modifier,
-        color = color,
-        fontStyle = fontStyle,
-        fontWeight = fontWeight,
-        fontFamily = fontFamily,
-        letterSpacing = letterSpacing,
-        textDecoration = textDecoration,
-        textAlign = textAlign,
-        lineHeight = lineHeight,
-        overflow = overflow,
-        softWrap = softWrap,
-        maxLines = maxLines,
-        style = style,
-    )
-}
-
-
-@Composable
-private fun AutoresizeText(
-    text: String,
-    fontSize: Float,
-    fontSizeRange: FontSizeRange,
-    onResizeText: (Float) -> Unit,
-    modifier: Modifier = Modifier,
-    color: Color = Color.Unspecified,
-    fontStyle: FontStyle? = null,
-    fontWeight: FontWeight? = null,
-    fontFamily: FontFamily? = null,
-    letterSpacing: TextUnit = TextUnit.Unspecified,
-    textDecoration: TextDecoration? = null,
-    textAlign: TextAlign? = null,
-    lineHeight: TextUnit = TextUnit.Unspecified,
-    overflow: TextOverflow = TextOverflow.Clip,
-    softWrap: Boolean = true,
-    maxLines: Int = Int.MAX_VALUE,
-    style: TextStyle = LocalTextStyle.current,
-) {
-    var readyToDraw by remember { mutableStateOf(false) }
-
-    Text(
-        text = text,
-        color = color,
-        fontStyle = fontStyle,
-        fontWeight = fontWeight,
-        fontFamily = fontFamily,
-        letterSpacing = letterSpacing,
-        textDecoration = textDecoration,
-        textAlign = textAlign,
-        lineHeight = lineHeight,
-        overflow = overflow,
-        softWrap = softWrap,
-        maxLines = maxLines,
-        style = style,
-        fontSize = fontSize.sp,
-        onTextLayout = { result ->
-            if (result.didOverflowHeight && !readyToDraw) {
-                val nextFontSize = fontSize - fontSizeRange.step.value
-                if (nextFontSize <= fontSizeRange.min.value) {
-                    onResizeText(fontSizeRange.min.value)
-                    readyToDraw = true
-                } else {
-                    onResizeText(nextFontSize)
-                }
-            } else {
-                readyToDraw = true
-            }
-        },
-        modifier = modifier.drawWithContent {
-            if (readyToDraw) drawContent()
-        }
-    )
-}
-
-
-private data class FontSizeRange(
-    val min: TextUnit,
-    val max: TextUnit,
-    val step: TextUnit = 1.sp
-) {
-    init {
-        require(min <= max) { "min should be less or equal than max, $this" }
-        require(step.value > 0) { "step should be greater than 0, $this" }
     }
 }
 

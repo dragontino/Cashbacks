@@ -42,6 +42,7 @@ android {
 dependencies {
     implementation(project(":common:resources"))
     implementation(project(":common:navigation"))
+    implementation(project(":common:composables"))
     implementation(project(":common:utils"))
 
     implementation(project(":features:bankcard:domain"))
