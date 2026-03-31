@@ -1,6 +1,7 @@
 package com.cashbacks.app.di
 
 import com.cashbacks.app.di.modules.AppModule
+import com.cashbacks.components.login.di.LoginComponentModule
 import com.cashbacks.core.database.di.DatabaseModule
 import com.cashbacks.core.network.di.NetworkModule
 import com.cashbacks.features.bankcard.data.di.BankCardDataModule
@@ -13,6 +14,7 @@ import com.cashbacks.features.category.data.di.CategoryDataModule
 import com.cashbacks.features.category.domain.di.CategoryDomainModule
 import com.cashbacks.features.category.presentation.impl.di.CategoryPresentationModule
 import com.cashbacks.features.home.impl.di.HomeModule
+import com.cashbacks.features.login.impl.di.LoginModule
 import com.cashbacks.features.settings.data.di.SettingsDataModule
 import com.cashbacks.features.settings.domain.di.SettingsDomainModule
 import com.cashbacks.features.settings.presentation.di.SettingsPresentationModule
@@ -26,6 +28,12 @@ private val SettingsModules = listOf(
     SettingsDomainModule,
     SettingsDataModule,
     SettingsPresentationModule
+)
+
+
+private val LoginModules = listOf(
+    LoginModule,
+    LoginComponentModule
 )
 
 
@@ -65,6 +73,7 @@ private val ShareModules = listOf(
 
 val ApplicationModules = buildList {
     addAll(SettingsModules)
+    addAll(LoginModules)
     addAll(BankCardModules)
     addAll(CashbackModules)
     addAll(ShopModules)

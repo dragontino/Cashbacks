@@ -33,23 +33,19 @@ val ciBuildNumber: Int? by lazy {
     properties.getProperty("ci.build.number")?.toIntOrNull()
 }
 val buildNumber: Int? by lazy {
-    when (ciBuildNumber) {
-        null -> {
-            logger.log(
-                LogLevel.INFO,
-                "Couldn`t find \"ci.build.number\" property in local.properties, trying to use \"build.number\" instead"
-            )
-            properties.getProperty("build.number", null)?.toIntOrNull().also {
-                if (it == null) {
-                    logger.log(
-                        LogLevel.WARN,
-                        "Couldn`t find property \"build.number\" in local.properties"
-                    )
-                }
+    ciBuildNumber ?: let {
+        logger.log(
+            LogLevel.INFO,
+            "Couldn`t find \"ci.build.number\" property in local.properties, trying to use \"build.number\" instead"
+        )
+        properties.getProperty("build.number", null)?.toIntOrNull().also {
+            if (it == null) {
+                logger.log(
+                    LogLevel.WARN,
+                    "Couldn`t find property \"build.number\" in local.properties"
+                )
             }
         }
-
-        else -> ciBuildNumber
     }
 }
 
@@ -279,6 +275,10 @@ dependencies {
     api(project(":features:settings:domain"))
     api(project(":features:settings:data"))
     api(project(":features:settings:presentation"))
+
+    api(project(":components:login"))
+    api(project(":features:login:api"))
+    api(project(":features:login:impl"))
 
     api(project(":features:bankcard:domain"))
     api(project(":features:bankcard:data"))
