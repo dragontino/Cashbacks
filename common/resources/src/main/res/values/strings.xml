@@ -41,6 +41,11 @@
     <string name="switchThemeText">App theme</string>
 
 
+    <!-- Login screen -->
+    <string name="enter_login_code">Enter your login code</string>
+    <string name="create_login_code">Create a login code</string>
+    <string name="repeat_login_code">Write the login code again</string>
+
     <string name="empty_categories_list_viewing">There are no categories with cashbacks.\nClick on the pencil to view all categories</string>
     <string name="empty_categories_list_editing">Click + to add categories</string>
     <string name="add_category">Add category</string>

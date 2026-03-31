@@ -42,6 +42,12 @@
     <string name="switchThemeText">Цветовая палитра</string>
 
 
+    <!-- Login screen -->
+    <string name="enter_login_code">Введите код для входа в приложение</string>
+    <string name="create_login_code">Придумайте пин-код приложения</string>
+    <string name="repeat_login_code">Введите пин-код ещё раз</string>
+
+
     <string name="empty_categories_list_viewing">Категорий с кешбэками нет.\nНажмите на карандаш для просмотра всех категорий</string>
     <string name="empty_categories_list_editing">Нажмите + для добавления категорий</string>
     <string name="add_category">Добавить категорию</string>
