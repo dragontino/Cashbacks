@@ -8,7 +8,7 @@ import org.koin.dsl.module
 val CategoryDataModule = module {
     single<CategoryRepository> {
         CategoryRepositoryImpl(
-            dao = get(),
+            source = get(),
             context = androidContext()
         )
     }
