@@ -16,8 +16,8 @@ internal sealed interface LoginLabel {
 
 
 internal sealed interface LoginIntent {
-    data class EnterCode(val pinCode: String) : LoginIntent
-    data class ClickEnterButton(val onSuccess: () -> Unit) : LoginIntent
+    data class EnterDigit(val digit: Int) : LoginIntent
+    data object ClearLastDigit : LoginIntent
     data object OpenHomeScreen : LoginIntent
 }
 
@@ -33,11 +33,19 @@ internal sealed class LoginState {
 
     data object Loading : LoginState()
 
-    data class Error(val exception: Exception, override val pinCode: String) : LoginState()
+    sealed class Sign : LoginState() {
+        abstract override val pinCode: String
+    }
 
-    data class SignUp(override val pinCode: String) : LoginState()
+    data class Error(val exception: Exception, val previousState: LoginState) : LoginState() {
+        override val pinCode: String? = previousState.pinCode
+        val errorMessage: String? get() = exception.localizedMessage
+    }
 
-    data class SignIn(override val pinCode: String) : LoginState()
+    data class SignUp(
+        override val pinCode: String,
+        val repeatedPinCode: String = "",
+    ) : Sign()
 
-
+    data class SignIn(override val pinCode: String) : Sign()
 }

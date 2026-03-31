@@ -8,6 +8,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import com.cashbacks.common.composables.utils.loadingContentAnimationSpec
 import com.cashbacks.common.navigation.FeatureApi
+import com.cashbacks.features.home.api.Home
 import com.cashbacks.features.login.api.LoginRoute
 import com.cashbacks.features.login.impl.LoginRoot
 
@@ -21,7 +22,14 @@ object LoginFeature : FeatureApi {
             enterTransition = { fadeIn(loadingContentAnimationSpec()) },
             exitTransition = { fadeOut(loadingContentAnimationSpec()) },
         ) {
-            LoginRoot()
+            LoginRoot(
+                navigateToHomeScreen = {
+                    navController.navigate(Home) {
+                        popUpTo<Home>()
+                        launchSingleTop = true
+                    }
+                }
+            )
         }
     }
 }

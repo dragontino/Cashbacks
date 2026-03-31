@@ -54,6 +54,7 @@ dependencies {
     implementation(project(":common:navigation"))
     implementation(project(":features:login:api"))
     implementation(project(":components:login"))
+    implementation(project(":features:home:api"))
 
     implementation(libs.androidx.core)
     implementation(libs.kotlinx.serialization.json)
@@ -72,6 +73,7 @@ dependencies {
     implementation(libs.compose.icons.core)
     implementation(libs.compose.icons.extended)
     implementation(libs.compose.material3)
+    implementation(libs.kotlinx.collections.immutable)
     androidTestImplementation(libs.compose.junit4)
     debugImplementation(libs.compose.ui.tooling)
     debugImplementation(libs.compose.ui.test.manifest)
